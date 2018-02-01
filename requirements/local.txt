@@ -1,0 +1,10 @@
+# Local development dependencies go here
+-r base.txt
+django-debug-toolbar==1.5
+django-extensions==1.7.4
+six==1.10.0
+sqlparse==0.2.1
+collection-json==0.1.1
+coverage==4.2
+
+
