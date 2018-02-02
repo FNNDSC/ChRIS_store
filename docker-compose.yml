@@ -12,7 +12,7 @@ version: '3'
 
 services:
   chris_store_dev:
-    image:  ${CREPO}/chris_store_dev_backend
+    image:  ${CREPO}/chris_store:dev
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./store_backend:/usr/src/store_backend

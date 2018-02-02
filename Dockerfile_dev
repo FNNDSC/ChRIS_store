@@ -3,19 +3,19 @@
 #
 # Build with
 #
-#   docker build -t <name> .
+#   docker build -t <name>:<tag> -f <dockerfile> .
 #
 # For example if building a local version, you could do:
 #
-#   docker build -t local/chris_store_dev_backend .
+#   docker build -t local/chris_store:dev -f Dockerfile_dev .
 #
 # In the case of a proxy (located at 192.168.13.14:3128), do:
 #
-#    docker build --build-arg http_proxy=http://192.168.13.14:3128 --build-arg UID=$UID -t local/chris_store_dev_backend .
+#   docker build --build-arg http_proxy=http://192.168.13.14:3128 --build-arg UID=$UID -t local/chris_store:dev -f Dockerfile_dev .
 #
 # To run an interactive shell inside this container, do:
 #
-#   docker run -ti --entrypoint /bin/bash local/chris_store_dev_backend
+#   docker run -ti --entrypoint /bin/bash local/chris_store:dev
 #
 
 

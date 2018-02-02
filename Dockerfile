@@ -1,5 +1,5 @@
 #
-# Docker file for ChRIS store development server
+# Docker file for ChRIS store production server
 #
 # Build with
 #
@@ -7,15 +7,15 @@
 #
 # For example if building a local version, you could do:
 #
-#   docker build -t local/chris_store_dev_backend .
+#   docker build -t local/chris_store .
 #
 # In the case of a proxy (located at 192.168.13.14:3128), do:
 #
-#    docker build --build-arg http_proxy=http://192.168.13.14:3128 --build-arg UID=$UID -t local/chris_store_dev_backend .
+#    docker build --build-arg http_proxy=http://192.168.13.14:3128 --build-arg UID=$UID -t local/chris_store .
 #
 # To run an interactive shell inside this container, do:
 #
-#   docker run -ti --entrypoint /bin/bash local/chris_store_dev_backend
+#   docker run -ti --entrypoint /bin/bash local/chris_store
 #
 
 
@@ -24,6 +24,7 @@ MAINTAINER fnndsc "dev@babymri.org"
 
 ENV APPROOT="/usr/src/store_backend" REQPATH="/usr/src/requirements" VERSION="0.1"
 COPY ["./requirements", "${REQPATH}"]
+COPY ["./store_backend", "${APPROOT}"]
 
 # Pass a UID on build command line (see above) to set internal UID
 ARG UID=1001
