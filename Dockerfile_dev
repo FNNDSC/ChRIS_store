@@ -36,6 +36,7 @@ RUN apt-get update \
   && echo "localuser:localuser" | chpasswd                            \
   && adduser localuser sudo                                           \
   && apt-get install -y libmysqlclient-dev                            \
+  && apt-get install -y apache2 apache2-dev                           \
   && pip3 install -r ${REQPATH}/local.txt                             \
   && mkdir /usr/users                                                 \
   && chmod 777 /usr/users                                             \
