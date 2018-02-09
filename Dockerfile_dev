@@ -43,11 +43,11 @@ RUN apt-get update \
   && echo "localuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 WORKDIR $APPROOT
-EXPOSE 8000
+EXPOSE 8010
 
 # Start as user $UID
 # For now this is disabled so the service runs as root to 
 # easily write to the managed db volume.
 # USER $UID
 
-CMD ["manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["manage.py", "runserver", "0.0.0.0:8010"]

@@ -38,21 +38,6 @@ urlpatterns = format_suffix_patterns([
     url(r'^v1/plugins/parameters/(?P<pk>[0-9]+)/$',
         plugin_views.PluginParameterDetail.as_view(), name='pluginparameter-detail'),
 
-    url(r'^v1/plugins/string-parameter/(?P<pk>[0-9]+)/$',
-        plugin_views.StringParameterDetail.as_view(), name='stringparameter-detail'),
-
-    url(r'^v1/plugins/int-parameter/(?P<pk>[0-9]+)/$',
-        plugin_views.IntParameterDetail.as_view(), name='intparameter-detail'),
-
-    url(r'^v1/plugins/float-parameter/(?P<pk>[0-9]+)/$',
-        plugin_views.FloatParameterDetail.as_view(), name='floatparameter-detail'),
-
-    url(r'^v1/plugins/bool-parameter/(?P<pk>[0-9]+)/$',
-        plugin_views.BoolParameterDetail.as_view(), name='boolparameter-detail'),
-
-    url(r'^v1/plugins/path-parameter/(?P<pk>[0-9]+)/$',
-        plugin_views.PathParameterDetail.as_view(), name='pathparameter-detail'),
-
 ])
 
 # Login and logout views for Djangos' browsable API

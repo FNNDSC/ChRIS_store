@@ -28,7 +28,7 @@ DATABASES['default']['NAME'] = 'chris_store_dev'
 DATABASES['default']['USER'] = 'chris'
 DATABASES['default']['PASSWORD'] = 'Chris1234'
 DATABASES['default']['TEST'] = {'CHARSET': 'utf8'}
-DATABASES['default']['HOST'] = 'chris_dev_db'
+DATABASES['default']['HOST'] = 'chris_store_dev_db'
 DATABASES['default']['PORT'] = '3306'
 
 # Feed file storage
