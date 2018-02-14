@@ -19,8 +19,13 @@ SECRET_KEY = 'w1kxu^l=@pnsf!5piqz6!!5kdcdpo79y6jebbp+2244yjm*#+k'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# debug control output
-CHRIS_DEBUG = {'quiet': False, 'debugFile': '/dev/null', 'useDebug': False}
+# swift service settings
+DEFAULT_FILE_STORAGE = 'swift.storage.SwiftStorage'
+SWIFT_AUTH_URL = 'http://swift_service:8080/auth/v1.0'
+SWIFT_USERNAME = 'chris:chris1234'
+SWIFT_KEY = 'testing'
+SWIFT_CONTAINER_NAME = 'store_users'
+SWIFT_AUTO_CREATE_CONTAINER = True
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
@@ -31,8 +36,8 @@ DATABASES['default']['TEST'] = {'CHARSET': 'utf8'}
 DATABASES['default']['HOST'] = 'chris_store_dev_db'
 DATABASES['default']['PORT'] = '3306'
 
-# Feed file storage
-MEDIA_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(BASE_DIR))) + '/users'
+# Uploaded file storage
+MEDIA_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(BASE_DIR))) + '/store_users'
 if not os.path.exists(MEDIA_ROOT):
     os.makedirs(MEDIA_ROOT)
 
