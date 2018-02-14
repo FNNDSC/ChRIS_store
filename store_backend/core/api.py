@@ -23,19 +23,22 @@ urlpatterns = format_suffix_patterns([
         user_views.UserList.as_view(), name='user-list'),
 
 
-    url(r'^v1/plugins/$',
+    url(r'^v1/$',
         plugin_views.PluginList.as_view(), name='plugin-list'),
 
-    url(r'^v1/plugins/search/$',
+    url(r'^v1/tags/$',
+        plugin_views.FullPluginList.as_view(), name='full-plugin-list'),
+
+    url(r'^v1/search/$',
         plugin_views.PluginListQuerySearch.as_view(), name='plugin-list-query-search'),
 
-    url(r'^v1/plugins/(?P<pk>[0-9]+)/$',
+    url(r'^v1/(?P<pk>[0-9]+)/$',
         plugin_views.PluginDetail.as_view(), name='plugin-detail'),
 
-    url(r'^v1/plugins/(?P<pk>[0-9]+)/parameters/$',
+    url(r'^v1/(?P<pk>[0-9]+)/parameters/$',
         plugin_views.PluginParameterList.as_view(), name='pluginparameter-list'),
 
-    url(r'^v1/plugins/parameters/(?P<pk>[0-9]+)/$',
+    url(r'^v1/parameters/(?P<pk>[0-9]+)/$',
         plugin_views.PluginParameterDetail.as_view(), name='pluginparameter-detail'),
 
 ])

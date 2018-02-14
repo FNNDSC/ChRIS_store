@@ -4,9 +4,6 @@ import django_filters
 
 from rest_framework.filters import FilterSet
 
-from django.conf import settings
-import swiftclient
-
 
 # API types
 TYPE_CHOICES = [("string", "String values"), ("float", "Float values"),
@@ -20,11 +17,21 @@ TYPES = {'string': 'str', 'integer': 'int', 'float': 'float', 'boolean': 'bool',
 PLUGIN_TYPE_CHOICES = [("ds", "Data plugin"), ("fs", "Filesystem plugin")]
 
 
+def uploaded_file_path(instance, filename):
+    # file will be stored to Swift at:
+    # SWIFT_CONTAINER_NAME/<username>/<uploads>/<filename>
+    owner = instance.owner
+    username = owner.username
+    return '{0}/{1}/{2}'.format(username, 'uploads', filename)
+
+
 class Plugin(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=100, unique=True)
     dock_image = models.CharField(max_length=500)
+    public_repo = models.URLField(max_length=300)
+    descriptor_file = models.FileField(max_length=512, upload_to=uploaded_file_path)
     type = models.CharField(choices=PLUGIN_TYPE_CHOICES, default='ds', max_length=4)
     authors = models.CharField(max_length=200, blank=True)
     title = models.CharField(max_length=400, blank=True)
@@ -33,6 +40,7 @@ class Plugin(models.Model):
     documentation = models.CharField(max_length=800, blank=True)
     license = models.CharField(max_length=50, blank=True)
     version = models.CharField(max_length=10, blank=True)
+    owner = models.ForeignKey('auth.User')
 
     class Meta:
         ordering = ('type',)
@@ -54,7 +62,7 @@ class PluginFilter(FilterSet):
     
     class Meta:
         model = Plugin
-        fields = ['name', 'dock_image', 'type', 'category', 'authors',
+        fields = ['name', 'dock_image', 'public_repo', 'type', 'category', 'owner',
                   'min_creation_date', 'max_creation_date', ]
 
 

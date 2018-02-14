@@ -8,7 +8,7 @@ from .models import Plugin, PluginParameter
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
     parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
-    instances = serializers.HyperlinkedIdentityField(view_name='plugininstance-list')
+    owner = serializers.ReadOnlyField(source='owner.username')
     
     class Meta:
         model = Plugin
