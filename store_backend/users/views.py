@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from collectionjson import services
 
 from .serializers import UserSerializer
-from .permissions import IsUserOrChris
+from .permissions import IsUserOrChrisOrReadOnly
 
 
 class UserCreate(generics.CreateAPIView):
@@ -15,21 +15,10 @@ class UserCreate(generics.CreateAPIView):
     serializer_class = UserSerializer
 
 
-class UserList(generics.ListAPIView):
-    serializer_class = UserSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_queryset(self):
-        """
-        Overriden to return a queryset comprised only by the currently authenticated user.
-        """
-        return [self.request.user]
-
-
 class UserDetail(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (permissions.IsAuthenticated, IsUserOrChris)
+    permission_classes = (permissions.IsAuthenticated, IsUserOrChrisOrReadOnly)
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -38,7 +27,7 @@ class UserDetail(generics.RetrieveUpdateAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         response = Response(serializer.data)
-        template_data = {"password": ""}
+        template_data = {"password": "", "email": ""}
         return services.append_collection_template(response, template_data)
 
     def update(self, request, *args, **kwargs):
@@ -54,6 +43,9 @@ class UserDetail(generics.RetrieveUpdateAPIView):
         Overriden to update user's password when requested by a PUT request.
         """
         user = self.get_object()
-        new_password = serializer.validated_data.get("password")
-        user.set_password(new_password)
+        if 'email' in serializer.validated_data:
+            user.email = serializer.validated_data.get("email")
+        if 'password' in serializer.validated_data:
+            new_password = serializer.validated_data.get("password")
+            user.set_password(new_password)
         user.save()

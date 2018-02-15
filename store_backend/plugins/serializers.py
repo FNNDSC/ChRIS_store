@@ -1,6 +1,4 @@
 
-from django.core.exceptions import ObjectDoesNotExist
-
 from rest_framework import serializers
 
 from .models import Plugin, PluginParameter
@@ -8,13 +6,14 @@ from .models import Plugin, PluginParameter
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
     parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
-    owner = serializers.ReadOnlyField(source='owner.username')
+    owner = serializers.HyperlinkedRelatedField(view_name='user-detail', read_only=True)
+    descriptor_file = serializers.FileField(write_only=True)
     
     class Meta:
         model = Plugin
-        fields = ('url', 'name', 'dock_image', 'type', 'authors', 'title', 'category',
-                  'description', 'documentation', 'license', 'version',
-                  'parameters', 'instances')
+        fields = ('url', 'name', 'creation_date', 'modification_date', 'dock_image',
+                  'public_repo', 'type', 'authors', 'title', 'category', 'description',
+                  'documentation', 'license', 'version', 'parameters', 'owner')
 
 
 class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
