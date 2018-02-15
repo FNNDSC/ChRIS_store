@@ -38,7 +38,7 @@ services:
       name: "ChRIS_store MySQL Database"
       role: "Development database"
 
-    swift_service:
+  swift_service:
     image:  fnndsc/docker-swift-onlyone
     volumes:
       - swift_storage:/srv
