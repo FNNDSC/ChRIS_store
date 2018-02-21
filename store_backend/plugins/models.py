@@ -1,6 +1,10 @@
 
+import json
+import swiftclient
+
 from django.db import models
 import django_filters
+from django.conf import settings
 
 from rest_framework.filters import FilterSet
 
@@ -33,6 +37,9 @@ class Plugin(models.Model):
     public_repo = models.URLField(max_length=300)
     descriptor_file = models.FileField(max_length=512, upload_to=uploaded_file_path)
     type = models.CharField(choices=PLUGIN_TYPE_CHOICES, default='ds', max_length=4)
+    execshell = models.CharField(max_length=50, blank=True)
+    selfpath = models.CharField(max_length=512, blank=True)
+    selfexec = models.CharField(max_length=50, blank=True)
     authors = models.CharField(max_length=200, blank=True)
     title = models.CharField(max_length=400, blank=True)
     category = models.CharField(max_length=100, blank=True)
@@ -41,7 +48,7 @@ class Plugin(models.Model):
     license = models.CharField(max_length=50, blank=True)
     version = models.CharField(max_length=10, blank=True)
     owner = models.ForeignKey('auth.User', on_delete=models.CASCADE,
-                               related_name='plugins')
+                               related_name='plugin')
 
     class Meta:
         ordering = ('type',)
@@ -55,7 +62,22 @@ class Plugin(models.Model):
         """
         params = self.parameters.all()
         return [param.name for param in params]
-    
+
+    def read_descriptor_file(self):
+        """
+        Custom method to read the plugin representation from the JSON decriptor file.
+        """
+        # initiate a Swift service connection
+        conn = swiftclient.Connection(
+            user=settings.SWIFT_USERNAME,
+            key=settings.SWIFT_KEY,
+            authurl=settings.SWIFT_AUTH_URL,
+        )
+        fpath = self.descriptor_file.name
+        obj_tuple = conn.get_object(settings.SWIFT_CONTAINER_NAME, fpath)
+        json_repr = json.loads(obj_tuple[1].decode())
+        return json_repr
+
 
 class PluginFilter(FilterSet):
     min_creation_date = django_filters.DateFilter(name="creation_date", lookup_expr='gte')

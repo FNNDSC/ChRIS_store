@@ -33,6 +33,7 @@ class PluginList(generics.ListCreateAPIView):
         saving to the DB.
         """
         serializer.save(owner=self.request.user)
+        serializer.save_descriptors()
 
     def list(self, request, *args, **kwargs):
         """
@@ -91,7 +92,8 @@ class PluginDetail(generics.RetrieveUpdateAPIView):
         response = super(PluginDetail, self).retrieve(request, *args, **kwargs)
         template_data = {'dock_image': '', 'authors': '', 'title': '', 'category': '',
                          'description': '', 'documentation': '', 'version': '',
-                         'public_repo': ''}
+                         'public_repo': '', 'execshell': '', 'selfpath': '',
+                         'selfexec': ''}
         return services.append_collection_template(response, template_data)
 
 

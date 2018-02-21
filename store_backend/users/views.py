@@ -32,7 +32,7 @@ class UserDetail(generics.RetrieveUpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         """
-        Overriden to add required username to the request before serializer validation.
+        Overriden to add required username before serializer validation.
         """
         user = self.get_object()
         request.data['username'] = user.username
@@ -40,12 +40,11 @@ class UserDetail(generics.RetrieveUpdateAPIView):
 
     def perform_update(self, serializer):
         """
-        Overriden to update user's password when requested by a PUT request.
+        Overriden to update user's password and email when requested by a PUT request.
         """
+        serializer.save(email=serializer.validated_data.get("email"))
         user = self.get_object()
-        if 'email' in serializer.validated_data:
-            user.email = serializer.validated_data.get("email")
-        if 'password' in serializer.validated_data:
-            new_password = serializer.validated_data.get("password")
-            user.set_password(new_password)
+        password = serializer.validated_data.get("password")
+        user.set_password(password)
         user.save()
+
