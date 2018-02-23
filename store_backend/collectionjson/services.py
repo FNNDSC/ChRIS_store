@@ -4,10 +4,11 @@ from urllib.parse import urlparse
 from django.core.urlresolvers import resolve
 
 from rest_framework.response import Response
+from rest_framework import serializers
 
 def get_list_response(list_view_instance, queryset):
     """
-    Convenience method to get an HTTP response with a list of objects
+    Convenience function to get an HTTP response with a list of objects
     from a list view instance and a queryset
     """
     page = list_view_instance.paginate_queryset(queryset)
@@ -21,7 +22,7 @@ def get_list_response(list_view_instance, queryset):
 
 def append_collection_links(response, link_dict):
     """
-    Convenience method to append document-level links to a response object.
+    Convenience function to append document-level links to a response object.
     """
     data = response.data
     if not 'collection_links' in data:
@@ -34,7 +35,7 @@ def append_collection_links(response, link_dict):
 
 def append_collection_template(response, template_data):
     """
-    Convenience method to append to a response a collection+json template.
+    Convenience function to append to a response a collection+json template.
     """
     data = []
     for (k, v) in template_data.items():
@@ -45,7 +46,7 @@ def append_collection_template(response, template_data):
 
 def append_collection_querylist(response, query_url_list):
     """
-    Convenience method to append to a response a collection+json queries template.
+    Convenience function to append to a response a collection+json queries template.
     """
     queries = []
     for query_url in query_url_list:
@@ -58,3 +59,17 @@ def append_collection_querylist(response, query_url_list):
         queries.append({'href': query_url, 'rel': 'search', "data": data})
     response.data["queries"] = queries
     return response
+
+
+def collection_serializer_is_valid(is_valid_method):
+    """
+    Convenience 'is_valid' method decorator to generate a properly formatted message
+    for serializers' validation errors.
+    """
+    def new_is_valid(*args, **kwargs):
+        try:
+            valid = is_valid_method(*args, **kwargs)
+        except serializers.ValidationError as error:
+            raise serializers.ValidationError({'detail': error})
+        return valid
+    return new_is_valid
