@@ -1,8 +1,9 @@
 
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
+from collectionjson.services import collection_serializer_is_valid
 
 from .models import Plugin, PluginParameter
-from .models import TYPES
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
     parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
@@ -16,61 +17,24 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                   'documentation', 'license', 'version', 'parameters', 'owner',
                   'descriptor_file', 'execshell', 'selfpath', 'selfexec')
 
+    @collection_serializer_is_valid
     def is_valid(self, raise_exception=False):
         """
         Overriden to generate a properly formatted message for validation errors
         """
-        valid = super(PluginSerializer, self).is_valid()
-        if raise_exception and not valid:
-            raise serializers.ValidationError({'detail': str(self._errors)})
-        return valid
+        return super(PluginSerializer, self).is_valid(raise_exception=raise_exception)
 
-    def save_descriptors(self):
+    def save(self, **kwargs):
         """
-        Custom method to check whether a new feef owner is a system-registered user.
+        Overriden to validate and save the plugin's app representation descriptors into
+        the DB
         """
-        plugin_name = self.validated_data.get("name")
-        plugin = Plugin.objects.get(name=plugin_name)
+        plugin = super(PluginSerializer, self).save(**kwargs)
         app_repr = plugin.read_descriptor_file()
         try:
-            # save plugin's attributes to the db
-            self.save(type = app_repr['type'],
-                      authors = app_repr['authors'],
-                      title = app_repr['title'],
-                      category = app_repr['category'],
-                      description = app_repr['description'],
-                      documentation = app_repr['documentation'],
-                      license = app_repr['license'],
-                      version = app_repr['version'],
-                      execshell = app_repr['execshell'],
-                      selfpath = app_repr['selfpath'],
-                      selfexec = app_repr['selfexec'])
-            import pdb;pdb.set_trace()
-            # save plugin's parameters to the db
-            params = app_repr['parameters']
-            for param in params:
-                self._save_plugin_param(plugin, param)
-        except serializers.ValidationError as e:
-            raise serializers.ValidationError(
-                {'detail': e})
-
-    def _save_plugin_param(self, plugin, param):
-        """
-        Internal method to save a plugin parameter into the DB.
-        """
-        # save plugin parameter to the db
-        plugin_param = PluginParameter()
-        serializer = PluginParameterSerializer(plugin_param)
-        param_type = [key for key in TYPES if TYPES[key] == param['type']][0]
-        param_default = ""
-        if param['default']:
-            param_default = str(param['default'])
-        serializer.save(plugin = plugin,
-                        name = param['name'],
-                        type = param_type,
-                        optional = param['optional'],
-                        default = param_default,
-                        help = param['help'])
+            plugin.save_descriptors(app_repr)
+        except (ValidationError, KeyError) as e:
+            raise serializers.ValidationError({'detail': e})
 
 
 class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
@@ -80,11 +44,9 @@ class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
         model = PluginParameter
         fields = ('url', 'name', 'type', 'optional', 'default', 'help', 'plugin')
 
+    @collection_serializer_is_valid
     def is_valid(self, raise_exception=False):
         """
         Overriden to generate a properly formatted message for validation errors
         """
-        valid = super(PluginParameterSerializer, self).is_valid()
-        if raise_exception and not valid:
-            raise serializers.ValidationError({'detail': str(self._errors)})
-        return valid
+        return super(PluginParameterSerializer, self).is_valid(raise_exception=raise_exception)

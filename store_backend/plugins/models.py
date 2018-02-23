@@ -5,6 +5,7 @@ import swiftclient
 from django.db import models
 import django_filters
 from django.conf import settings
+from django.utils import timezone
 
 from rest_framework.filters import FilterSet
 
@@ -23,10 +24,12 @@ PLUGIN_TYPE_CHOICES = [("ds", "Data plugin"), ("fs", "Filesystem plugin")]
 
 def uploaded_file_path(instance, filename):
     # file will be stored to Swift at:
-    # SWIFT_CONTAINER_NAME/<username>/<uploads>/<filename>
+    # SWIFT_CONTAINER_NAME/<username>/<uploads>/<today_path>/<filename>
     owner = instance.owner
     username = owner.username
-    return '{0}/{1}/{2}'.format(username, 'uploads', filename)
+    today = timezone.now()
+    today_path = today.strftime("%Y/%m/%d/%H/%M")
+    return '{0}/{1}/{2}/{3}'.format(username, 'uploads', today_path, filename)
 
 
 class Plugin(models.Model):
@@ -77,6 +80,47 @@ class Plugin(models.Model):
         obj_tuple = conn.get_object(settings.SWIFT_CONTAINER_NAME, fpath)
         json_repr = json.loads(obj_tuple[1].decode())
         return json_repr
+
+    def save_descriptors(self, app_reprentation):
+        """
+        Custom method to save the plugin's app representation descriptors into the DB.
+        """
+        self.type = app_reprentation['type']
+        self.authors = app_reprentation['authors']
+        self.title = app_reprentation['title']
+        self.description = app_reprentation['description']
+        self.license = app_reprentation['license']
+        self.version = app_reprentation['version']
+        self.execshell = app_reprentation['execshell']
+        self.selfpath = app_reprentation['selfpath']
+        self.selfexec = app_reprentation['selfexec']
+        if 'category' in app_reprentation:
+            self.category = app_reprentation['category']
+        if 'documentation' in app_reprentation:
+            self.documentation = app_reprentation['documentation']
+        self.save()
+        # save plugin's parameters to the db
+        params = app_reprentation['parameters']
+        for param in params:
+            self._save_plugin_param(param)
+
+    def _save_plugin_param(self, parameter):
+        """
+        Internal method to save a plugin's parameter into the DB.
+        """
+        # save plugin parameter to the db
+        plugin_param = PluginParameter()
+        param_type = [key for key in TYPES if TYPES[key] == parameter['type']][0]
+        param_default = ""
+        if parameter['default']:
+            param_default = str(parameter['default'])
+        plugin_param.plugin = self
+        plugin_param.name = parameter['name']
+        plugin_param.type = param_type
+        plugin_param.optional = parameter['optional']
+        plugin_param.default = param_default
+        plugin_param.help = parameter['help']
+        plugin_param.save()
 
 
 class PluginFilter(FilterSet):

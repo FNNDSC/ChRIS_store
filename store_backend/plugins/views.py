@@ -33,7 +33,6 @@ class PluginList(generics.ListCreateAPIView):
         saving to the DB.
         """
         serializer.save(owner=self.request.user)
-        serializer.save_descriptors()
 
     def list(self, request, *args, **kwargs):
         """
@@ -90,11 +89,16 @@ class PluginDetail(generics.RetrieveUpdateAPIView):
         Overriden to append a collection+json template.
         """
         response = super(PluginDetail, self).retrieve(request, *args, **kwargs)
-        template_data = {'dock_image': '', 'authors': '', 'title': '', 'category': '',
-                         'description': '', 'documentation': '', 'version': '',
-                         'public_repo': '', 'execshell': '', 'selfpath': '',
-                         'selfexec': ''}
+        template_data = {'dock_image': '', 'public_repo': '', 'descriptor_file': ''}
         return services.append_collection_template(response, template_data)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Overriden to add required field before serializer validation.
+        """
+        plugin = self.get_object()
+        request.data['name'] = plugin.name
+        return super(PluginDetail, self).update(request, *args, **kwargs)
 
 
 class PluginParameterList(generics.ListCreateAPIView):
