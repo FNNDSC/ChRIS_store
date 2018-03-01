@@ -99,7 +99,10 @@ class Plugin(models.Model):
         if 'documentation' in app_reprentation:
             self.documentation = app_reprentation['documentation']
         self.save()
-        # save plugin's parameters to the db
+        # delete plugin's parameters from the db
+        if self.parameters:
+            self.parameters.all().delete()
+        # save new plugin's parameters to the db
         params = app_reprentation['parameters']
         for param in params:
             self._save_plugin_param(param)
