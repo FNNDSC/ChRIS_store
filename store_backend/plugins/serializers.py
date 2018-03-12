@@ -43,10 +43,3 @@ class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = PluginParameter
         fields = ('url', 'name', 'type', 'optional', 'default', 'help', 'plugin')
-
-    @collection_serializer_is_valid
-    def is_valid(self, raise_exception=False):
-        """
-        Overriden to generate a properly formatted message for validation errors
-        """
-        return super(PluginParameterSerializer, self).is_valid(raise_exception=raise_exception)

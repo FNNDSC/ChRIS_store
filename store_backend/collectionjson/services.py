@@ -6,6 +6,7 @@ from django.core.urlresolvers import resolve
 from rest_framework.response import Response
 from rest_framework import serializers
 
+
 def get_list_response(list_view_instance, queryset):
     """
     Convenience function to get an HTTP response with a list of objects
