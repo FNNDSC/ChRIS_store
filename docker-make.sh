@@ -28,7 +28,11 @@ docker-compose exec chris_store_dev python manage.py migrate
 windowBottom
 
 title -d 1 "Running Django Unit tests..."
-#docker-compose exec chris_store_dev python manage.py test --exclude-tag integration
+docker-compose exec chris_store_dev python manage.py test --exclude-tag integration
+windowBottom
+
+title -d 1 "Running Django Integration tests..."
+docker-compose exec chris_store_dev python manage.py test --tag integration
 windowBottom
 
 title -d 1 "Creating two ChRIS store API users"
