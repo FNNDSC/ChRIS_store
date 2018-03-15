@@ -41,9 +41,14 @@ class PluginList(generics.ListCreateAPIView):
         """
         response = super(PluginList, self).list(request, *args, **kwargs)
         user = self.request.user
+        # append document-level link relations
         links = {'all_plugins': reverse('full-plugin-list', request=request),
                  'user': reverse('user-detail', request=request, kwargs={"pk": user.id})}
         response = services.append_collection_links(response, links)
+        # append query list
+        query_list = [reverse('plugin-list-query-search', request=request)]
+        response = services.append_collection_querylist(response, query_list)
+        # append write template
         template_data = {'name': '', 'dock_image': '', 'public_repo': '',
                          'descriptor_file': ''}
         return services.append_collection_template(response, template_data)
@@ -62,8 +67,12 @@ class FullPluginList(generics.ListAPIView):
         Overriden to append document-level link relations.
         """
         response = super(FullPluginList, self).list(request, *args, **kwargs)
+        # append document-level link relations
         links = {'plugins': reverse('plugin-list', request=request)}
-        return services.append_collection_links(response, links)
+        response = services.append_collection_links(response, links)
+        # append query list
+        query_list = [reverse('plugin-list-query-search', request=request)]
+        return services.append_collection_querylist(response, query_list)
 
 
 class PluginListQuerySearch(generics.ListAPIView):

@@ -129,11 +129,12 @@ class Plugin(models.Model):
 class PluginFilter(FilterSet):
     min_creation_date = django_filters.DateFilter(name="creation_date", lookup_expr='gte')
     max_creation_date = django_filters.DateFilter(name="creation_date", lookup_expr='lte')
+    owner_username = django_filters.CharFilter(name="owner__username", lookup_expr='icontains')
     
     class Meta:
         model = Plugin
-        fields = ['name', 'dock_image', 'public_repo', 'type', 'category', 'owner',
-                  'min_creation_date', 'max_creation_date', ]
+        fields = ['name', 'dock_image', 'public_repo', 'type', 'category',
+                  'owner_username', 'min_creation_date', 'max_creation_date', ]
 
 
 class PluginParameter(models.Model):
