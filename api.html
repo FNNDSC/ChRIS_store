@@ -1,0 +1,157 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>REST API Reference &#8212; chris store 0.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Plugin collection" href="collections/plugin.html" />
+    <link rel="prev" title="REST API Authentication" href="authentication.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="rest-api-reference">
+<h1>REST API Reference<a class="headerlink" href="#rest-api-reference" title="Permalink to this headline">¶</a></h1>
+<p>This API uses the standard <a class="reference external" href="http://amundsen.com/media-types/collection/">Collection+JSON</a> hypermedia type to exchange resource
+representations with clients. All the functionality provided by the API can be
+discovered by clients by doing <a class="reference external" href="https://tools.ietf.org/html/rfc7231#section-4.3.1">GET</a> requests to links (“href” elements)
+presented by the hypermedia documents returned by the web server, starting with the API’s
+“home page”.</p>
+<p>The API’s “home page” relative url is: /api/v1/ which serves a user-specific <a class="reference external" href="collections/plugin.html">collection
+of plugins</a>.</p>
+<p>There are two main types of resources served by the API:</p>
+<dl class="docutils">
+<dt><strong>Collection</strong></dt>
+<dd>A resource to group other resources together. Its representation focuses on links to
+other resources, though it may also include snippets from the representations of those
+other resources.</dd>
+<dt><strong>Item</strong></dt>
+<dd>A standalone resource that is linked to from a collection’s representation.</dd>
+</dl>
+<p>The following table shows the API’s HTTP protocol semantics for these resource types:</p>
+<table border="1" class="docutils" id="id1">
+<caption><span class="caption-text"><strong>API’s accepted HTTP requests</strong></span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head" colspan="2">Collection resource</th>
+<th class="head" colspan="2">Item resource</th>
+</tr>
+<tr class="row-even"><th class="head">read-only</th>
+<th class="head">read/write</th>
+<th class="head">read-only</th>
+<th class="head">read/write</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference external" href="https://tools.ietf.org/html/rfc7231#section-4.3.1">GET</a></td>
+<td><p class="first"><a class="reference external" href="https://tools.ietf.org/html/rfc7231#section-4.3.1">GET</a></p>
+<p class="last"><a class="reference external" href="https://tools.ietf.org/html/rfc7231#section-4.3.3">POST</a></p>
+</td>
+<td><a class="reference external" href="https://tools.ietf.org/html/rfc7231#section-4.3.1">GET</a></td>
+<td><p class="first"><a class="reference external" href="https://tools.ietf.org/html/rfc7231#section-4.3.1">GET</a></p>
+<p><a class="reference external" href="https://tools.ietf.org/html/rfc7231#section-4.3.4">PUT</a></p>
+<p class="last"><a class="reference external" href="https://tools.ietf.org/html/rfc7231#section-4.3.5">DELETE</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Following are the actuall lists of resource types:</p>
+<p><strong>Collections:</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="collections/plugin.html">Plugin collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collections/allplugin.html">All plugin collection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="collections/plugin_parameter.html">Plugin Parameter collection</a></li>
+</ul>
+</div>
+<p><strong>Items:</strong></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="items/plugin.html">Plugin item</a></li>
+<li class="toctree-l1"><a class="reference internal" href="items/plugin_parameter.html">Plugin Parameter item</a></li>
+<li class="toctree-l1"><a class="reference internal" href="items/user.html">User item</a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="authentication.html" title="previous chapter">REST API Authentication</a></li>
+      <li>Next: <a href="collections/plugin.html" title="next chapter">Plugin collection</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, FNNDSC Devs.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
