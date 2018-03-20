@@ -134,6 +134,11 @@ Then upload the plugin representation json file to the ChRIS Store as part of th
 http -a cube:cube1234 -f POST http://localhost:8010/api/v1/ dock_image=fnndsc/pl-simplefsapp descriptor_file@/tmp/json/SimpleFSApp.json public_repo=https://github.com/FNNDSC/pl-simplefsapp name=simplefsapp
 ```
 
+#### An unauthenticated POST request to create a new ChRIS store user account:
+```bash
+http POST http://localhost:8010/api/v1/users/ Content-Type:application/vnd.collection+json Accept:application/vnd.collection+json template:='{"data":[{"name":"email","value":"developer@babymri.org"}, {"name":"password","value":"newstoreuser1234"}, {"name":"username","value":"newstoreuser"}]}'
+```
+
 ### Using swift client to list files in the store_users bucket
 ```bash
 swift -A http://127.0.0.1:8080/auth/v1.0 -U chris:chris1234 -K testing list store_users
