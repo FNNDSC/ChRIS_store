@@ -1,6 +1,6 @@
-=================
-Plugin collection
-=================
+=====================
+All plugin collection
+=====================
 
 .. _Collection+JSON: http://amundsen.com/media-types/collection/
 
@@ -9,26 +9,26 @@ Plugin collection
 .. _plugin: ../items/plugin.html
 
 
-**Read/write**
+**Read-only**
 
 
-This resource type refers a collection of user-specific plugin_ items.
+This resource type refers to the collection of all plugin_ items for all users of the store.
 
 In other Collection+JSON_ resource representations this resource type is linked by any
 `link relation`_ with attribute:
 
-``"rel": "plugins"``
+``"rel": "all_plugins"``
 
 
 .. http:get:: /api/v1/plugins/
 
-   :synopsis: Gets the list of plugins owned by the authenticated user.
+   :synopsis: Gets the list of all the plugins in the store.
 
    **Example request**:
 
    .. sourcecode:: http
 
-      GET /api/v1/ HTTP/1.1
+      GET /api/v1/plugins/ HTTP/1.1
       Host: localhost:8010
       Accept: application/vnd.collection+json
 
@@ -43,7 +43,7 @@ In other Collection+JSON_ resource representations this resource type is linked 
 
         {
             "collection": {
-                "href": "http://localhost:8010/api/v1/",
+                "href": "http://localhost:8010/api/v1/plugins/",
                 "items": [
                     {
                         "data": [
@@ -206,12 +206,8 @@ In other Collection+JSON_ resource representations this resource type is linked 
                 ],
                 "links": [
                     {
-                        "href": "http://localhost:8010/api/v1/users/2/",
-                        "rel": "user"
-                    },
-                    {
-                        "href": "http://localhost:8010/api/v1/plugins/",
-                        "rel": "all_plugins"
+                        "href": "http://localhost:8010/api/v1/",
+                        "rel": "plugins"
                     }
                 ],
                 "queries": [
@@ -254,26 +250,6 @@ In other Collection+JSON_ resource representations this resource type is linked 
                         "rel": "search"
                     }
                 ],
-                "template": {
-                    "data": [
-                        {
-                            "name": "dock_image",
-                            "value": ""
-                        },
-                        {
-                            "name": "public_repo",
-                            "value": ""
-                        },
-                        {
-                            "name": "descriptor_file",
-                            "value": ""
-                        },
-                        {
-                            "name": "name",
-                            "value": ""
-                        }
-                    ]
-                },
                 "version": "1.0"
             }
         }
@@ -296,8 +272,7 @@ In other Collection+JSON_ resource representations this resource type is linked 
    `Link Relations`_:
 
     - plugin_ item link relations
-    - **all_plugins** |--| links to the `collection of all plugins`_ for the currently authenticated
-    - **user** |--| links to the currently authenticated `user item`_
+    - **plugins** |--| links to the user-specific `collection of plugins`_ for the
+      currently authenticated user
 
-   .. _`collection of all plugins`: allplugin.html
-   .. _`user item`: ../items/user.html
+   .. _`collection of plugins`: plugin.html

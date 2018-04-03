@@ -20,7 +20,7 @@ In other Collection+JSON_ resource representations this resource type is linked 
 ``"rel": "parameters"``
 
 
-.. http:get:: /api/v1/plugins/(int:plugin_id)/parameters/
+.. http:get:: /api/v1/(int:plugin_id)/parameters/
 
    :synopsis: Gets the list of parameters for the plugin (`plugin_id`).
 
@@ -28,8 +28,8 @@ In other Collection+JSON_ resource representations this resource type is linked 
 
    .. sourcecode:: http
 
-      GET /api/v1/plugins/12/parameters/ HTTP/1.1
-      Host: localhost:8000
+      GET /api/v1/1/parameters/ HTTP/1.1
+      Host: localhost:8010
       Accept: application/vnd.collection+json
 
 
@@ -41,51 +41,46 @@ In other Collection+JSON_ resource representations this resource type is linked 
       Allow: GET
       Content-Type: application/vnd.collection+json
 
-      {
-          "collection": {
-              "href": "https://localhost:8000/api/v1/plugins/12/parameters/",
-              "items": [
-                  {
-                      "data": [
-                          {
-                              "name": "name",
-                              "value": "dir"
-                          },
-                          {
-                              "name": "type",
-                              "value": "string"
-                          },
-                          {
-                              "name": "optional",
-                              "value": true
-                          },
-                          {
-                              "name": "default",
-                              "value": "./"
-                          },
-                          {
-                              "name": "help",
-                              "value": "look up directory"
-                          }
-                      ],
-                      "href": "https://localhost:8000/api/v1/plugins/parameters/12/",
-                      "links": [
-                          {
-                              "href": "https://localhost:8000/api/v1/plugins/12/",
-                              "rel": "plugin"
-                          }
-                      ]
-                  }
-              ],
-              "links": [
-                  {
-                      "href": "https://localhost:8000/api/v1/plugins/12/",
-                      "rel": "plugin"
-                  }
-              ],
-              "version": "1.0"
-          }
-      }
+        {
+            "collection": {
+                "href": "http://localhost:8010/api/v1/1/parameters/",
+                "items": [
+                    {
+                        "data": [
+                            {
+                                "name": "name",
+                                "value": "dir"
+                            },
+                            {
+                                "name": "type",
+                                "value": "path"
+                            },
+                            {
+                                "name": "optional",
+                                "value": true
+                            },
+                            {
+                                "name": "default",
+                                "value": "./"
+                            },
+                            {
+                                "name": "help",
+                                "value": "look up directory"
+                            }
+                        ],
+                        "href": "http://localhost:8010/api/v1/parameters/1/",
+                        "links": [
+                            {
+                                "href": "http://localhost:8010/api/v1/1/",
+                                "rel": "plugin"
+                            }
+                        ]
+                    }
+                ],
+                "links": [],
+                "version": "1.0"
+            }
+        }
 
    :reqheader Accept: application/vnd.collection+json
    :resheader Content-Type: application/vnd.collection+json

@@ -12,9 +12,9 @@ presented by the hypermedia documents returned by the web server, starting with 
 
 
 The API's "home page" relative url is: /api/v1/ which serves a user-specific `collection
-of feeds`_.
+of plugins`_.
 
-.. _`collection of feeds`: collections/feed.html
+.. _`collection of plugins`: collections/plugin.html
 
 
 There are two main types of resources served by the API:
@@ -33,17 +33,15 @@ The following table shows the API's HTTP protocol semantics for these resource t
 
 .. table:: **API's accepted HTTP requests**
 
-	=====================  =====================    =====================  =====================
- 	             Collection resource                              Item resource
-	--------------------------------------------    --------------------------------------------
-	read-only              read/write               read-only              read/write
-	=====================  =====================    =====================  =====================
-	:http:method:`get`     :http:method:`get`       :http:method:`get`     :http:method:`get`
+	=====================  =====================  =====================    =====================  =====================
+                           Collection resource                                            Item resource
+	-------------------------------------------------------------------    --------------------------------------------
+	read-only              read/write             write-only               read-only              read/write
+	=====================  =====================  =====================    =====================  =====================
+	:http:method:`get`     :http:method:`get`     :http:method:`post`      :http:method:`get`     :http:method:`get`
 
-			       :http:method:`post`                             :http:method:`put`
-
-			       			                               :http:method:`delete`
-	=====================  =====================    =====================  =====================
+	                       :http:method:`post`                                                    :http:method:`put`
+	=====================  =====================  =====================    =====================  =====================
 
 
 
@@ -56,13 +54,9 @@ Following are the actuall lists of resource types:
 .. toctree::
    :maxdepth: 2
 
-   collections/feed
-   collections/comment
-   collections/tag
-   collections/file
    collections/plugin
+   collections/allplugin
    collections/plugin_parameter
-   collections/plugin_instance
    collections/user
 
 
@@ -71,25 +65,6 @@ Following are the actuall lists of resource types:
 .. toctree::
    :maxdepth: 2
 
-   items/feed
-   items/comment
-   items/tag
-   items/file
    items/plugin
    items/plugin_parameter
-   items/plugin_instance
    items/user
-
-
-**Other resources:**
-
-.. toctree::
-   :maxdepth: 2
-
-   other_resources/note
-   other_resources/file_content
-   other_resources/string_parameter_instance
-   other_resources/integer_parameter_instance
-   other_resources/float_parameter_instance
-   other_resources/boolean_parameter_instance
-   other_resources/path_parameter_instance

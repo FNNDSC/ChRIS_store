@@ -7,22 +7,22 @@ User collection
 .. _user: ../items/user.html
 
 
-**Read-only**
+**Write-only**
 
 
 This resource type refers to the collection of registered users.
 
 
-.. http:get:: /api/v1/users/
+.. http:post:: /api/v1/users/
 
-   :synopsis: Gets the list of registered users.
+   :synopsis: Creates a new user account.
 
    **Example request**:
 
    .. sourcecode:: http
 
-      GET /api/v1/users/ HTTP/1.1
-      Host: localhost:8000
+      POST /api/v1/users/ HTTP/1.1
+      Host: localhost:8010
       Accept: application/vnd.collection+json
 
 
@@ -31,79 +31,42 @@ This resource type refers to the collection of registered users.
    .. sourcecode:: http
 
       HTTP/1.1 200 OK
-      Allow: GET
+      Allow: POST
       Content-Type: application/vnd.collection+json
 
-      {
-          "collection": {
-              "href": "https://localhost:8000/api/v1/users/",
-              "items": [
-                  {
-                      "data": [
-                          {
-                              "name": "username",
-                              "value": "chris"
-                          }
-                      ],
-                      "href": "https://localhost:8000/api/v1/users/1/"
-                  },
-                  {
-                      "data": [
-                          {
-                              "name": "username",
-                              "value": "jbernal"
-                          }
-                      ],
-                      "href": "https://localhost:8000/api/v1/users/2/",
-                      "links": [
-                          {
-                              "href": "https://localhost:8000/api/v1/33/",
-                              "rel": "feed"
-                          },
-                          {
-                              "href": "https://localhost:8000/api/v1/34/",
-                              "rel": "feed"
-                          },
-                          {
-                              "href": "https://localhost:8000/api/v1/35/",
-                              "rel": "feed"
-                          },
-                          {
-                              "href": "https://localhost:8000/api/v1/36/",
-                              "rel": "feed"
-                          }
-                      ]
-                  },
-                  {
-                      "data": [
-                          {
-                              "name": "username",
-                              "value": "jbernal1"
-                          }
-                      ],
-                      "href": "https://localhost:8000/api/v1/users/3/"
-                  }
-              ],
-              "links": [],
-              "version": "1.0"
-          }
-      }
+        {
+            "collection": {
+                "href": "http://localhost:8010/api/v1/users/",
+                "items": [
+                    {
+                        "data": [
+                            {
+                                "name": "username",
+                                "value": "bob"
+                            },
+                            {
+                                "name": "email",
+                                "value": "bob@babymri.org"
+                            }
+                        ],
+                        "href": "http://localhost:8010/api/v1/users/6/"
+                    }
+                ],
+                "links": [],
+                "version": "1.0"
+            }
+        }
 
 
    :reqheader Accept: application/vnd.collection+json
    :resheader Content-Type: application/vnd.collection+json
-   :statuscode 200: no error
-   :statuscode 401: authentication credentials were not provided
+   :statuscode 201: Created
 
    .. |--| unicode:: U+2013   .. en dash
 
    .. _Properties: http://amundsen.com/media-types/collection/format/#properties
-   .. _`Link Relations`: http://amundsen.com/media-types/collection/format/#link-relations
 
    Properties_ (API semantic descriptors):
 
     - user_ item properties
 
-   `Link Relations`_:
-
-    - user_ item link relations

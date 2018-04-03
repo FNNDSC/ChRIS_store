@@ -26,8 +26,8 @@ In other Collection+JSON_ resource representations this resource type is linked 
 
    .. sourcecode:: http
 
-      GET /api/v1/parameters/12/ HTTP/1.1
-      Host: localhost:8000
+      GET /api/v1/parameters/1/ HTTP/1.1
+      Host: localhost:8010
       Accept: application/vnd.collection+json
 
 
@@ -41,7 +41,7 @@ In other Collection+JSON_ resource representations this resource type is linked 
 
       {
           "collection": {
-              "href": "https://localhost:8000/api/v1/plugins/parameters/12/",
+              "href": "https://localhost:8010/api/v1/parameters/1/",
               "items": [
                   {
                       "data": [
@@ -66,10 +66,10 @@ In other Collection+JSON_ resource representations this resource type is linked 
                               "value": "look up directory"
                           }
                       ],
-                      "href": "https://localhost:8000/api/v1/plugins/parameters/12/",
+                      "href": "https://localhost:8010/api/v1/parameters/1/",
                       "links": [
                           {
-                              "href": "https://localhost:8000/api/v1/plugins/12/",
+                              "href": "https://localhost:8000/api/v1/1/",
                               "rel": "plugin"
                           }
                       ]

@@ -86,6 +86,10 @@ class Plugin(models.Model):
         Custom method to save the plugin's app representation descriptors into the DB.
         """
         self.type = app_reprentation['type']
+        plugin_types = [plg_type[0] for plg_type in PLUGIN_TYPE_CHOICES]
+        if self.type not in plugin_types:
+            raise ValueError("A plugin's TYPE can only be any of %s. Please fix this in "
+                             "the plugin app representation file." % plugin_types)
         self.authors = app_reprentation['authors']
         self.title = app_reprentation['title']
         self.description = app_reprentation['description']

@@ -7,15 +7,15 @@ User item
 .. _`link relation`: http://amundsen.com/media-types/collection/format/#link-relations
 
 
-**Read-only**
+**Read/write**
 
 
-This resource type refers to a registered user.
+This resource type refers to a registered store user.
 
 In other Collection+JSON_ resource representations this resource type is linked by any
 `link relation`_ with attribute:
 
-``"rel": "owner"``
+``"rel": "owner"`` or ``"rel": "user"``
 
 
 .. http:get:: /api/v1/users/(int:user_id)/
@@ -27,7 +27,7 @@ In other Collection+JSON_ resource representations this resource type is linked 
    .. sourcecode:: http
 
       GET /api/v1/users/2/ HTTP/1.1
-      Host: localhost:8000
+      Host: localhost:8010
       Accept: application/vnd.collection+json
 
 
@@ -39,42 +39,51 @@ In other Collection+JSON_ resource representations this resource type is linked 
       Allow: GET
       Content-Type: application/vnd.collection+json
 
-      {
-          "collection": {
-              "href": "https://localhost:8000/api/v1/users/2/",
-              "items": [
-                  {
-                      "data": [
-                          {
-                              "name": "username",
-                              "value": "jbernal"
-                          }
-                      ],
-                      "href": "https://localhost:8000/api/v1/users/2/",
-                      "links": [
-                          {
-                              "href": "https://localhost:8000/api/v1/33/",
-                              "rel": "feed"
-                          },
-                          {
-                              "href": "https://localhost:8000/api/v1/34/",
-                              "rel": "feed"
-                          },
-                          {
-                              "href": "https://localhost:8000/api/v1/35/",
-                              "rel": "feed"
-                          },
-                          {
-                              "href": "https://localhost:8000/api/v1/36/",
-                              "rel": "feed"
-                          }
-                      ]
-                  }
-              ],
-              "links": [],
-              "version": "1.0"
-          }
-      }
+        {
+            "collection": {
+                "href": "http://localhost:8010/api/v1/users/2/",
+                "items": [
+                    {
+                        "data": [
+                            {
+                                "name": "username",
+                                "value": "cube"
+                            },
+                            {
+                                "name": "email",
+                                "value": "cube@babymri.org"
+                            }
+                        ],
+                        "href": "http://localhost:8010/api/v1/users/2/",
+                        "links": [
+                            {
+                                "href": "http://localhost:8010/api/v1/1/",
+                                "rel": "plugin"
+                            },
+                            {
+                                "href": "http://localhost:8010/api/v1/2/",
+                                "rel": "plugin"
+                            }
+                        ]
+                    }
+                ],
+                "links": [],
+                "template": {
+                    "data": [
+                        {
+                            "name": "email",
+                            "value": ""
+                        },
+                        {
+                            "name": "password",
+                            "value": ""
+                        }
+                    ]
+                },
+                "version": "1.0"
+            }
+        }
+
 
 
    :reqheader Accept: application/vnd.collection+json
@@ -91,9 +100,10 @@ In other Collection+JSON_ resource representations this resource type is linked 
    Properties_ (API semantic descriptors):
 
     - **username** (`string`) |--| user's username
+    - **email** (`string`) |--| user's email
 
    `Link Relations`_:
 
-    - **feed** |--| links to a user's feed_
+    - **plugin** |--| links to a user's owned plugin_
 
-   .. _feed: feed.html
+   .. _plugin: plugin.html

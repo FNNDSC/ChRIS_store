@@ -1,9 +1,9 @@
-.. chris ultron backend documentation master file, created by
-   sphinx-quickstart on Thu Jun 16 09:24:54 2016.
+.. chris store documentation master file, created by
+   sphinx-quickstart on Tu Mar 20 09:24:54 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to chris ultron backend's documentation!
+Welcome to ChRIS store's documentation!
 ================================================
 
 Contents:

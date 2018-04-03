@@ -8,14 +8,14 @@ In order to receive an access token a POST request like the following must be ma
 
 .. http:post:: /api/v1/auth-token/
 
-   :synopsis: Gets the acces token for the user especified in the request content body.
+   :synopsis: Gets the access token for the user especified in the request content body.
 
    **Example request**:
 
    .. sourcecode:: http
 
       POST /api/v1/auth-token/ HTTP/1.1
-      Host: localhost:8000
+      Host: localhost:8010
       Accept: application/json
 
       {
