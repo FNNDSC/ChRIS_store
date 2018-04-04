@@ -9,6 +9,8 @@ from django.utils import timezone
 
 from rest_framework.filters import FilterSet
 
+from .fields import CPUField, MemoryField
+
 
 # API types
 TYPE_CHOICES = [("string", "String values"), ("float", "Float values"),
@@ -33,6 +35,11 @@ def uploaded_file_path(instance, filename):
 
 
 class Plugin(models.Model):
+    # default minimum resource limits inserted at registration time
+    defaults = {'cpu_limit': 1000, # in millicores
+                'memory_limit': 200   # in Mi
+               }
+    maxint = 2147483647
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=100, unique=True)
@@ -50,6 +57,14 @@ class Plugin(models.Model):
     documentation = models.CharField(max_length=800, blank=True)
     license = models.CharField(max_length=50, blank=True)
     version = models.CharField(max_length=10, blank=True)
+    min_gpu_limit = models.IntegerField(null=True)
+    max_gpu_limit = models.IntegerField(null=True)
+    min_number_of_workers = models.IntegerField(null=True, default=1)
+    max_number_of_workers = models.IntegerField(null=True, default=maxint)
+    min_cpu_limit = CPUField(null=True, default=defaults['cpu_limit'])          # In millicores
+    max_cpu_limit = CPUField(null=True, default=maxint)                         # In millicores
+    min_memory_limit = MemoryField(null=True, default=defaults['memory_limit']) # In Mi
+    max_memory_limit = MemoryField(null=True, default=maxint)
     owner = models.ForeignKey('auth.User', on_delete=models.CASCADE,
                                related_name='plugin')
 
