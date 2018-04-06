@@ -49,7 +49,7 @@ docker-compose exec chris_store_dev /bin/bash -c \
 echo ""
 windowBottom
 
-title -d 1 "Restarting CUBE's Django development server in interactive mode..."
+title -d 1 "Restarting ChRIS store's Django development server in interactive mode..."
 docker-compose stop chris_store_dev
 docker-compose rm -f chris_store_dev
 docker-compose run --service-ports chris_store_dev

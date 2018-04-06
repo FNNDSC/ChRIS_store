@@ -35,11 +35,12 @@ def uploaded_file_path(instance, filename):
 
 
 class Plugin(models.Model):
-    # default minimum resource limits inserted at registration time
-    defaults = {'cpu_limit': 1000, # in millicores
-                'memory_limit': 200   # in Mi
+    # default resource limits inserted at registration time
+    defaults = {
+                'min_cpu_limit': 1000,   # in millicores
+                'min_memory_limit': 200, # in Mi
+                'max_limit': 2147483647  # maxint
                }
-    maxint = 2147483647
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=100, unique=True)
@@ -57,14 +58,18 @@ class Plugin(models.Model):
     documentation = models.CharField(max_length=800, blank=True)
     license = models.CharField(max_length=50, blank=True)
     version = models.CharField(max_length=10, blank=True)
-    min_gpu_limit = models.IntegerField(null=True)
-    max_gpu_limit = models.IntegerField(null=True)
-    min_number_of_workers = models.IntegerField(null=True, default=1)
-    max_number_of_workers = models.IntegerField(null=True, default=maxint)
-    min_cpu_limit = CPUField(null=True, default=defaults['cpu_limit'])          # In millicores
-    max_cpu_limit = CPUField(null=True, default=maxint)                         # In millicores
-    min_memory_limit = MemoryField(null=True, default=defaults['memory_limit']) # In Mi
-    max_memory_limit = MemoryField(null=True, default=maxint)
+    min_gpu_limit = models.IntegerField(null=True, blank=True)
+    max_gpu_limit = models.IntegerField(null=True, blank=True)
+    min_number_of_workers = models.IntegerField(null=True, blank=True, default=1)
+    max_number_of_workers = models.IntegerField(null=True, blank=True,
+                                                default=defaults['max_limit'])
+    min_cpu_limit = CPUField(null=True, blank=True,
+                             default=defaults['min_cpu_limit']) # In millicores
+    max_cpu_limit = CPUField(null=True, blank=True,
+                             default=defaults['max_limit']) # In millicores
+    min_memory_limit = MemoryField(null=True, blank=True,
+                                   default=defaults['min_memory_limit']) # In Mi
+    max_memory_limit = MemoryField(null=True, blank=True, default=defaults['max_limit'])
     owner = models.ForeignKey('auth.User', on_delete=models.CASCADE,
                                related_name='plugin')
 
@@ -96,39 +101,55 @@ class Plugin(models.Model):
         json_repr = json.loads(obj_tuple[1].decode())
         return json_repr
 
-    def save_descriptors(self, app_reprentation):
+    def save_descriptors(self, app_representation):
         """
         Custom method to save the plugin's app representation descriptors into the DB.
         """
-        self.type = app_reprentation['type']
+        self.type = app_representation['type']
         plugin_types = [plg_type[0] for plg_type in PLUGIN_TYPE_CHOICES]
         if self.type not in plugin_types:
             raise ValueError("A plugin's TYPE can only be any of %s. Please fix this in "
                              "the plugin app representation file." % plugin_types)
-        self.authors = app_reprentation['authors']
-        self.title = app_reprentation['title']
-        self.description = app_reprentation['description']
-        self.license = app_reprentation['license']
-        self.version = app_reprentation['version']
-        self.execshell = app_reprentation['execshell']
-        self.selfpath = app_reprentation['selfpath']
-        self.selfexec = app_reprentation['selfexec']
-        if 'category' in app_reprentation:
-            self.category = app_reprentation['category']
-        if 'documentation' in app_reprentation:
-            self.documentation = app_reprentation['documentation']
+        self.authors = app_representation['authors']
+        self.title = app_representation['title']
+        self.description = app_representation['description']
+        self.license = app_representation['license']
+        self.version = app_representation['version']
+        self.execshell = app_representation['execshell']
+        self.selfpath = app_representation['selfpath']
+        self.selfexec = app_representation['selfexec']
+        if 'category' in app_representation:
+            self.category = app_representation['category']
+        if 'documentation' in app_representation:
+            self.documentation = app_representation['documentation']
+        if 'max_number_of_workers' in app_representation:
+            self.max_number_of_workers = app_representation['max_number_of_workers']
+        if 'min_number_of_workers' in app_representation:
+            self.min_number_of_workers = app_representation['min_number_of_workers']
+        if 'max_memory_limit' in app_representation:
+            self.max_memory_limit = app_representation['max_memory_limit']
+        if 'max_cpu_limit' in app_representation:
+            self.max_cpu_limit = app_representation['max_cpu_limit']
+        if 'min_memory_limit' in app_representation:
+            self.min_memory_limit = app_representation['min_memory_limit']
+        if 'min_cpu_limit' in app_representation:
+            self.min_cpu_limit = app_representation['min_cpu_limit']
+        if 'min_gpu_limit' in app_representation:
+            self.min_gpu_limit = app_representation['min_gpu_limit']
+        if 'max_gpu_limit' in app_representation:
+            self.max_gpu_limit = app_representation['max_gpu_limit']
         self.save()
         # delete plugin's parameters from the db
         if self.parameters:
             self.parameters.all().delete()
         # save new plugin's parameters to the db
-        params = app_reprentation['parameters']
+        params = app_representation['parameters']
         for param in params:
             self._save_plugin_param(param)
 
-    def _save_plugin_param(self, parameter):
+    def save_plugin_param(self, parameter):
         """
-        Internal method to save a plugin's parameter into the DB.
+        Custom method to save a plugin's parameter into the DB.
         """
         # save plugin parameter to the db
         plugin_param = PluginParameter()
@@ -143,6 +164,7 @@ class Plugin(models.Model):
         plugin_param.default = param_default
         plugin_param.help = parameter['help']
         plugin_param.save()
+        return plugin_param
 
 
 class PluginFilter(FilterSet):
