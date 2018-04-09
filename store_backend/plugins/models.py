@@ -1,10 +1,6 @@
 
-import json
-import swiftclient
-
 from django.db import models
 import django_filters
-from django.conf import settings
 from django.utils import timezone
 
 from rest_framework.filters import FilterSet
@@ -71,7 +67,7 @@ class Plugin(models.Model):
                                    default=defaults['min_memory_limit']) # In Mi
     max_memory_limit = MemoryField(null=True, blank=True, default=defaults['max_limit'])
     owner = models.ForeignKey('auth.User', on_delete=models.CASCADE,
-                               related_name='plugin')
+                              related_name='plugin')
 
     class Meta:
         ordering = ('type',)
@@ -85,86 +81,6 @@ class Plugin(models.Model):
         """
         params = self.parameters.all()
         return [param.name for param in params]
-
-    def read_descriptor_file(self):
-        """
-        Custom method to read the plugin representation from the JSON decriptor file.
-        """
-        # initiate a Swift service connection
-        conn = swiftclient.Connection(
-            user=settings.SWIFT_USERNAME,
-            key=settings.SWIFT_KEY,
-            authurl=settings.SWIFT_AUTH_URL,
-        )
-        fpath = self.descriptor_file.name
-        obj_tuple = conn.get_object(settings.SWIFT_CONTAINER_NAME, fpath)
-        json_repr = json.loads(obj_tuple[1].decode())
-        return json_repr
-
-    def save_descriptors(self, app_representation):
-        """
-        Custom method to save the plugin's app representation descriptors into the DB.
-        """
-        self.type = app_representation['type']
-        plugin_types = [plg_type[0] for plg_type in PLUGIN_TYPE_CHOICES]
-        if self.type not in plugin_types:
-            raise ValueError("A plugin's TYPE can only be any of %s. Please fix this in "
-                             "the plugin app representation file." % plugin_types)
-        self.authors = app_representation['authors']
-        self.title = app_representation['title']
-        self.description = app_representation['description']
-        self.license = app_representation['license']
-        self.version = app_representation['version']
-        self.execshell = app_representation['execshell']
-        self.selfpath = app_representation['selfpath']
-        self.selfexec = app_representation['selfexec']
-        if 'category' in app_representation:
-            self.category = app_representation['category']
-        if 'documentation' in app_representation:
-            self.documentation = app_representation['documentation']
-        if 'max_number_of_workers' in app_representation:
-            self.max_number_of_workers = app_representation['max_number_of_workers']
-        if 'min_number_of_workers' in app_representation:
-            self.min_number_of_workers = app_representation['min_number_of_workers']
-        if 'max_memory_limit' in app_representation:
-            self.max_memory_limit = app_representation['max_memory_limit']
-        if 'max_cpu_limit' in app_representation:
-            self.max_cpu_limit = app_representation['max_cpu_limit']
-        if 'min_memory_limit' in app_representation:
-            self.min_memory_limit = app_representation['min_memory_limit']
-        if 'min_cpu_limit' in app_representation:
-            self.min_cpu_limit = app_representation['min_cpu_limit']
-        if 'min_gpu_limit' in app_representation:
-            self.min_gpu_limit = app_representation['min_gpu_limit']
-        if 'max_gpu_limit' in app_representation:
-            self.max_gpu_limit = app_representation['max_gpu_limit']
-        self.save()
-        # delete plugin's parameters from the db
-        if self.parameters:
-            self.parameters.all().delete()
-        # save new plugin's parameters to the db
-        params = app_representation['parameters']
-        for param in params:
-            self._save_plugin_param(param)
-
-    def save_plugin_param(self, parameter):
-        """
-        Custom method to save a plugin's parameter into the DB.
-        """
-        # save plugin parameter to the db
-        plugin_param = PluginParameter()
-        param_type = [key for key in TYPES if TYPES[key] == parameter['type']][0]
-        param_default = ""
-        if parameter['default']:
-            param_default = str(parameter['default'])
-        plugin_param.plugin = self
-        plugin_param.name = parameter['name']
-        plugin_param.type = param_type
-        plugin_param.optional = parameter['optional']
-        plugin_param.default = param_default
-        plugin_param.help = parameter['help']
-        plugin_param.save()
-        return plugin_param
 
 
 class PluginFilter(FilterSet):

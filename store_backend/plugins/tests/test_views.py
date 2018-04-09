@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from rest_framework import status
 
 from plugins.models import Plugin, PluginParameter
-from plugins.services.manager import PluginManager
+
 
 class ViewTests(TestCase):
     
@@ -46,7 +46,6 @@ class PluginListViewTests(ViewTests):
                                       'optional': False, 'flag':'--dir', 'default': '',
                                       'help': 'test plugin'}]
         plg_repr = {}
-        plg_repr['name'] = self.plugin_name
         plg_repr['type'] = 'fs'
         plg_repr['authors'] = 'DEV FNNDSC'
         plg_repr['title'] = 'Dir plugin'
@@ -87,6 +86,13 @@ class PluginListViewTests(ViewTests):
         self.client.login(username=self.username, password=self.password)
         post = { "name": "testplugin", "descriptor_file": io.StringIO("file content"),
                  "public_repo": "http://localhost"}
+        response = self.client.post(self.create_read_url, data=post)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_plugin_create_failure_name_already_exists(self):
+        self.client.login(username=self.username, password=self.password)
+        post = { "name": self.plugin_name, "descriptor_file": io.StringIO("file content"),
+                 "dock_image": "pl-testplugin", "public_repo": "http://localhost" }
         response = self.client.post(self.create_read_url, data=post)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

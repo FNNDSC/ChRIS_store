@@ -1,11 +1,14 @@
 
-from django.test import TestCase
+import io
+import json
+
+from django.test import TestCase, tag
 from django.contrib.auth.models import User
 
-
 from plugins.models import Plugin, PluginParameter
+from plugins.serializers import PluginSerializer, PluginParameterSerializer
 
-class PluginModelTests(TestCase):
+class PluginSerializerTests(TestCase):
     
     def setUp(self):
         self.username = 'foo'
@@ -31,14 +34,7 @@ class PluginModelTests(TestCase):
                                  password=self.password)
 
         # create a plugin
-        Plugin.objects.get_or_create(name=self.plugin_name, owner=user)
-
-    def test_get_plugin_parameter_names(self):
-        """
-        Test whether custom get_plugin_parameter_names method returns the names of all
-        parameters of an existing plugin in a list.
-        """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name, owner=user)
         # add plugin's parameters
         PluginParameter.objects.get_or_create(
             plugin=plugin,
@@ -47,3 +43,11 @@ class PluginModelTests(TestCase):
             optional=self.plugin_parameters[0]['optional'])
         param_names = plugin.get_plugin_parameter_names()
         self.assertEquals(param_names, [self.plugin_parameters[0]['name']])
+
+    def test_read_app_representation(self):
+        """
+        Test whether custom read_app_representation method returns an appropriate plugin
+        representation dictionary from a json representation file.
+        """
+        with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
+            self.assertEquals(PluginSerializer.read_app_representation(f), self.plg_repr)
