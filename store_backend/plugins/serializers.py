@@ -121,10 +121,12 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         self.parameter_serializers = []
         for param in parameter_list:
-            param['type'] = [key for key in TYPES if TYPES[key] == param['type']]
-            if not param:
-                serializers.ValidationError("Invalid parameter type %s" % param['type'])
-            param['type'] = param['type'][0]
+            # translate from back-end type to front-end type, eg. bool->boolean
+            param_type = [key for key in TYPES if TYPES[key] == param['type']]
+            if not param_type:
+                raise serializers.ValidationError("Invalid parameter type %s" %
+                                                  param['type'])
+            param['type'] = param_type[0]
             if param['default']:
                 param['default'] = str(param['default'])
             else:
