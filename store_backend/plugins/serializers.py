@@ -5,6 +5,7 @@ from rest_framework import serializers
 from collectionjson.services import collection_serializer_is_valid
 
 from .models import Plugin, PluginParameter, TYPES
+from .fields import CPUInt, MemoryInt
 
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
@@ -22,24 +23,36 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                   'max_cpu_limit', 'min_memory_limit','max_memory_limit', 'min_gpu_limit',
                   'max_gpu_limit')
 
+    def update(self, instance, validated_data):
+        """
+        Overriden to validate and save all the plugin descriptors and parameters
+        associated with the plugin.
+        """
+        # run all default validators for the full set of plugin fields
+        new_plg_serializer = PluginSerializer(instance, data=validated_data)
+        new_plg_serializer.validate = lambda x: x  # no need to rerun custom validators
+        new_plg_serializer.is_valid(raise_exception=True)
+        request_parameters = validated_data['parameters']
+        del validated_data['parameters']
+        instance = super(PluginSerializer, self).update(instance, validated_data)
+
+        # validate and save all the plugin parameters
+        for param in instance.parameters.all():
+            request_param = [p for p in request_parameters if p['name'] == param.name]
+            if request_param:
+                param_serializer = PluginParameterSerializer(
+                    param, data=request_param[0])
+                param_serializer.is_valid(raise_exception=True)
+                param_serializer.save()
+
+        return instance
+
     @collection_serializer_is_valid
     def is_valid(self, raise_exception=False):
         """
         Overriden to generate a properly formatted message for validation errors.
         """
         return super(PluginSerializer, self).is_valid(raise_exception=raise_exception)
-
-    def save(self, **kwargs):
-        """
-        Overriden to save the plugin's parameters into the DB.
-        """
-        plugin = super(PluginSerializer, self).save(**kwargs)
-        # delete plugin's parameters from the db
-        if plugin.parameters:
-            plugin.parameters.all().delete()
-        for param_serializer in self.parameter_serializers:
-            param_serializer.save(plugin=plugin)
-        return plugin
 
     def validate(self, data):
         """
@@ -79,15 +92,29 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             app_repr['max_gpu_limit'] = self.validate_app_gpu_descriptor(
                 app_repr['max_gpu_limit'])
 
-        # validations for descriptors with custom fields happen in the field itself
         if ('min_cpu_limit' in app_repr) and (app_repr['min_cpu_limit'] == ''):
             del app_repr['min_cpu_limit']
+        elif 'min_cpu_limit' in app_repr:
+            app_repr['min_cpu_limit'] = self.validate_app_cpu_descriptor(
+                app_repr['min_cpu_limit'])
+
         if ('max_cpu_limit' in app_repr) and (app_repr['max_cpu_limit'] == ''):
             del app_repr['max_cpu_limit']
+        elif 'max_cpu_limit' in app_repr:
+            app_repr['max_cpu_limit'] = self.validate_app_cpu_descriptor(
+                app_repr['max_cpu_limit'])
+
         if ('min_memory_limit' in app_repr) and app_repr['min_memory_limit'] == '':
             del app_repr['min_memory_limit']
+        elif 'min_memory_limit' in app_repr:
+            app_repr['min_memory_limit'] = self.validate_app_memory_descriptor(
+                app_repr['min_memory_limit'])
+
         if ('max_memory_limit' in app_repr) and app_repr['max_memory_limit'] == '':
             del app_repr['max_memory_limit']
+        elif 'max_memory_limit' in app_repr:
+            app_repr['max_memory_limit'] = self.validate_app_memory_descriptor(
+                app_repr['max_memory_limit'])
 
         # validate limits
         err_msg = "Minimum number of workers should be less than maximum number of workers"
@@ -107,19 +134,18 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                                             err_msg)
 
         # validate plugin parameters in the request data
-        self.validate_app_parameters(app_repr['parameters'])
+        app_repr['parameters'] = self.validate_app_parameters(app_repr['parameters'])
 
-        # update the request data and run all validators for the plugin fields
-        del app_repr['parameters']
+        # update the request data
         data.update(app_repr)
-        self.run_validators(data)
+
         return data
 
-    def validate_app_parameters(self, parameter_list):
+    @staticmethod
+    def validate_app_parameters(parameter_list):
         """
         Custom method to validate plugin parameters.
         """
-        self.parameter_serializers = []
         for param in parameter_list:
             # translate from back-end type to front-end type, eg. bool->boolean
             param_type = [key for key in TYPES if TYPES[key] == param['type']]
@@ -131,9 +157,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                 param['default'] = str(param['default'])
             else:
                 param['default'] = ''
-            param_serializer = PluginParameterSerializer(data=param)
-            param_serializer.is_valid(raise_exception=True)
-            self.parameter_serializers.append(param_serializer)
+        return parameter_list
 
     @staticmethod
     def validate_app_workers_descriptor(descriptor):
@@ -145,6 +169,26 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         if int_d < 1:
             raise serializers.ValidationError(error_msg)
         return int_d
+
+    @staticmethod
+    def validate_app_cpu_descriptor(descriptor):
+        """
+        Custom method to validate plugin maximum and minimum cpu descriptors.
+        """
+        try:
+            return CPUInt(descriptor)
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))
+
+    @staticmethod
+    def validate_app_memory_descriptor(descriptor):
+        """
+        Custom method to validate plugin maximum and minimum memory descriptors.
+        """
+        try:
+            return MemoryInt(descriptor)
+        except ValueError as e:
+            raise serializers.ValidationError(str(e))
 
     @staticmethod
     def validate_app_gpu_descriptor(descriptor):
