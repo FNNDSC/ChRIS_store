@@ -78,7 +78,7 @@ class PluginSerializerTests(TestCase):
     def test_validate_app_int_descriptor(self):
         """
         Test whether custom validate_app_int_descriptor method raises a ValidationError
-        when the descriptor cannot be converted to a a non-negative integer.
+        when the descriptor cannot be converted to a non-negative integer.
         """
         with self.assertRaises(serializers.ValidationError):
             PluginSerializer.validate_app_int_descriptor('one')
@@ -105,11 +105,31 @@ class PluginSerializerTests(TestCase):
         with self.assertRaises(serializers.ValidationError):
             PluginSerializer.validate_app_workers_descriptor(0)
 
+    def test_validate_app_cpu_descriptor(self):
+        """
+        Test whether custom validate_app_cpu_descriptor method raises a ValidationError
+        when the app cpu descriptor cannot be converted to a fields.CPUInt.
+        """
+        with self.assertRaises(serializers.ValidationError):
+            PluginSerializer.validate_app_cpu_descriptor('100me')
+            self.assertEquals(100, PluginSerializer.validate_app_cpu_descriptor('100m'))
+
+    def test_validate_app_memory_descriptor(self):
+        """
+        Test whether custom validate_app_memory_descriptor method raises a ValidationError
+        when the app memory descriptor cannot be converted to a fields.MemoryInt.
+        """
+        with self.assertRaises(serializers.ValidationError):
+            PluginSerializer.validate_app_cpu_descriptor('100me')
+            self.assertEquals(100, PluginSerializer.validate_app_cpu_descriptor('100mi'))
+            self.assertEquals(100, PluginSerializer.validate_app_cpu_descriptor('100gi'))
+
     def test_validate_app_parameters(self):
         """
         Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        a plugin parameter has an unsupported type. Also test whether the parameter's
+        'default' descriptor is automatically set to the empty string when not submitted
+        in the request.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -118,16 +138,14 @@ class PluginSerializerTests(TestCase):
         with self.assertRaises(serializers.ValidationError):
             plg_serializer.validate_app_parameters(parameter_list)
         parameter_list[0]['type'] = 'path'
-        parameter_list[0]['optional'] = None
-        with self.assertRaises(serializers.ValidationError):
-            plg_serializer.validate_app_parameters(parameter_list)
-        parameter_list[0]['optional'] = True
+        del parameter_list[0]['default']
+        parameter_list = plg_serializer.validate_app_parameters(parameter_list)
+        self.assertEquals(parameter_list[0]['default'], '')
 
     def test_validate_check_required_execshell(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method raises a ValidationError when required
+        'execshell' descriptor is missing from the plugin app representation.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -139,9 +157,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_check_required_selfpath(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method raises a ValidationError when required
+        'selfpath' descriptor is missing from the plugin app representation.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -153,9 +170,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_check_required_selfexec(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method raises a ValidationError when required
+        'selfexec' descriptor is missing from the plugin app representation.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -167,9 +183,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_check_required_parameters(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method raises a ValidationError when required
+        'parameters' descriptor is missing from the plugin app representation.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -181,9 +196,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_remove_empty_min_number_of_workers(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method removes 'min_number_of_workers'
+        descriptor from the validated data when it is the empty string.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -194,9 +208,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_remove_empty_max_number_of_workers(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method removes 'max_number_of_workers'
+        descriptor from the validated data when it is the empty string.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -207,9 +220,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_remove_empty_min_gpu_limit(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method removes 'min_gpu_limit' descriptor from
+        the validated data when it is the empty string.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -220,9 +232,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_remove_empty_max_gpu_limit(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method removes 'max_gpu_limit' descriptor from
+        the validated data when it is the empty string.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -233,9 +244,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_remove_empty_min_cpu_limit(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method removes 'min_cpu_limit' descriptor from
+        the validated data when it is the empty string.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -246,9 +256,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_remove_empty_max_cpu_limit(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method removes 'max_cpu_limit' descriptor from
+        the validated data when it is the empty string.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -259,9 +268,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_remove_empty_min_memory_limit(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method removes 'min_memory_limit'
+        descriptor from the validated data when it is the empty string.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -272,9 +280,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_remove_empty_max_memory_limit(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether the custom validate method removes 'max_memory_limit'
+        descriptor from the validated data when it is the empty string.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -285,9 +292,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_workers_limits(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether custom validate method raises a ValidationError when the
+        'max_number_of_workers' is smaller than the 'min_number_of_workers'.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -300,9 +306,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_cpu_limits(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether custom validate method raises a ValidationError when the
+        'max_cpu_limit' is smaller than the 'min_cpu_limit'.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -315,9 +320,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_memory_limits(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether custom validate method raises a ValidationError when the
+        'max_memory_limit' is smaller than the 'min_memory_limit'.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -330,9 +334,8 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_gpu_limits(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether custom validate method raises a ValidationError when the
+        'max_gpu_limit' is smaller than the 'max_gpu_limit'.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -345,9 +348,7 @@ class PluginSerializerTests(TestCase):
 
     def test_validate_validate_app_parameters(self):
         """
-        Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin's parameter has an unsupported type or any of its descriptors failed
-        default validation.
+        Test whether custom validate method validates submitted plugin's parameters.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -357,9 +358,18 @@ class PluginSerializerTests(TestCase):
             data = {'descriptor_file': f}
             with self.assertRaises(serializers.ValidationError):
                 plg_serializer.validate(data)
-        parameter_list[0]['type'] = 'path'
-        parameter_list[0]['optional'] = None
+
+    def test_validate_update_validated_data(self):
+        """
+        Test whether custom validate method updates validated data with the plugin app
+        representation.
+        """
+        plugin = Plugin.objects.get(name=self.plugin_name)
+        plg_serializer = PluginSerializer(plugin)
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
             data = {'descriptor_file': f}
-            with self.assertRaises(serializers.ValidationError):
-                plg_serializer.validate(data)
+            new_data = plg_serializer.validate(data)
+            self.assertIn('execshell', new_data)
+            self.assertIn('selfpath', new_data)
+            self.assertIn('selfexec', new_data)
+            self.assertIn('parameters', new_data)
