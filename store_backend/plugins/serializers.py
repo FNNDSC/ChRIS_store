@@ -1,6 +1,8 @@
 
 import json
 
+from django.utils import timezone
+
 from rest_framework import serializers
 from collectionjson.services import collection_serializer_is_valid
 
@@ -23,29 +25,55 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                   'max_cpu_limit', 'min_memory_limit','max_memory_limit', 'min_gpu_limit',
                   'max_gpu_limit')
 
+    def create(self, validated_data):
+        """
+        Overriden to validate and save all the plugin descriptors and parameters
+        associated with the plugin when creating it.
+        """
+        # run all default validators for the full set of plugin fields
+        request_parameters = validated_data['parameters']
+        del validated_data['parameters']
+        new_plg_serializer = PluginSerializer(data=validated_data)
+        new_plg_serializer.validate = lambda x: x  # no need to rerun custom validators
+        new_plg_serializer.is_valid(raise_exception=True)
+
+        plugin = super(PluginSerializer, self).create(validated_data)
+
+        # validate and save all the plugin parameters
+        for request_param in request_parameters:
+            param_serializer = PluginParameterSerializer(data=request_param)
+            param_serializer.is_valid(raise_exception=True)
+            param_serializer.save(plugin=plugin)
+
+        return plugin
+
     def update(self, instance, validated_data):
         """
         Overriden to validate and save all the plugin descriptors and parameters
-        associated with the plugin.
+        associated with the plugin when updating it.
         """
         # run all default validators for the full set of plugin fields
+        request_parameters = validated_data['parameters']
+        del validated_data['parameters']
         new_plg_serializer = PluginSerializer(instance, data=validated_data)
         new_plg_serializer.validate = lambda x: x  # no need to rerun custom validators
         new_plg_serializer.is_valid(raise_exception=True)
-        request_parameters = validated_data['parameters']
-        del validated_data['parameters']
-        instance = super(PluginSerializer, self).update(instance, validated_data)
+
+        validated_data.update({'modification_date': timezone.now()})
+        plugin = super(PluginSerializer, self).update(instance, validated_data)
 
         # validate and save all the plugin parameters
-        for param in instance.parameters.all():
-            request_param = [p for p in request_parameters if p['name'] == param.name]
-            if request_param:
-                param_serializer = PluginParameterSerializer(
-                    param, data=request_param[0])
-                param_serializer.is_valid(raise_exception=True)
-                param_serializer.save()
+        db_parameters = plugin.parameters.all()
+        for request_param in request_parameters:
+            db_param = [p for p in db_parameters if p.name == request_param['name']]
+            if db_param:
+                param_serializer = PluginParameterSerializer(db_param[0], data=request_param)
+            else:
+                param_serializer = PluginParameterSerializer(data=request_param)
+            param_serializer.is_valid(raise_exception=True)
+            param_serializer.save(plugin=plugin)
 
-        return instance
+        return plugin
 
     @collection_serializer_is_valid
     def is_valid(self, raise_exception=False):
@@ -153,7 +181,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                 raise serializers.ValidationError("Invalid parameter type %s" %
                                                   param['type'])
             param['type'] = param_type[0]
-            if param['default']:
+            if 'default' in param:
                 param['default'] = str(param['default'])
             else:
                 param['default'] = ''
