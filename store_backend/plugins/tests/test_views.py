@@ -61,6 +61,7 @@ class PluginListViewTests(ViewTests):
         with io.StringIO(json.dumps(plg_repr)) as f:
             post = {"descriptor_file": f, "name": "testplugin",
                     "public_repo": "http://localhost", "dock_image": "pl-testplugin"}
+            # multipart request
             response = self.client.post(self.create_read_url, data=post)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -125,6 +126,9 @@ class PluginDetailViewTests(ViewTests):
     def test_plugin_detail_failure_unauthenticated(self):
         response = self.client.get(self.read_update_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_update_success(self):
+        pass # self.client limited as it doesn't support multipart data on PUT requests
 
     def test_plugin_update_failure_unauthenticated(self):
         response = self.client.put(self.read_update_url, data={},
