@@ -73,9 +73,8 @@ class PluginManager(object):
 
     def modify_plugin(self, args):
         """
-        Register/add new parameters to a plugin from the corresponding plugin's app.
-        Also update plugin's fields and add the current date as a new plugin modification
-        date.
+        Modify an existing/registered plugin and add the current date as a new plugin
+        modification date.
         """
         data = self.get_plugin_descriptors(args)
         plugin = self.get_plugin(args.name)
@@ -126,18 +125,18 @@ class PluginManager(object):
     @staticmethod
     def get_plugin_descriptors(args):
         """
-        Get the plugin descriptors given the parser's arguments.
+        Get the plugin descriptors data given the parser's arguments.
         """
-        app_repr = {'name': args.name, 'public_repo': args.publicrepo,
-                    'dock_image': args.dockerimage}
+        data = {'name': args.name, 'public_repo': args.publicrepo,
+                'dock_image': args.dockerimage}
         if args.descriptorfile:
-            app_repr['descriptor_file'] = args.descriptorfile
+            data['descriptor_file'] = args.descriptorfile
         else:
             app_repr = json.loads(args.descriptorstring)
             f = ContentFile(json.dumps(app_repr).encode())
             f.name = args.name + '.json'
-            app_repr['descriptor_file'] = f
-        return app_repr
+            data['descriptor_file'] = f
+        return data
 
     @staticmethod
     def read_plugin_descriptor_file(descriptor_file_path):
