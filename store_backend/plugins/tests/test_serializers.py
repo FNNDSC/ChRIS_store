@@ -42,7 +42,8 @@ class PluginSerializerTests(TestCase):
             plugin=plugin,
             name=self.plugin_parameters[0]['name'],
             type=self.plugin_parameters[0]['type'],
-            optional=self.plugin_parameters[0]['optional'])
+            optional=self.plugin_parameters[0]['optional'],
+            flag=self.plugin_parameters[0]['flag'])
         param_names = plugin.get_plugin_parameter_names()
         self.assertEquals(param_names, [self.plugin_parameters[0]['name']])
 
