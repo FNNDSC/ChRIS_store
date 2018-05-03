@@ -97,6 +97,7 @@ class PluginFilter(FilterSet):
 class PluginParameter(models.Model):
     name = models.CharField(max_length=50)
     flag = models.CharField(max_length=52)
+    action = models.CharField(max_length=20, default='store')
     optional = models.BooleanField(default=True)
     default = models.CharField(max_length=200, blank=True)
     type = models.CharField(choices=TYPE_CHOICES, default='string', max_length=10)

@@ -278,7 +278,8 @@ class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = PluginParameter
-        fields = ('url', 'name', 'type', 'optional', 'default', 'flag', 'help', 'plugin')
+        fields = ('url', 'name', 'type', 'optional', 'default', 'flag', 'action',
+                  'help', 'plugin')
 
     @collection_serializer_is_valid
     def is_valid(self, raise_exception=False):

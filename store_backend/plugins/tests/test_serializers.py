@@ -17,7 +17,7 @@ class PluginSerializerTests(TestCase):
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
         self.plugin_name = "simplefsapp"
-        self.plugin_parameters = [{'name': 'dir', 'type': str.__name__,
+        self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                                       'optional': False, 'flag':'--dir', 'default': '',
                                       'help': 'test plugin'}]
         self.plg_repr = {}
@@ -43,6 +43,7 @@ class PluginSerializerTests(TestCase):
             name=self.plugin_parameters[0]['name'],
             type=self.plugin_parameters[0]['type'],
             optional=self.plugin_parameters[0]['optional'],
+            action=self.plugin_parameters[0]['action'],
             flag=self.plugin_parameters[0]['flag'])
         param_names = plugin.get_plugin_parameter_names()
         self.assertEquals(param_names, [self.plugin_parameters[0]['name']])

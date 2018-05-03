@@ -42,7 +42,7 @@ class PluginListViewTests(ViewTests):
     @tag('integration')
     def test_integration_plugin_create_success(self):
 
-        plugin_parameters = [{'name': 'dir', 'type': str.__name__,
+        plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                                       'optional': False, 'flag':'--dir', 'default': '',
                                       'help': 'test plugin'}]
         plg_repr = {}
@@ -171,7 +171,7 @@ class PluginParameterListViewTests(ViewTests):
 
     def setUp(self):
         super(PluginParameterListViewTests, self).setUp()
-        self.plugin_parameters = [{'name': 'dir', 'type': str.__name__,
+        self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                                       'optional': False, 'flag':'--dir', 'default': '',
                                       'help': 'test plugin'}]
         plugin = Plugin.objects.get(name=self.plugin_name)
@@ -182,6 +182,8 @@ class PluginParameterListViewTests(ViewTests):
             plugin=plugin,
             name=self.plugin_parameters[0]['name'],
             type=self.plugin_parameters[0]['type'],
+            action=self.plugin_parameters[0]['action'],
+            flag=self.plugin_parameters[0]['flag'],
             optional=self.plugin_parameters[0]['optional'])
 
     def test_plugin_parameter_list_success(self):
@@ -201,7 +203,7 @@ class PluginParameterDetailViewTests(ViewTests):
 
     def setUp(self):
         super(PluginParameterDetailViewTests, self).setUp()
-        self.plugin_parameters = [{'name': 'dir', 'type': str.__name__,
+        self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                                       'optional': False, 'flag':'--dir', 'default': '',
                                       'help': 'test plugin'}]
         plugin = Plugin.objects.get(name=self.plugin_name)
@@ -210,6 +212,8 @@ class PluginParameterDetailViewTests(ViewTests):
             plugin=plugin,
             name=self.plugin_parameters[0]['name'],
             type=self.plugin_parameters[0]['type'],
+            action=self.plugin_parameters[0]['action'],
+            flag=self.plugin_parameters[0]['flag'],
             optional=self.plugin_parameters[0]['optional'])
 
         self.read_url = reverse("pluginparameter-detail", kwargs={"pk": param.id})
