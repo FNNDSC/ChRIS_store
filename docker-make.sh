@@ -49,6 +49,28 @@ docker-compose exec chris_store_dev /bin/bash -c \
 echo ""
 windowBottom
 
+title -d 1 "Automatically uploading some plugins to the ChRIS STORE ..."
+# Declare an array variable for the list of plugin names to be automatically registered
+# Add a new plugin name to the list if you want it to be automatically registered
+declare -a plugins=( "simplefsapp"
+                     "simpledsapp"
+                     "pacsquery"
+                     "pacsretrieve"
+                     "s3retrieve"
+                     "s3push"
+                     "dircopy"
+)
+declare -i i=1
+declare -i STEP=7
+for plugin in "${plugins[@]}"; do
+    echo "${STEP}.$i: Uploading $plugin representation to the ChRIS store ..."
+    PLUGIN_DOCK="fnndsc/pl-${plugin}"
+    PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${plugin}.py" --json 2> /dev/null;)
+    docker-compose exec chris_store_dev python plugins/services/manager.py add "${plugin}" cube https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP"
+    ((i++))
+done
+windowBottom
+
 title -d 1 "Restarting ChRIS store's Django development server in interactive mode..."
 docker-compose stop chris_store_dev
 docker-compose rm -f chris_store_dev
