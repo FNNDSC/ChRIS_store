@@ -85,7 +85,7 @@ class PluginListQuerySearch(generics.ListAPIView):
     filter_class = PluginFilter
         
 
-class PluginDetail(generics.RetrieveUpdateAPIView):
+class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     A plugin view.
     """
