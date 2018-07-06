@@ -42,10 +42,10 @@ docker-compose exec chris_store_dev /bin/bash -c 'python manage.py createsuperus
 docker-compose exec chris_store_dev /bin/bash -c \
 'python manage.py shell -c "from django.contrib.auth.models import User; user = User.objects.get(username=\"chris\"); user.set_password(\"chris1234\"); user.save()"'
 echo ""
-echo "Setting normal user cube:cube1234 ..."
-docker-compose exec chris_store_dev /bin/bash -c 'python manage.py createsuperuser --noinput --username cube --email cube@babymri.org 2> /dev/null;'
+echo "Setting normal user cubeadmin:cubeadmin1234 ..."
+docker-compose exec chris_store_dev /bin/bash -c 'python manage.py createsuperuser --noinput --username cubeadmin --email cubeadmin@babymri.org 2> /dev/null;'
 docker-compose exec chris_store_dev /bin/bash -c \
-'python manage.py shell -c "from django.contrib.auth.models import User; user = User.objects.get(username=\"cube\"); user.set_password(\"cube1234\"); user.save()"'
+'python manage.py shell -c "from django.contrib.auth.models import User; user = User.objects.get(username=\"cubeadmin\"); user.set_password(\"cubeadmin1234\"); user.save()"'
 echo ""
 windowBottom
 
@@ -66,7 +66,7 @@ for plugin in "${plugins[@]}"; do
     echo "${STEP}.$i: Uploading $plugin representation to the ChRIS store ..."
     PLUGIN_DOCK="fnndsc/pl-${plugin}"
     PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${plugin}.py" --json 2> /dev/null;)
-    docker-compose exec chris_store_dev python plugins/services/manager.py add "${plugin}" cube https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP"
+    docker-compose exec chris_store_dev python plugins/services/manager.py add "${plugin}" cubeadmin https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP"
     ((i++))
 done
 windowBottom
