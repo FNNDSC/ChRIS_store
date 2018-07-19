@@ -47,6 +47,7 @@ class PluginListViewTests(ViewTests):
                                       'help': 'test plugin'}]
         plg_repr = {}
         plg_repr['type'] = 'fs'
+        plg_repr['icon'] = 'http://github.com/plugin'
         plg_repr['authors'] = 'DEV FNNDSC'
         plg_repr['title'] = 'Dir plugin'
         plg_repr['description'] = 'Dir test plugin'

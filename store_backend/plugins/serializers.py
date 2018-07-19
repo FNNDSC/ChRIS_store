@@ -18,9 +18,9 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Plugin
         fields = ('url', 'name', 'creation_date', 'modification_date', 'dock_image',
-                  'public_repo', 'type', 'authors', 'title', 'category', 'description',
-                  'documentation', 'license', 'version', 'parameters', 'owner',
-                  'descriptor_file', 'execshell', 'selfpath', 'selfexec',
+                  'public_repo', 'icon', 'type', 'authors', 'title', 'category',
+                  'description', 'documentation', 'license', 'version', 'parameters',
+                  'owner', 'descriptor_file', 'execshell', 'selfpath', 'selfexec',
                   'min_number_of_workers', 'max_number_of_workers','min_cpu_limit',
                   'max_cpu_limit', 'min_memory_limit','max_memory_limit', 'min_gpu_limit',
                   'max_gpu_limit')

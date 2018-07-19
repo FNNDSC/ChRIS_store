@@ -17,6 +17,7 @@ class PluginModelTests(TestCase):
                                       'help': 'test plugin'}]
         self.plg_repr = {}
         self.plg_repr['type'] = 'fs'
+        self.plg_repr['icon'] = 'http://github.com/plugin'
         self.plg_repr['authors'] = 'DEV FNNDSC'
         self.plg_repr['title'] = 'Dir plugin'
         self.plg_repr['description'] = 'Dir test plugin'

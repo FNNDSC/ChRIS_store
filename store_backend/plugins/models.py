@@ -44,6 +44,7 @@ class Plugin(models.Model):
     public_repo = models.URLField(max_length=300)
     descriptor_file = models.FileField(max_length=512, upload_to=uploaded_file_path)
     type = models.CharField(choices=PLUGIN_TYPE_CHOICES, default='ds', max_length=4)
+    icon = models.URLField(max_length=300, blank=True)
     execshell = models.CharField(max_length=50, blank=True)
     selfpath = models.CharField(max_length=512, blank=True)
     selfexec = models.CharField(max_length=50, blank=True)
