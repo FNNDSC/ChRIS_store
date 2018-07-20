@@ -23,8 +23,8 @@ urlpatterns = format_suffix_patterns([
     url(r'^v1/$',
         plugin_views.PluginList.as_view(), name='plugin-list'),
 
-    url(r'^v1/plugins/$',
-        plugin_views.FullPluginList.as_view(), name='full-plugin-list'),
+    url(r'^v1/user-plugins/$',
+        plugin_views.UserPluginList.as_view(), name='user-plugin-list'),
 
     url(r'^v1/search/$',
         plugin_views.PluginListQuerySearch.as_view(), name='plugin-list-query-search'),
