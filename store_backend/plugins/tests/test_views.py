@@ -37,7 +37,28 @@ class PluginListViewTests(ViewTests):
 
     def setUp(self):
         super(PluginListViewTests, self).setUp()
-        self.create_read_url = reverse("plugin-list")
+        self.list_url = reverse("plugin-list")
+
+    def test_plugin_list_success_authenticated(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.list_url)
+        self.assertContains(response, self.plugin_name)
+        self.assertContains(response, 'user_plugins')
+
+    def test_plugin_list_success_unauthenticated(self):
+        response = self.client.get(self.list_url)
+        self.assertContains(response, self.plugin_name)
+        self.assertNotContains(response, 'user_plugins')
+
+
+class UserPluginListViewTests(ViewTests):
+    """
+    Test the plugin-list view
+    """
+
+    def setUp(self):
+        super(UserPluginListViewTests, self).setUp()
+        self.create_read_url = reverse("user-plugin-list")
 
     @tag('integration')
     def test_integration_plugin_create_success(self):
@@ -155,14 +176,15 @@ class PluginListQuerySearchViewTests(ViewTests):
         super(PluginListQuerySearchViewTests, self).setUp()
         self.list_url = reverse("plugin-list-query-search") + '?name=' + self.plugin_name
 
-    def test_plugin_list_query_search_success(self):
+    def test_plugin_list_query_search_success_authenticated(self):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.list_url)
         self.assertContains(response, self.plugin_name)
 
-    def test_plugin_list_query_search_failure_unauthenticated(self):
+    def test_plugin_list_query_search_success_unauthenticated(self):
+        self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertContains(response, self.plugin_name)
 
 
 class PluginParameterListViewTests(ViewTests):
@@ -187,14 +209,14 @@ class PluginParameterListViewTests(ViewTests):
             flag=self.plugin_parameters[0]['flag'],
             optional=self.plugin_parameters[0]['optional'])
 
-    def test_plugin_parameter_list_success(self):
+    def test_plugin_parameter_list_success_authenticated(self):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.list_url)
         self.assertContains(response, self.plugin_parameters[0]['name'])
 
-    def test_plugin_parameter_list_failure_unauthenticated(self):
+    def test_plugin_parameter_list_success_unauthenticated(self):
         response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertContains(response, self.plugin_parameters[0]['name'])
 
 
 class PluginParameterDetailViewTests(ViewTests):
@@ -219,11 +241,11 @@ class PluginParameterDetailViewTests(ViewTests):
 
         self.read_url = reverse("pluginparameter-detail", kwargs={"pk": param.id})
 
-    def test_plugin_parameter_detail_success(self):
+    def test_plugin_parameter_detail_success_authenticated(self):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.read_url)
         self.assertContains(response, self.plugin_parameters[0]['name'])
 
-    def test_plugin_parameter_detail_failure_unauthenticated(self):
+    def test_plugin_parameter_detail_success_unauthenticated(self):
         response = self.client.get(self.read_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertContains(response, self.plugin_parameters[0]['name'])
