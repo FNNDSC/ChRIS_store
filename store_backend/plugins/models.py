@@ -89,6 +89,7 @@ class PluginFilter(FilterSet):
     max_creation_date = django_filters.DateFilter(name="creation_date", lookup_expr='lte')
     owner_username = django_filters.CharFilter(name="owner__username", lookup_expr='icontains')
     name = django_filters.CharFilter(name="name", lookup_expr='startswith')
+    authors = django_filters.CharFilter(name="authors", lookup_expr='icontains')
     
     class Meta:
         model = Plugin
