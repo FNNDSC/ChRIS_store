@@ -62,13 +62,13 @@ declare -a plugins=( "simplefsapp"
 )
 declare -i i=1
 declare -i STEP=7
-for plugin in "${plugins[@]}"; do
-    echo "${STEP}.$i: Uploading $plugin representation to the ChRIS store ..."
-    PLUGIN_DOCK="fnndsc/pl-${plugin}"
-    PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${plugin}.py" --json 2> /dev/null;)
-    docker-compose exec chris_store_dev python plugins/services/manager.py add "${plugin}" cubeadmin https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP"
-    ((i++))
-done
+#for plugin in "${plugins[@]}"; do
+#    echo "${STEP}.$i: Uploading $plugin representation to the ChRIS store ..."
+#    PLUGIN_DOCK="fnndsc/pl-${plugin}"
+#    PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${plugin}.py" --json 2> /dev/null;)
+#    docker-compose exec chris_store_dev python plugins/services/manager.py add "${plugin}" cubeadmin https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP"
+#    ((i++))
+#done
 windowBottom
 
 title -d 1 "Restarting ChRIS store's Django development server in interactive mode..."

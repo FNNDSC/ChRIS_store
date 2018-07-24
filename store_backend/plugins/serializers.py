@@ -12,7 +12,6 @@ from .fields import CPUInt, MemoryInt
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
     parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
-    owner = serializers.HyperlinkedRelatedField(view_name='user-detail', read_only=True)
     descriptor_file = serializers.FileField(write_only=True)
     
     class Meta:
@@ -20,7 +19,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'name', 'creation_date', 'modification_date', 'dock_image',
                   'public_repo', 'icon', 'type', 'authors', 'title', 'category',
                   'description', 'documentation', 'license', 'version', 'parameters',
-                  'owner', 'descriptor_file', 'execshell', 'selfpath', 'selfexec',
+                  'descriptor_file', 'execshell', 'selfpath', 'selfexec',
                   'min_number_of_workers', 'max_number_of_workers','min_cpu_limit',
                   'max_cpu_limit', 'min_memory_limit','max_memory_limit', 'min_gpu_limit',
                   'max_gpu_limit')

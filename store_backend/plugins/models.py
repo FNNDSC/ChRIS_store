@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from rest_framework.filters import FilterSet
 
+from users.models import UserOrganization
 from .fields import CPUField, MemoryField
 
 
@@ -22,12 +23,11 @@ PLUGIN_TYPE_CHOICES = [("ds", "Data plugin"), ("fs", "Filesystem plugin")]
 
 def uploaded_file_path(instance, filename):
     # file will be stored to Swift at:
-    # SWIFT_CONTAINER_NAME/<username>/<uploads>/<today_path>/<filename>
+    # SWIFT_CONTAINER_NAME/<owner_name>/<uploads>/<today_path>/<filename>
     owner = instance.owner
-    username = owner.username
     today = timezone.now()
     today_path = today.strftime("%Y/%m/%d/%H/%M")
-    return '{0}/{1}/{2}/{3}'.format(username, 'uploads', today_path, filename)
+    return '{0}/{1}/{2}/{3}'.format(owner.name, 'uploads', today_path, filename)
 
 
 class Plugin(models.Model):
@@ -67,7 +67,7 @@ class Plugin(models.Model):
     min_memory_limit = MemoryField(null=True, blank=True,
                                    default=defaults['min_memory_limit']) # In Mi
     max_memory_limit = MemoryField(null=True, blank=True, default=defaults['max_limit'])
-    owner = models.ForeignKey('auth.User', on_delete=models.CASCADE,
+    owner = models.ForeignKey(UserOrganization, on_delete=models.CASCADE,
                               related_name='plugin')
 
     class Meta:
@@ -87,14 +87,14 @@ class Plugin(models.Model):
 class PluginFilter(FilterSet):
     min_creation_date = django_filters.DateFilter(name="creation_date", lookup_expr='gte')
     max_creation_date = django_filters.DateFilter(name="creation_date", lookup_expr='lte')
-    owner_username = django_filters.CharFilter(name="owner__username", lookup_expr='icontains')
+    owner_name = django_filters.CharFilter(name="owner__name", lookup_expr='icontains')
     name = django_filters.CharFilter(name="name", lookup_expr='startswith')
     authors = django_filters.CharFilter(name="authors", lookup_expr='icontains')
     
     class Meta:
         model = Plugin
         fields = ['name', 'dock_image', 'public_repo', 'type', 'category', 'authors',
-                  'owner_username', 'min_creation_date', 'max_creation_date', ]
+                  'owner', 'min_creation_date', 'max_creation_date', ]
 
 
 class PluginParameter(models.Model):
@@ -113,5 +113,3 @@ class PluginParameter(models.Model):
 
     def __str__(self):
         return self.name
-    
-
