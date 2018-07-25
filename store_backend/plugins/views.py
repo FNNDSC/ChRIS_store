@@ -59,6 +59,16 @@ class UserPluginList(generics.ListCreateAPIView):
         """
         serializer.save(owner=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        """
+        Overriden to insert the username as a prefix of the submitted plugin name.
+        """
+        # modify plugin's name to always include username as prefix
+        name = request.data['name']
+        if not name.startswith(request.user.username + '/'):
+            request.data['name'] = request.user.username +  '/' + name
+        return super(UserPluginList, self).create(request, *args, **kwargs)
+
     def list(self, request, *args, **kwargs):
         """
         Overriden to append document-level link relations and a collection+json template

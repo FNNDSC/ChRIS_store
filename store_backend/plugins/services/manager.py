@@ -66,6 +66,10 @@ class PluginManager(object):
         Register/add a new plugin to the system.
         """
         data = self.get_plugin_descriptors(args)
+        # modify plugin's name to always include owner's username as prefix
+        name = data['name']
+        if not name.startswith(args.owner + '/'):
+            data['name'] = args.owner +  '/' + name
         plg_serializer = PluginSerializer(data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)
