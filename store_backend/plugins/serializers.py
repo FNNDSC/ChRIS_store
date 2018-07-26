@@ -52,13 +52,6 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to validate and save all the plugin descriptors and parameters
         associated with the plugin when updating it.
         """
-        # make sure that the name always starts with the original owner's username
-        name = validated_data['name']
-        username_prefix = instance.name.split('/')[0] + '/'
-        if not name.startswith(username_prefix):
-            raise serializers.ValidationError("Plugin's name must start with the original" +
-                                              " owner's username %s" % username_prefix)
-
         # run all default validators for the full set of plugin fields
         request_parameters = validated_data['parameters']
         del validated_data['parameters']
@@ -176,6 +169,19 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         data.update(app_repr)
 
         return data
+
+
+    @staticmethod
+    def validate_plugin_name(instance, name):
+        """
+        Custom method to validate a plugin name when updating it.
+        """
+        # check that plugin's name always include username as prefix
+        name_prefix = instance.name.split('/')[0] + '/'
+        if not name.startswith(name_prefix):
+            raise serializers.ValidationError(
+                {'detail': "New plugin name must start with %s prefix" % name_prefix})
+        return name
 
     @staticmethod
     def validate_app_parameters(parameter_list):
