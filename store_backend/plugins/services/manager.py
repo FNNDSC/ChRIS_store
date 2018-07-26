@@ -69,7 +69,7 @@ class PluginManager(object):
         # modify plugin's name to always include owner's username as prefix
         name = data['name']
         if not name.startswith(args.owner + '/'):
-            data['name'] = args.owner +  '/' + name
+            data['name'] = args.owner + '/' + name
         plg_serializer = PluginSerializer(data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)
@@ -84,6 +84,7 @@ class PluginManager(object):
         plugin = self.get_plugin(args.name)
         if args.newname:
             data['name'] = args.newname
+        PluginSerializer.validate_plugin_name(plugin, data['name'])
         plg_serializer = PluginSerializer(plugin, data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)
