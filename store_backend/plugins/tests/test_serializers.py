@@ -16,7 +16,7 @@ class PluginSerializerTests(TestCase):
         self.username = 'foo'
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
-        self.plugin_name = "simplefsapp"
+        self.plugin_name = self.username + "/simplefsapp"
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                                       'optional': False, 'flag':'--dir', 'default': '',
                                       'help': 'test plugin'}]
