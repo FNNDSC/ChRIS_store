@@ -64,9 +64,9 @@ class UserPluginList(generics.ListCreateAPIView):
         Overriden to insert the username as a prefix of the submitted plugin name.
         """
         # modify plugin's name to always include username as prefix
-        name = request.data['name']
-        if not name.startswith(request.user.username + '/'):
-            request.data['name'] = request.user.username +  '/' + name
+        name = request.data.get('name')
+        if name and (not name.startswith(request.user.username + '/')):
+            request.data['name'] = request.user.username + '/' + name
         return super(UserPluginList, self).create(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
@@ -102,6 +102,17 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
     permission_classes = (permissions.IsAuthenticated, IsOwnerOrChrisOrReadOnly,)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Overriden to make sure original owner's username is a prefix of the submitted
+        plugin name.
+        """
+        name = request.data.get('name')
+        if name:
+            plugin = self.get_object()
+            PluginSerializer.validate_plugin_name(plugin, name)
+        return super(PluginDetail, self).update(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         """
