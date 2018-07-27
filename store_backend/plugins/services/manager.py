@@ -84,7 +84,6 @@ class PluginManager(object):
         plugin = self.get_plugin(args.name)
         if args.newname:
             data['name'] = args.newname
-        PluginSerializer.validate_plugin_name(plugin, data['name'])
         plg_serializer = PluginSerializer(plugin, data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)

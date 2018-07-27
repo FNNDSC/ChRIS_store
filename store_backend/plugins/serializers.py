@@ -52,6 +52,11 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to validate and save all the plugin descriptors and parameters
         associated with the plugin when updating it.
         """
+        # make sure plugin's name always include username as prefix
+        name = validated_data.get('name')
+        if name:
+            PluginSerializer.validate_plugin_name(instance, name)
+
         # run all default validators for the full set of plugin fields
         request_parameters = validated_data['parameters']
         del validated_data['parameters']

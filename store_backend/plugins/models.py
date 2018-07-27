@@ -1,9 +1,9 @@
 
 from django.db import models
-import django_filters
 from django.utils import timezone
 
-from rest_framework.filters import FilterSet
+import django_filters
+from django_filters.rest_framework import FilterSet
 
 from .fields import CPUField, MemoryField
 
@@ -85,19 +85,24 @@ class Plugin(models.Model):
 
 
 class PluginFilter(FilterSet):
-    min_creation_date = django_filters.DateFilter(name="creation_date", lookup_expr='gte')
-    max_creation_date = django_filters.DateFilter(name="creation_date", lookup_expr='lte')
-    owner_username = django_filters.CharFilter(name="owner__username", lookup_expr='icontains')
-    name = django_filters.CharFilter(name="name", lookup_expr='icontains')
-    title = django_filters.CharFilter(name="title", lookup_expr='icontains')
-    category = django_filters.CharFilter(name="category", lookup_expr='icontains')
-    description = django_filters.CharFilter(name="description", lookup_expr='icontains')
-    authors = django_filters.CharFilter(name="authors", lookup_expr='icontains')
+    min_creation_date = django_filters.DateFilter(field_name='creation_date',
+                                                  lookup_expr='gte')
+    max_creation_date = django_filters.DateFilter(field_name='creation_date',
+                                                  lookup_expr='lte')
+    owner_username = django_filters.CharFilter(field_name='owner__username',
+                                               lookup_expr='icontains')
+    name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
+    title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
+    category = django_filters.CharFilter(field_name='category', lookup_expr='icontains')
+    description = django_filters.CharFilter(field_name='description',
+                                            lookup_expr='icontains')
+    authors = django_filters.CharFilter(field_name='authors', lookup_expr='icontains')
     
     class Meta:
         model = Plugin
         fields = ['name', 'dock_image', 'public_repo', 'type', 'category', 'authors',
-                  'owner_username', 'min_creation_date', 'max_creation_date', ]
+                  'owner_username', 'min_creation_date', 'max_creation_date', 'title',
+                  'description']
 
 
 class PluginParameter(models.Model):
