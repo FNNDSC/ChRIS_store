@@ -97,12 +97,19 @@ class PluginFilter(FilterSet):
     description = django_filters.CharFilter(field_name='description',
                                             lookup_expr='icontains')
     authors = django_filters.CharFilter(field_name='authors', lookup_expr='icontains')
+    name_title_category = django_filters.CharFilter(method='search_name_title_category')
+
+    def search_name_title_category(self, queryset, name, value):
+        # construct the full lookup expression.
+        lookup = models.Q(name__icontains=value) | models.Q(title__icontains=value)
+        lookup = lookup | models.Q(category__icontains=value)
+        return queryset.filter(lookup)
     
     class Meta:
         model = Plugin
         fields = ['name', 'dock_image', 'public_repo', 'type', 'category', 'authors',
                   'owner_username', 'min_creation_date', 'max_creation_date', 'title',
-                  'description']
+                  'description', 'name_title_category']
 
 
 class PluginParameter(models.Model):
