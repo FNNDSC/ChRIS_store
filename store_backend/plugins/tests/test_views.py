@@ -4,7 +4,7 @@ import io
 from unittest import mock
 
 from django.test import TestCase, tag
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import User
 
 from rest_framework import status
@@ -18,7 +18,7 @@ class ViewTests(TestCase):
         self.username = 'foo'
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
-        self.plugin_name = "simplefsapp"
+        self.plugin_name = self.username + "/simplefsapp"
         self.content_type = 'application/vnd.collection+json'
 
         # create basic models
@@ -27,7 +27,8 @@ class ViewTests(TestCase):
         user = User.objects.create_user(username=self.username, email=self.email,
                                  password=self.password)
         # create a plugin
-        Plugin.objects.get_or_create(name=self.plugin_name, type='fs', owner=user)
+        Plugin.objects.get_or_create(name=self.plugin_name, title='chris app', type='fs',
+                                     owner=user)
 
 
 class PluginListViewTests(ViewTests):
@@ -182,9 +183,15 @@ class PluginListQuerySearchViewTests(ViewTests):
         self.assertContains(response, self.plugin_name)
 
     def test_plugin_list_query_search_success_unauthenticated(self):
-        self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.list_url)
         self.assertContains(response, self.plugin_name)
+
+    def test_plugin_list_query_search_across_name_title_category_success(self):
+        search_params = '?name=chris&title=chris&category=chris'
+        list_url = reverse("plugin-list-query-search") + search_params
+        response = self.client.get(list_url)
+        self.assertContains(response, 'chris')
+
 
 
 class PluginParameterListViewTests(ViewTests):

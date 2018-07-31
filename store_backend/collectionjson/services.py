@@ -1,7 +1,7 @@
 
 from urllib.parse import urlparse
 
-from django.core.urlresolvers import resolve
+from django.urls import resolve
 
 from rest_framework.response import Response
 from rest_framework import serializers
@@ -53,7 +53,7 @@ def append_collection_querylist(response, query_url_list):
     for query_url in query_url_list:
         relative_url = urlparse(query_url).path
         match = resolve(relative_url)
-        filters = match.func.cls.filter_class.base_filters
+        filters = match.func.cls.filterset_class.base_filters
         data = []
         for k in filters.keys():
             data.append({"name": k, "value": ""})

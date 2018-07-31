@@ -52,6 +52,11 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to validate and save all the plugin descriptors and parameters
         associated with the plugin when updating it.
         """
+        # make sure plugin's name always include username as prefix
+        name = validated_data.get('name')
+        if name:
+            PluginSerializer.validate_plugin_name(instance, name)
+
         # run all default validators for the full set of plugin fields
         request_parameters = validated_data['parameters']
         del validated_data['parameters']
@@ -67,7 +72,8 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         for request_param in request_parameters:
             db_param = [p for p in db_parameters if p.name == request_param['name']]
             if db_param:
-                param_serializer = PluginParameterSerializer(db_param[0], data=request_param)
+                param_serializer = PluginParameterSerializer(db_param[0],
+                                                             data=request_param)
             else:
                 param_serializer = PluginParameterSerializer(data=request_param)
             param_serializer.is_valid(raise_exception=True)
@@ -168,6 +174,19 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         data.update(app_repr)
 
         return data
+
+
+    @staticmethod
+    def validate_plugin_name(instance, name):
+        """
+        Custom method to validate a plugin name when updating it.
+        """
+        # check that plugin's name always include username as prefix
+        name_prefix = instance.name.split('/')[0] + '/'
+        if not name.startswith(name_prefix):
+            raise serializers.ValidationError(
+                {'detail': "New plugin name must start with %s prefix" % name_prefix})
+        return name
 
     @staticmethod
     def validate_app_parameters(parameter_list):
