@@ -13,6 +13,7 @@ chmod -R 755 $(pwd)
 windowBottom
 
 title -d 1 "Starting containerized development environment using " " ./docker-compose.yml"
+docker pull fnndsc/chris_store:dev
 echo "docker-compose up -d"
 docker-compose up -d
 windowBottom

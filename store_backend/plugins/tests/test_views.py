@@ -18,7 +18,7 @@ class ViewTests(TestCase):
         self.username = 'foo'
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
-        self.plugin_name = self.username + "/simplefsapp"
+        self.plugin_name = 'simplefsapp'
         self.content_type = 'application/vnd.collection+json'
 
         # create basic models

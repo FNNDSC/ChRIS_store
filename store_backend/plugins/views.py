@@ -54,15 +54,9 @@ class UserPluginList(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         """
-        Overriden to associate an owner with the plugin before first saving to the DB
-        and to insert the owner's username as a prefix of the submitted plugin name.
+        Overriden to associate an owner with the plugin before first saving to the DB.
         """
-        # modify plugin's name to always include username as prefix
-        name = self.request.data.get('name')
-        username = self.request.user.username
-        if name and (not name.startswith(username + '/')):
-            name = username + '/' + name
-        serializer.save(owner=self.request.user, name=name)
+        serializer.save(owner=self.request.user)
 
     def list(self, request, *args, **kwargs):
         """
