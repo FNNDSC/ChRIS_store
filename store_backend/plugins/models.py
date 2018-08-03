@@ -99,6 +99,10 @@ class PluginFilter(FilterSet):
     name_title_category = django_filters.CharFilter(method='search_name_title_category')
 
     def search_name_title_category(self, queryset, name, value):
+        """
+        Custom method to get a filtered queryset with all plugins for wich name or title
+        or category matches the search value.
+        """
         # construct the full lookup expression.
         lookup = models.Q(name__icontains=value) | models.Q(title__icontains=value)
         lookup = lookup | models.Q(category__icontains=value)
