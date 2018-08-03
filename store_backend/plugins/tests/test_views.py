@@ -27,8 +27,9 @@ class ViewTests(TestCase):
         user = User.objects.create_user(username=self.username, email=self.email,
                                  password=self.password)
         # create a plugin
-        Plugin.objects.get_or_create(name=self.plugin_name, title='chris app', type='fs',
-                                     owner=user)
+        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name,
+                                                    title='chris app', type='fs')
+        plugin.owner.set([user])
 
 
 class PluginListViewTests(ViewTests):

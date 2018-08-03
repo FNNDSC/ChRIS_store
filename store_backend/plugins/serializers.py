@@ -1,6 +1,8 @@
 
 import json
 
+from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from rest_framework import serializers
@@ -12,7 +14,8 @@ from .fields import CPUInt, MemoryInt
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
     parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
-    owner = serializers.HyperlinkedRelatedField(view_name='user-detail', read_only=True)
+    owner = serializers.HyperlinkedRelatedField(many=True, view_name='user-detail',
+                                                read_only=True)
     descriptor_file = serializers.FileField(write_only=True)
     
     class Meta:
@@ -37,7 +40,15 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         new_plg_serializer.validate = lambda x: x  # no need to rerun custom validators
         new_plg_serializer.is_valid(raise_exception=True)
 
+        # this is necessary because the descriptor_file's FileField needs an instance of
+        # a plugin before saving to the the DB since its "uploaded_file_path" function
+        # needs to access instance.owner (now an m2m relationship)
+        descriptor_file = validated_data['descriptor_file']
+        del validated_data['descriptor_file']
+
         plugin = super(PluginSerializer, self).create(validated_data)
+        plugin.descriptor_file = descriptor_file
+        plugin.save()
 
         # validate and save all the plugin parameters
         for request_param in request_parameters:
@@ -169,6 +180,19 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         data.update(app_repr)
 
         return data
+
+    @staticmethod
+    def validate_new_owner(username):
+        """
+        Custom method to check whether a new plugin owner is a system-registered user.
+        """
+        try:
+            # check if user is a system-registered user
+            new_owner = User.objects.get(username=username)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError(
+                {'detail': "%s is not a registered user" % username})
+        return new_owner
 
     @staticmethod
     def validate_app_parameters(parameter_list):

@@ -32,7 +32,8 @@ class PluginModelTests(TestCase):
                                  password=self.password)
 
         # create a plugin
-        Plugin.objects.get_or_create(name=self.plugin_name, owner=user)
+        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name)
+        plugin.owner.set([user])
 
     def test_get_plugin_parameter_names(self):
         """

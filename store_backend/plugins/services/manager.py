@@ -69,7 +69,7 @@ class PluginManager(object):
         plg_serializer = PluginSerializer(data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)
-        plg_serializer.save(owner=owner)
+        plg_serializer.save(owner=[owner])
 
     def modify_plugin(self, args):
         """
@@ -83,7 +83,7 @@ class PluginManager(object):
         plg_serializer = PluginSerializer(plugin, data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)
-        plg_serializer.save(owner=owner)
+        plg_serializer.save(owner=[owner])
         plugin.modification_date = timezone.now()
         plugin.save()
 

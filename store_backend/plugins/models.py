@@ -22,8 +22,8 @@ PLUGIN_TYPE_CHOICES = [("ds", "Data plugin"), ("fs", "Filesystem plugin")]
 
 def uploaded_file_path(instance, filename):
     # file will be stored to Swift at:
-    # SWIFT_CONTAINER_NAME/<username>/<uploads>/<today_path>/<filename>
-    owner = instance.owner
+    # SWIFT_CONTAINER_NAME/<original_owner_username>/uploads/<today_path>/<filename>
+    owner = instance.owner.all()[0]
     username = owner.username
     today = timezone.now()
     today_path = today.strftime("%Y/%m/%d/%H/%M")
@@ -67,8 +67,7 @@ class Plugin(models.Model):
     min_memory_limit = MemoryField(null=True, blank=True,
                                    default=defaults['min_memory_limit']) # In Mi
     max_memory_limit = MemoryField(null=True, blank=True, default=defaults['max_limit'])
-    owner = models.ForeignKey('auth.User', on_delete=models.CASCADE,
-                              related_name='plugin')
+    owner = models.ManyToManyField('auth.User', related_name='plugin')
 
     class Meta:
         ordering = ('type',)
