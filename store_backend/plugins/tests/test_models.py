@@ -65,17 +65,16 @@ class PluginFilterTests(ModelTests):
         self.other_plg_repr = self.plg_repr
         self.other_plg_repr['title'] = 'Other Dir plugin'
 
-        user = User.objects.create_user(username=self.username, email=self.email,
-                                 password=self.password)
+        user = User.objects.get(username=self.username)
 
         # create other plugin
-        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name)
+        (plugin, tf) = Plugin.objects.get_or_create(name=self.other_plugin_name)
         plugin.owner.set([user])
 
     def test_search_name_title_category(self):
         """
         Test whether custom method search_name_title_category returns a filtered queryset
-        with all plugins for wich name or title or category matches the search value.
+        with all plugins for which name or title or category matches the search value.
         """
         pl1 = Plugin.objects.get(name=self.plugin_name)
         pl1.title = self.plg_repr['title']
@@ -85,8 +84,7 @@ class PluginFilterTests(ModelTests):
         pl2.title = self.other_plg_repr['title']
         pl2.category = self.other_plg_repr['category']
         pl2.save()
-        values = [pl1, pl2]
         pl_filter = PluginFilter()
         queryset = Plugin.objects.all()
         qs = pl_filter.search_name_title_category(queryset, 'name_title_category', 'Dir')
-        self.assertQuerysetEqual(qs, values)
+        self.assertCountEqual(qs, queryset)
