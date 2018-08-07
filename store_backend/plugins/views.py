@@ -54,9 +54,9 @@ class UserPluginList(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         """
-        Overriden to associate an owner with the plugin before first saving to the DB.
+        Overriden to associate an owner with the plugin.
         """
-        serializer.save(owner=self.request.user)
+        serializer.save(owner=[self.request.user])
 
     def list(self, request, *args, **kwargs):
         """
@@ -92,13 +92,36 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Plugin.objects.all()
     permission_classes = (permissions.IsAuthenticated, IsOwnerOrChrisOrReadOnly,)
 
+    def perform_update(self, serializer):
+        """
+        Overriden to update plugin's owners if requested by a PUT request.
+        """
+        if 'owner' in self.request.data:
+            self.update_owners(serializer)
+        super(PluginDetail, self).perform_update(serializer)
+
+    def update_owners(self, serializer):
+        """
+        Custom method to update the plugin's owners.
+        """
+        plugin = self.get_object()
+        owners = plugin.owner.values('username')
+        username = self.request.data.pop('owner')
+        if isinstance(username, list):
+            username = username[0]
+        if {'username': username} not in owners:
+            new_owner = serializer.validate_new_owner(username)
+            owners = [o for o in plugin.owner.all()]
+            owners.append(new_owner)
+            plugin.owner.set(owners)
+
     def retrieve(self, request, *args, **kwargs):
         """
         Overriden to append a collection+json template.
         """
         response = super(PluginDetail, self).retrieve(request, *args, **kwargs)
         template_data = {'name': '', 'dock_image': '', 'public_repo': '',
-                         'descriptor_file': ''}
+                         'descriptor_file': '', 'owner': ''}
         return services.append_collection_template(response, template_data)
 
 

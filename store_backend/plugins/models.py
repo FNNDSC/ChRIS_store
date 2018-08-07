@@ -22,8 +22,8 @@ PLUGIN_TYPE_CHOICES = [("ds", "Data plugin"), ("fs", "Filesystem plugin")]
 
 def uploaded_file_path(instance, filename):
     # file will be stored to Swift at:
-    # SWIFT_CONTAINER_NAME/<username>/<uploads>/<today_path>/<filename>
-    owner = instance.owner
+    # SWIFT_CONTAINER_NAME/<original_owner_username>/uploads/<today_path>/<filename>
+    owner = instance.owner.all()[0]
     username = owner.username
     today = timezone.now()
     today_path = today.strftime("%Y/%m/%d/%H/%M")
@@ -67,8 +67,7 @@ class Plugin(models.Model):
     min_memory_limit = MemoryField(null=True, blank=True,
                                    default=defaults['min_memory_limit']) # In Mi
     max_memory_limit = MemoryField(null=True, blank=True, default=defaults['max_limit'])
-    owner = models.ForeignKey('auth.User', on_delete=models.CASCADE,
-                              related_name='plugin')
+    owner = models.ManyToManyField('auth.User', related_name='plugin')
 
     class Meta:
         ordering = ('type',)
@@ -100,6 +99,10 @@ class PluginFilter(FilterSet):
     name_title_category = django_filters.CharFilter(method='search_name_title_category')
 
     def search_name_title_category(self, queryset, name, value):
+        """
+        Custom method to get a filtered queryset with all plugins for which name or title
+        or category matches the search value.
+        """
         # construct the full lookup expression.
         lookup = models.Q(name__icontains=value) | models.Q(title__icontains=value)
         lookup = lookup | models.Q(category__icontains=value)

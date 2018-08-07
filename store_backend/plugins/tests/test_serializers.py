@@ -37,7 +37,9 @@ class PluginSerializerTests(TestCase):
                                  password=self.password)
 
         # create a plugin
-        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name, owner=user)
+        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name)
+        plugin.owner.set([user])
+
         # add plugin's parameters
         PluginParameter.objects.get_or_create(
             plugin=plugin,

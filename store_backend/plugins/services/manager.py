@@ -45,9 +45,9 @@ class PluginManager(object):
         # create the parser for the "modify" command
         parser_modify = subparsers.add_parser('modify', help='Modify existing plugin')
         parser_modify.add_argument('name', help="Plugin's name")
-        parser_modify.add_argument('owner', help="Plugin's new owner username")
         parser_modify.add_argument('publicrepo', help="Plugin's new public repo url")
         parser_modify.add_argument('dockerimage', help="Plugin's new docker image name")
+        parser_modify.add_argument('--newowner', help="Plugin's new owner username")
         parser_modify.add_argument('--newname', help="Plugin's new name")
         group = parser_modify.add_mutually_exclusive_group()
         group.add_argument("--descriptorfile", dest='descriptorfile', type=str,
@@ -69,7 +69,7 @@ class PluginManager(object):
         plg_serializer = PluginSerializer(data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)
-        plg_serializer.save(owner=owner)
+        plg_serializer.save(owner=[owner])
 
     def modify_plugin(self, args):
         """
@@ -82,8 +82,14 @@ class PluginManager(object):
             data['name'] = args.newname
         plg_serializer = PluginSerializer(plugin, data=data)
         plg_serializer.is_valid(raise_exception=True)
-        owner = User.objects.get(username=args.owner)
-        plg_serializer.save(owner=owner)
+        plg_serializer.save()
+        if args.newowner:
+            owners = plugin.owner.values('username')
+            if {'username': args.newowner} not in owners:
+                new_owner = plg_serializer.validate_new_owner(args.newowner)
+                owners = [o for o in plugin.owner.all()]
+                owners.append(new_owner)
+                plugin.owner.set(owners)
         plugin.modification_date = timezone.now()
         plugin.save()
 
@@ -143,7 +149,7 @@ class PluginManager(object):
         """
         Read the plugin's descriptor json file given its path.
         """
-        with open( descriptor_file_path) as descriptor_file:
+        with open(descriptor_file_path) as descriptor_file:
             return json.load(descriptor_file)
 
 
