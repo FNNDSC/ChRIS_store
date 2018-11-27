@@ -62,8 +62,8 @@ git clone https://github.com/FNNDSC/ChRIS_store.git
 cd ChRIS_store
 workon chris_store_env
 pip install httpie
+pip install python-swiftclient
 pip install django-storage-swift
-pip install docker
 ```
 
 You can also install some python libraries (not all of them) specified in the ``requirements/base.txt`` and 
@@ -121,7 +121,7 @@ docker exec -it chrisstore_chris_store_dev_run_1 coverage report
 ### Using httpie to play with the REST API 
 #### A simple GET request:
 ```bash
-http -a cube:cube1234 http://localhost:8010/api/v1/
+http -a cubeadmin:cubeadmin1234 http://localhost:8010/api/v1/
 ```
 
 #### A simple POST request to register a new plugin app in the store:
@@ -131,7 +131,7 @@ docker run --rm -v /tmp/json:/json fnndsc/pl-simplefsapp simplefsapp.py --savejs
 ```
 Then upload the plugin representation json file to the ChRIS Store as part of the `POST` request:
 ```bash
-http -a cube:cube1234 -f POST http://localhost:8010/api/v1/ dock_image=fnndsc/pl-simplefsapp descriptor_file@/tmp/json/SimpleFSApp.json public_repo=https://github.com/FNNDSC/pl-simplefsapp name=simplefsapp
+http -a cubeadmin:cubeadmin1234 -f POST http://localhost:8010/api/v1/ dock_image=fnndsc/pl-simplefsapp descriptor_file@/tmp/json/SimpleFSApp.json public_repo=https://github.com/FNNDSC/pl-simplefsapp name=simplefsapp
 ```
 
 #### An unauthenticated POST request to create a new ChRIS store user account:
