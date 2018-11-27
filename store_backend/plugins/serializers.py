@@ -20,7 +20,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
     
     class Meta:
         model = Plugin
-        fields = ('url', 'name', 'creation_date', 'modification_date', 'dock_image',
+        fields = ('url', 'id', 'name', 'creation_date', 'modification_date', 'dock_image',
                   'public_repo', 'icon', 'type', 'authors', 'title', 'category',
                   'description', 'documentation', 'license', 'version', 'parameters',
                   'owner', 'descriptor_file', 'execshell', 'selfpath', 'selfexec',
@@ -303,7 +303,7 @@ class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = PluginParameter
-        fields = ('url', 'name', 'type', 'optional', 'default', 'flag', 'action',
+        fields = ('url', 'id', 'name', 'type', 'optional', 'default', 'flag', 'action',
                   'help', 'plugin')
 
     @collection_serializer_is_valid

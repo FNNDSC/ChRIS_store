@@ -110,7 +110,7 @@ class PluginFilter(FilterSet):
     
     class Meta:
         model = Plugin
-        fields = ['name', 'dock_image', 'public_repo', 'type', 'category', 'authors',
+        fields = ['id', 'name', 'dock_image', 'public_repo', 'type', 'category', 'authors',
                   'owner_username', 'min_creation_date', 'max_creation_date', 'title',
                   'description', 'name_title_category']
 
