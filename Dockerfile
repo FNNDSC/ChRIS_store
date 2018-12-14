@@ -9,9 +9,9 @@
 #
 #   docker build -t local/chris_store .
 #
-# In the case of a proxy (located at 192.168.13.14:3128), do:
+# In the case of a proxy (located at proxy.tch.harvard.edu:3128), do:
 #
-#    docker build --build-arg http_proxy=http://192.168.13.14:3128 --build-arg UID=$UID -t local/chris_store .
+#    docker build --build-arg http_proxy=http://proxy.tch.harvard.edu:3128 --build-arg UID=$UID -t local/chris_store .
 #
 # To run an interactive shell inside this container, do:
 #
