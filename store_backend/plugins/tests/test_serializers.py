@@ -132,9 +132,7 @@ class PluginSerializerTests(TestCase):
     def test_validate_app_parameters(self):
         """
         Test whether custom validate_app_parameters method raises a ValidationError when
-        a plugin parameter has an unsupported type. Also test whether the parameter's
-        'default' descriptor is automatically set to the empty string when not submitted
-        in the request.
+        a plugin parameter has an unsupported type.
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
@@ -142,10 +140,6 @@ class PluginSerializerTests(TestCase):
         parameter_list[0]['type'] = 'booleano'
         with self.assertRaises(serializers.ValidationError):
             plg_serializer.validate_app_parameters(parameter_list)
-        parameter_list[0]['type'] = 'path'
-        del parameter_list[0]['default']
-        parameter_list = plg_serializer.validate_app_parameters(parameter_list)
-        self.assertEquals(parameter_list[0]['default'], '')
 
     def test_validate_check_required_execshell(self):
         """

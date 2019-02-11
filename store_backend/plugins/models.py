@@ -120,7 +120,6 @@ class PluginParameter(models.Model):
     flag = models.CharField(max_length=52)
     action = models.CharField(max_length=20, default='store')
     optional = models.BooleanField(default=True)
-    default = models.CharField(max_length=200, blank=True)
     type = models.CharField(choices=TYPE_CHOICES, default='string', max_length=10)
     help = models.TextField(blank=True)
     plugin = models.ForeignKey(Plugin, on_delete=models.CASCADE,
@@ -131,5 +130,48 @@ class PluginParameter(models.Model):
 
     def __str__(self):
         return self.name
-    
 
+
+class DefaultStringParameter(models.Model):
+    value = models.CharField(max_length=200, blank=True)
+    plugin_param = models.OneToOneField(PluginParameter, on_delete=models.CASCADE,
+                                        related_name='string_default')
+
+    def __str__(self):
+        return self.value
+
+
+class DefaultIntParameter(models.Model):
+    value = models.IntegerField()
+    plugin_param = models.OneToOneField(PluginParameter, on_delete=models.CASCADE,
+                                        related_name='integer_default')
+
+    def __str__(self):
+        return str(self.value)
+
+
+class DefaultFloatParameter(models.Model):
+    value = models.FloatField()
+    plugin_param = models.OneToOneField(PluginParameter, on_delete=models.CASCADE,
+                                        related_name='float_default')
+
+    def __str__(self):
+        return str(self.value)
+
+
+class DefaultBoolParameter(models.Model):
+    value = models.BooleanField()
+    plugin_param = models.OneToOneField(PluginParameter, on_delete=models.CASCADE,
+                                        related_name='boolean_default')
+
+    def __str__(self):
+        return str(self.value)
+
+
+class DefaultPathParameter(models.Model):
+    value = models.CharField(max_length=200, blank=True)
+    plugin_param = models.OneToOneField(PluginParameter, on_delete=models.CASCADE,
+                                        related_name='path_default')
+
+    def __str__(self):
+        return self.value

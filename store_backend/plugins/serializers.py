@@ -9,6 +9,8 @@ from rest_framework import serializers
 from collectionjson.services import collection_serializer_is_valid
 
 from .models import Plugin, PluginParameter, TYPES
+from .models import DefaultFloatParameter, DefaultIntParameter, DefaultBoolParameter
+from .models import DefaultPathParameter, DefaultStringParameter
 from .fields import CPUInt, MemoryInt
 
 
@@ -50,11 +52,18 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         plugin.descriptor_file = descriptor_file
         plugin.save()
 
-        # validate and save all the plugin parameters
+        # validate and save all the plugin parameters and their default values
         for request_param in request_parameters:
+            default = request_param['default'] if 'default' in request_param else None
+            del request_param['default']
             param_serializer = PluginParameterSerializer(data=request_param)
             param_serializer.is_valid(raise_exception=True)
-            param_serializer.save(plugin=plugin)
+            param = param_serializer.save(plugin=plugin)
+            if default is not None:
+                default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param.type](
+                    data={'value': default})
+                default_param_serializer.is_valid(raise_exception=True)
+                default_param_serializer.save(plugin_param=param)
 
         return plugin
 
@@ -73,9 +82,11 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         validated_data.update({'modification_date': timezone.now()})
         plugin = super(PluginSerializer, self).update(instance, validated_data)
 
-        # validate and save all the plugin parameters
+        # validate and save all the plugin parameters and their default values
         db_parameters = plugin.parameters.all()
         for request_param in request_parameters:
+            default = request_param['default'] if 'default' in request_param else None
+            del request_param['default']
             db_param = [p for p in db_parameters if p.name == request_param['name']]
             if db_param:
                 param_serializer = PluginParameterSerializer(db_param[0],
@@ -83,7 +94,17 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             else:
                 param_serializer = PluginParameterSerializer(data=request_param)
             param_serializer.is_valid(raise_exception=True)
-            param_serializer.save(plugin=plugin)
+            param = param_serializer.save(plugin=plugin)
+            if default is not None:
+                if hasattr(param, param.type + '_default'): # check if a default in DB
+                    db_default = getattr(param, param.type + '_default')
+                    default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param.type](
+                        db_default, data={'value': default})
+                else:
+                    default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param.type](
+                        data={'value': default})
+                default_param_serializer.is_valid(raise_exception=True)
+                default_param_serializer.save(plugin_param=param)
 
         return plugin
 
@@ -206,10 +227,6 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                 raise serializers.ValidationError("Invalid parameter type %s" %
                                                   param['type'])
             param['type'] = param_type[0]
-            if 'default' in param:
-                param['default'] = str(param['default'])
-            else:
-                param['default'] = ''
         return parameter_list
 
     @staticmethod
@@ -300,6 +317,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
 class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
     plugin = serializers.HyperlinkedRelatedField(view_name='plugin-detail',
                                                  read_only=True)
+    default = serializers.SerializerMethodField()
 
     class Meta:
         model = PluginParameter
@@ -313,3 +331,92 @@ class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
         """
         return super(PluginParameterSerializer, self).is_valid(
             raise_exception=raise_exception)
+
+    def get_default(self, obj):
+        """
+        Overriden to get the default parameter value regardless of type.
+        """
+        default_parameter = getattr(obj, obj.type + '_default', None)
+        return default_parameter.value if default_parameter else None
+
+
+class DefaultStringParameterSerializer(serializers.HyperlinkedModelSerializer):
+    param_name = serializers.ReadOnlyField(source='plugin_param.name')
+    type = serializers.SerializerMethodField()
+    plugin_param = serializers.HyperlinkedRelatedField(view_name='pluginparameter-detail',
+                                                       read_only=True)
+
+    @staticmethod
+    def get_type(obj):
+        return obj.plugin_param.type
+
+    class Meta:
+        model = DefaultStringParameter
+        fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
+
+
+class DefaultIntParameterSerializer(serializers.HyperlinkedModelSerializer):
+    param_name = serializers.ReadOnlyField(source='plugin_param.name')
+    type = serializers.SerializerMethodField()
+    plugin_param = serializers.HyperlinkedRelatedField(view_name='pluginparameter-detail',
+                                                       read_only=True)
+
+    @staticmethod
+    def get_type(obj):
+        return obj.plugin_param.type
+
+    class Meta:
+        model = DefaultIntParameter
+        fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
+
+
+class DefaultFloatParameterSerializer(serializers.HyperlinkedModelSerializer):
+    param_name = serializers.ReadOnlyField(source='plugin_param.name')
+    type = serializers.SerializerMethodField()
+    plugin_param = serializers.HyperlinkedRelatedField(view_name='pluginparameter-detail',
+                                                       read_only=True)
+
+    @staticmethod
+    def get_type(obj):
+        return obj.plugin_param.type
+
+    class Meta:
+        model = DefaultFloatParameter
+        fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
+
+
+class DefaultBoolParameterSerializer(serializers.HyperlinkedModelSerializer):
+    param_name = serializers.ReadOnlyField(source='plugin_param.name')
+    type = serializers.SerializerMethodField()
+    plugin_param = serializers.HyperlinkedRelatedField(view_name='pluginparameter-detail',
+                                                       read_only=True)
+
+    @staticmethod
+    def get_type(obj):
+        return obj.plugin_param.type
+
+    class Meta:
+        model = DefaultBoolParameter
+        fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
+
+
+class DefaultPathParameterSerializer(serializers.HyperlinkedModelSerializer):
+    param_name = serializers.ReadOnlyField(source='plugin_param.name')
+    type = serializers.SerializerMethodField()
+    plugin_param = serializers.HyperlinkedRelatedField(view_name='pluginparameter-detail',
+                                                       read_only=True)
+
+    @staticmethod
+    def get_type(obj):
+        return obj.plugin_param.type
+
+    class Meta:
+        model = DefaultPathParameter
+        fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
+
+
+DEFAULT_PARAMETER_SERIALIZERS = {'string': DefaultStringParameterSerializer,
+                         'integer': DefaultIntParameterSerializer,
+                         'float': DefaultFloatParameterSerializer,
+                         'boolean': DefaultBoolParameterSerializer,
+                         'path': DefaultPathParameterSerializer}
