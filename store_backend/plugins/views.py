@@ -58,6 +58,16 @@ class UserPluginList(generics.ListCreateAPIView):
         """
         serializer.save(owner=[self.request.user])
 
+    def create(self, request, *args, **kwargs):
+        """
+        Overriden to include required version descriptor in the request dict.
+        """
+        if 'descriptor_file' in request.data:
+            df = request.data['descriptor_file']
+            version = PluginSerializer.get_plugin_version_from_app_representation(df)
+            request.data['version'] = version  # version is a required descriptor
+        return super(UserPluginList, self).create(request, *args, **kwargs)
+
     def list(self, request, *args, **kwargs):
         """
         Overriden to append document-level link relations and a collection+json template
@@ -115,13 +125,22 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
             owners.append(new_owner)
             plugin.owner.set(owners)
 
+    def update(self, request, *args, **kwargs):
+        """
+        Overriden to override descriptors that are not allowed to be updated.
+        """
+        plugin = self.get_object()
+        request.data['name'] = plugin.name
+        request.data['descriptor_file'] = plugin.descriptor_file
+        request.data['version'] = plugin.version
+        return super(PluginDetail, self).update(request, *args, **kwargs)
+
     def retrieve(self, request, *args, **kwargs):
         """
         Overriden to append a collection+json template.
         """
         response = super(PluginDetail, self).retrieve(request, *args, **kwargs)
-        template_data = {'name': '', 'dock_image': '', 'public_repo': '',
-                         'descriptor_file': '', 'owner': ''}
+        template_data = {'dock_image': '', 'public_repo': '', 'owner': ''}
         return services.append_collection_template(response, template_data)
 
 

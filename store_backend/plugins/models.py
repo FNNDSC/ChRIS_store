@@ -39,10 +39,11 @@ class Plugin(models.Model):
                }
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     dock_image = models.CharField(max_length=500)
     public_repo = models.URLField(max_length=300)
     descriptor_file = models.FileField(max_length=512, upload_to=uploaded_file_path)
+    version = models.CharField(max_length=10)
     type = models.CharField(choices=PLUGIN_TYPE_CHOICES, default='ds', max_length=4)
     icon = models.URLField(max_length=300, blank=True)
     execshell = models.CharField(max_length=50, blank=True)
@@ -54,7 +55,6 @@ class Plugin(models.Model):
     description = models.CharField(max_length=800, blank=True)
     documentation = models.CharField(max_length=800, blank=True)
     license = models.CharField(max_length=50, blank=True)
-    version = models.CharField(max_length=10, blank=True)
     min_gpu_limit = models.IntegerField(null=True, blank=True)
     max_gpu_limit = models.IntegerField(null=True, blank=True)
     min_number_of_workers = models.IntegerField(null=True, blank=True, default=1)
@@ -70,6 +70,7 @@ class Plugin(models.Model):
     owner = models.ManyToManyField('auth.User', related_name='plugin')
 
     class Meta:
+        unique_together = ('name', 'version',)
         ordering = ('type',)
 
     def __str__(self):

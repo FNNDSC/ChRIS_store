@@ -44,20 +44,14 @@ class PluginManager(object):
 
         # create the parser for the "modify" command
         parser_modify = subparsers.add_parser('modify', help='Modify existing plugin')
-        parser_modify.add_argument('name', help="Plugin's name")
+        parser_modify.add_argument('id', type=int, help="Plugin's id")
         parser_modify.add_argument('publicrepo', help="Plugin's new public repo url")
         parser_modify.add_argument('dockerimage', help="Plugin's new docker image name")
         parser_modify.add_argument('--newowner', help="Plugin's new owner username")
-        parser_modify.add_argument('--newname', help="Plugin's new name")
-        group = parser_modify.add_mutually_exclusive_group()
-        group.add_argument("--descriptorfile", dest='descriptorfile', type=str,
-                           help="A json descriptor file with the plugin representation")
-        group.add_argument("--descriptorstring", dest='descriptorstring', type=str,
-                           help="A json string with the plugin representation")
 
         # create the parser for the "remove" command
         parser_remove = subparsers.add_parser('remove', help='Remove an existing plugin')
-        parser_remove.add_argument('name', help="Plugin's name")
+        parser_remove.add_argument('id', type=int, help="Plugin's id")
 
         self.parser = parser
 
@@ -65,7 +59,11 @@ class PluginManager(object):
         """
         Register/add a new plugin to the system.
         """
-        data = self.get_plugin_descriptors(args)
+        df = self.get_plugin_descriptor_file(args)
+        data = {'name': args.name, 'public_repo': args.publicrepo,
+                'dock_image': args.dockerimage, 'descriptor_file': df}
+        version = PluginSerializer.get_plugin_version_from_app_representation(df)
+        data['version'] = version  # version is a required descriptor
         plg_serializer = PluginSerializer(data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)
@@ -76,10 +74,10 @@ class PluginManager(object):
         Modify an existing/registered plugin and add the current date as a new plugin
         modification date.
         """
-        data = self.get_plugin_descriptors(args)
-        plugin = self.get_plugin(args.name)
-        if args.newname:
-            data['name'] = args.newname
+        plugin = self.get_plugin(args.id)
+        data = {'public_repo': args.publicrepo, 'dock_image': args.dockerimage,
+                'name': plugin.name, 'descriptor_file': plugin.descriptor_file,
+                'version': plugin.version}
         plg_serializer = PluginSerializer(plugin, data=data)
         plg_serializer.is_valid(raise_exception=True)
         plg_serializer.save()
@@ -97,7 +95,7 @@ class PluginManager(object):
         """
         Remove an existing/registered plugin from the system.
         """
-        plugin = self.get_plugin(args.name)
+        plugin = self.get_plugin(args.id)
         plugin.delete()
 
     def run(self, args=None):
@@ -105,11 +103,10 @@ class PluginManager(object):
         Parse the arguments passed to the manager and perform the appropriate action.
         """
         options = self.parser.parse_args(args)
-        if (options.subparser_name == 'add') or (options.subparser_name == 'modify'):
-            if (not options.descriptorfile) and (not options.descriptorstring):
+        if (options.subparser_name == 'add') and (not options.descriptorfile) and (
+                not options.descriptorstring):
                 self.parser.error("Either --descriptorFile or --descriptorString must be "
                                   "specified")
-
         if options.subparser_name == 'add':
             self.add_plugin(options)
         elif options.subparser_name == 'modify':
@@ -118,31 +115,28 @@ class PluginManager(object):
             self.remove_plugin(options)
 
     @staticmethod
-    def get_plugin(name):
+    def get_plugin(id):
         """
         Get an existing plugin.
         """
         try:
-            plugin = Plugin.objects.get(name=name)
+            plugin = Plugin.objects.get(pk=id)
         except Plugin.DoesNotExist:
-            raise NameError("Couldn't find '%s' plugin in the system" % name)
+            raise NameError("Couldn't find plugin with id '%s' in the system" % id)
         return plugin
 
     @staticmethod
-    def get_plugin_descriptors(args):
+    def get_plugin_descriptor_file(args):
         """
-        Get the plugin descriptors data given the parser's arguments.
+        Get the plugin descriptor file from the arguments.
         """
-        data = {'name': args.name, 'public_repo': args.publicrepo,
-                'dock_image': args.dockerimage}
         if args.descriptorfile:
-            data['descriptor_file'] = args.descriptorfile
+            f = args.descriptorfile
         else:
             app_repr = json.loads(args.descriptorstring)
             f = ContentFile(json.dumps(app_repr).encode())
             f.name = args.name + '.json'
-            data['descriptor_file'] = f
-        return data
+        return f
 
     @staticmethod
     def read_plugin_descriptor_file(descriptor_file_path):
@@ -158,5 +152,3 @@ class PluginManager(object):
 if __name__ == "__main__":
     manager = PluginManager()
     manager.run()
-
-
