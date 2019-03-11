@@ -89,6 +89,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             app_repr = self.read_app_representation(data['descriptor_file'])
 
             # check for required descriptors in the app representation
+            self.check_required_descriptor(app_repr, 'version')
             self.check_required_descriptor(app_repr, 'execshell')
             self.check_required_descriptor(app_repr, 'selfpath')
             self.check_required_descriptor(app_repr, 'selfexec')
@@ -273,22 +274,12 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         Custom method to read the submitted plugin app representation file.
         """
-        app_repr = {}
         try:
             app_repr = json.loads(app_representation_file.read().decode())
             app_representation_file.seek(0)
         except Exception:
-            serializers.ValidationError("Invalid json representation file")
+            raise serializers.ValidationError("Invalid json representation file")
         return app_repr
-
-    @staticmethod
-    def get_plugin_version_from_app_representation(app_representation_file):
-        """
-        Custom method to get the plugin version from the submitted plugin app
-        representation file.
-        """
-        app_repr = PluginSerializer.read_app_representation(app_representation_file)
-        return app_repr['version'] if 'version' in app_repr else None
 
 
 class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
