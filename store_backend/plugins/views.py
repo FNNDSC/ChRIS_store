@@ -62,10 +62,7 @@ class UserPluginList(generics.ListCreateAPIView):
         """
         Overriden to include required version descriptor in the request dict.
         """
-        if 'descriptor_file' in request.data:
-            df = request.data['descriptor_file']
-            version = PluginSerializer.get_plugin_version_from_app_representation(df)
-            request.data['version'] = version  # version is a required descriptor
+        request.data['version'] = '0.1'
         return super(UserPluginList, self).create(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
