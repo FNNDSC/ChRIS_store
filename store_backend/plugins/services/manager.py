@@ -60,10 +60,8 @@ class PluginManager(object):
         Register/add a new plugin to the system.
         """
         df = self.get_plugin_descriptor_file(args)
-        data = {'name': args.name, 'public_repo': args.publicrepo,
+        data = {'name': args.name, 'public_repo': args.publicrepo, 'version': '0.1',
                 'dock_image': args.dockerimage, 'descriptor_file': df}
-        version = PluginSerializer.get_plugin_version_from_app_representation(df)
-        data['version'] = version  # version is a required descriptor
         plg_serializer = PluginSerializer(data=data)
         plg_serializer.is_valid(raise_exception=True)
         owner = User.objects.get(username=args.owner)
