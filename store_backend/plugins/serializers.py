@@ -72,7 +72,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to add modification date.
         """
         validated_data.update({'modification_date': timezone.now()})
-        super(PluginSerializer, self).update(instance, validated_data)
+        return super(PluginSerializer, self).update(instance, validated_data)
 
     @collection_serializer_is_valid
     def is_valid(self, raise_exception=False):
