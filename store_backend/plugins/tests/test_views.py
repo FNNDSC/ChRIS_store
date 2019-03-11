@@ -21,13 +21,30 @@ class ViewTests(TestCase):
         self.plugin_name = 'simplefsapp'
         self.content_type = 'application/vnd.collection+json'
 
+        plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
+                                      'optional': True, 'flag':'--dir', 'default': './',
+                                      'help': 'test plugin'}]
+        plg_repr = {}
+        plg_repr['type'] = 'fs'
+        plg_repr['icon'] = 'http://github.com/plugin'
+        plg_repr['authors'] = 'DEV FNNDSC'
+        plg_repr['title'] = 'Dir plugin'
+        plg_repr['description'] = 'Dir test plugin'
+        plg_repr['license'] = 'MIT'
+        plg_repr['version'] = 'v0.1'
+        plg_repr['execshell'] = 'python3'
+        plg_repr['selfpath'] = '/usr/src/simplefsapp'
+        plg_repr['selfexec'] = 'simplefsapp.py'
+        plg_repr['parameters'] = plugin_parameters
+        self.plg_repr = plg_repr
+
         # create basic models
 
         # create a chris store user
         user = User.objects.create_user(username=self.username, email=self.email,
                                  password=self.password)
         # create a plugin
-        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name,
+        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name, version='v0.1',
                                                     title='chris app', type='fs')
         plugin.owner.set([user])
 
@@ -55,38 +72,22 @@ class PluginListViewTests(ViewTests):
 
 class UserPluginListViewTests(ViewTests):
     """
-    Test the plugin-list view
+    Test the user-plugin-list view
     """
 
     def setUp(self):
         super(UserPluginListViewTests, self).setUp()
         self.create_read_url = reverse("user-plugin-list")
+        self.post = {"descriptor_file": "", "name": "testplugin",
+                     "public_repo": "http://localhost", "dock_image": "pl-testplugin"}
 
     @tag('integration')
     def test_integration_plugin_create_success(self):
-
-        plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
-                                      'optional': False, 'flag':'--dir', 'default': '',
-                                      'help': 'test plugin'}]
-        plg_repr = {}
-        plg_repr['type'] = 'fs'
-        plg_repr['icon'] = 'http://github.com/plugin'
-        plg_repr['authors'] = 'DEV FNNDSC'
-        plg_repr['title'] = 'Dir plugin'
-        plg_repr['description'] = 'Dir test plugin'
-        plg_repr['license'] = 'MIT'
-        plg_repr['version'] = 'v0.1'
-        plg_repr['execshell'] = 'python3'
-        plg_repr['selfpath'] = '/usr/src/simplefsapp'
-        plg_repr['selfexec'] = 'simplefsapp.py'
-        plg_repr['parameters'] = plugin_parameters
-
-        self.client.login(username=self.username, password=self.password)
-        with io.StringIO(json.dumps(plg_repr)) as f:
-            post = {"descriptor_file": f, "name": "testplugin",
-                    "public_repo": "http://localhost", "dock_image": "pl-testplugin"}
-            # multipart request
-            response = self.client.post(self.create_read_url, data=post)
+        with io.StringIO(json.dumps(self.plg_repr)) as f:
+            self.post["descriptor_file"] = f
+            self.client.login(username=self.username, password=self.password)
+            #  multipart request
+            response = self.client.post(self.create_read_url, data=self.post)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_plugin_create_failure_unauthenticated(self):
@@ -95,30 +96,32 @@ class UserPluginListViewTests(ViewTests):
 
     def test_plugin_create_failure_missing_descriptor_file(self):
         self.client.login(username=self.username, password=self.password)
-        post = { "name": "testplugin", "public_repo": "http://localhost",
-                 "dock_image": "pl-testplugin"}
-        response = self.client.post(self.create_read_url, data=post)
+        response = self.client.post(self.create_read_url, data=self.post,
+                                    content_type=self.content_type)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_plugin_create_failure_missing_public_repo(self):
-        self.client.login(username=self.username, password=self.password)
-        post = { "name": "testplugin", "descriptor_file": io.StringIO("file content"),
-                 "dock_image": "pl-testplugin"}
-        response = self.client.post(self.create_read_url, data=post)
+        del self.post["public_repo"]
+        with io.StringIO(json.dumps(self.plg_repr)) as f:
+            self.post["descriptor_file"] = f
+            self.client.login(username=self.username, password=self.password)
+            response = self.client.post(self.create_read_url, data=self.post)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_plugin_create_failure_missing_dock_image(self):
-        self.client.login(username=self.username, password=self.password)
-        post = { "name": "testplugin", "descriptor_file": io.StringIO("file content"),
-                 "public_repo": "http://localhost"}
-        response = self.client.post(self.create_read_url, data=post)
+        del self.post["dock_image"]
+        with io.StringIO(json.dumps(self.plg_repr)) as f:
+            self.post["descriptor_file"] = f
+            self.client.login(username=self.username, password=self.password)
+            response = self.client.post(self.create_read_url, data=self.post)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_plugin_create_failure_name_already_exists(self):
-        self.client.login(username=self.username, password=self.password)
-        post = { "name": self.plugin_name, "descriptor_file": io.StringIO("file content"),
-                 "dock_image": "pl-testplugin", "public_repo": "http://localhost" }
-        response = self.client.post(self.create_read_url, data=post)
+    def test_plugin_create_failure_name_version_combination_already_exists(self):
+        self.post["name"] = self.plugin_name
+        with io.StringIO(json.dumps(self.plg_repr)) as f:
+            self.post["descriptor_file"] = f
+            self.client.login(username=self.username, password=self.password)
+            response = self.client.post(self.create_read_url, data=self.post)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_plugin_list_success(self):

@@ -49,7 +49,7 @@ class PluginSerializerTests(TestCase):
             action=self.plugin_parameters[0]['action'],
             flag=self.plugin_parameters[0]['flag'])
         param_names = plugin.get_plugin_parameter_names()
-        self.assertEquals(param_names, [self.plugin_parameters[0]['name']])
+        self.assertEqual(param_names, [self.plugin_parameters[0]['name']])
 
     def test_read_app_representation(self):
         """
@@ -57,7 +57,7 @@ class PluginSerializerTests(TestCase):
         representation dictionary from an uploaded json representation file.
         """
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
-            self.assertEquals(PluginSerializer.read_app_representation(f), self.plg_repr)
+            self.assertEqual(PluginSerializer.read_app_representation(f), self.plg_repr)
 
     def test_check_required_descriptor(self):
         """
@@ -117,7 +117,7 @@ class PluginSerializerTests(TestCase):
         """
         with self.assertRaises(serializers.ValidationError):
             PluginSerializer.validate_app_cpu_descriptor('100me')
-            self.assertEquals(100, PluginSerializer.validate_app_cpu_descriptor('100m'))
+            self.assertEqual(100, PluginSerializer.validate_app_cpu_descriptor('100m'))
 
     def test_validate_app_memory_descriptor(self):
         """
@@ -126,8 +126,8 @@ class PluginSerializerTests(TestCase):
         """
         with self.assertRaises(serializers.ValidationError):
             PluginSerializer.validate_app_cpu_descriptor('100me')
-            self.assertEquals(100, PluginSerializer.validate_app_cpu_descriptor('100mi'))
-            self.assertEquals(100, PluginSerializer.validate_app_cpu_descriptor('100gi'))
+            self.assertEqual(100, PluginSerializer.validate_app_cpu_descriptor('100mi'))
+            self.assertEqual(100, PluginSerializer.validate_app_cpu_descriptor('100gi'))
 
     def test_validate_app_parameters(self):
         """
@@ -146,9 +146,8 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method raises a ValidationError when required
         'execshell' descriptor is missing from the plugin app representation.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
         del self.plg_repr['execshell'] # remove required 'execshell' from representation
+        plg_serializer = PluginSerializer()
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
             data = {'descriptor_file': f}
             with self.assertRaises(serializers.ValidationError):
@@ -159,8 +158,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method raises a ValidationError when required
         'selfpath' descriptor is missing from the plugin app representation.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         del self.plg_repr['selfpath'] # remove required 'selfpath' from representation
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
             data = {'descriptor_file': f}
@@ -172,8 +170,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method raises a ValidationError when required
         'selfexec' descriptor is missing from the plugin app representation.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         del self.plg_repr['selfexec'] # remove required 'selfexec' from representation
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
             data = {'descriptor_file': f}
@@ -185,8 +182,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method raises a ValidationError when required
         'parameters' descriptor is missing from the plugin app representation.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         del self.plg_repr['parameters'] # remove required 'parameters' from representation
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
             data = {'descriptor_file': f}
@@ -294,8 +290,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate method raises a ValidationError when the
         'max_number_of_workers' is smaller than the 'min_number_of_workers'.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         self.plg_repr['min_number_of_workers'] = 2
         self.plg_repr['max_number_of_workers'] = 1
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -308,8 +303,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate method raises a ValidationError when the
         'max_cpu_limit' is smaller than the 'min_cpu_limit'.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         self.plg_repr['min_cpu_limit'] = 200
         self.plg_repr['max_cpu_limit'] = 100
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -322,8 +316,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate method raises a ValidationError when the
         'max_memory_limit' is smaller than the 'min_memory_limit'.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         self.plg_repr['min_memory_limit'] = 100000
         self.plg_repr['max_memory_limit'] = 10000
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -336,8 +329,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate method raises a ValidationError when the
         'max_gpu_limit' is smaller than the 'max_gpu_limit'.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         self.plg_repr['min_gpu_limit'] = 2
         self.plg_repr['max_gpu_limit'] = 1
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -349,8 +341,7 @@ class PluginSerializerTests(TestCase):
         """
         Test whether custom validate method validates submitted plugin's parameters.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         parameter_list = self.plg_repr['parameters']
         parameter_list[0]['type'] = 'booleano'
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -363,8 +354,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate method updates validated data with the plugin app
         representation.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        plg_serializer = PluginSerializer(plugin)
+        plg_serializer = PluginSerializer()
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
             data = {'descriptor_file': f}
             new_data = plg_serializer.validate(data)

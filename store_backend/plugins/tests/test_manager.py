@@ -1,5 +1,6 @@
 
 import json
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
@@ -58,13 +59,6 @@ class PluginManagerTests(TestCase):
 
         self.pl_manager = manager.PluginManager()
 
-    def test_mananger_can_get_plugin(self):
-        """
-        Test whether the manager can return a plugin object.
-        """
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        self.assertEquals(plugin, self.pl_manager.get_plugin(plugin.id))
-
     def test_mananger_can_add_plugin(self):
         """
         Test whether the manager can add a new plugin to the system.
@@ -72,7 +66,7 @@ class PluginManagerTests(TestCase):
         self.pl_manager.run(['add', 'testapp', self.username, 'http://github.com/repo',
                              'fnndsc/pl-testapp', '--descriptorstring',
                              json.dumps(self.plg_repr)])
-        self.assertEquals(Plugin.objects.count(), 2)
+        self.assertEqual(Plugin.objects.count(), 2)
         self.assertTrue(PluginParameter.objects.count() > 1)
 
     def test_mananger_can_modify_plugin(self):
@@ -83,6 +77,10 @@ class PluginManagerTests(TestCase):
         user = User.objects.create_user(username='another', email='another@babymri.org',
                                  password='anotherpassword')
         plugin = Plugin.objects.get(name=self.plugin_name)
+        f = ContentFile(json.dumps(self.plg_repr).encode())
+        f.name = self.plugin_name + '.json'
+        plugin.descriptor_file = f
+        plugin.save()
         initial_modification_date = plugin.modification_date
         self.pl_manager.run(['modify', str(plugin.id), 'http://github.com/repo',
                              'fnndsc/pl-testapp', '--newowner', user.username])
@@ -97,5 +95,27 @@ class PluginManagerTests(TestCase):
         """
         plugin = Plugin.objects.get(name=self.plugin_name)
         self.pl_manager.run(['remove', str(plugin.id)])
-        self.assertEquals(Plugin.objects.count(), 0)
-        self.assertEquals(PluginParameter.objects.count(), 0)
+        self.assertEqual(Plugin.objects.count(), 0)
+        self.assertEqual(PluginParameter.objects.count(), 0)
+
+    def test_mananger_can_get_plugin(self):
+        """
+        Test whether the manager can return a plugin object.
+        """
+        plugin = Plugin.objects.get(name=self.plugin_name)
+        self.assertEqual(plugin, self.pl_manager.get_plugin(plugin.id))
+
+    def test_mananger_can_get_plugin_descriptor_file(self):
+        """
+        Test whether the manager can get a plugin descriptor file from the arguments.
+        """
+        arg = mock.Mock()
+        f = ContentFile(json.dumps(self.plg_repr).encode())
+        f.name = self.plugin_name + '.json'
+        arg.descriptorfile = f
+        self.assertEqual(f, self.pl_manager.get_plugin_descriptor_file(arg))
+        arg.descriptorfile = None
+        arg.descriptorstring = json.dumps(self.plg_repr)
+        arg.name = self.plugin_name + '.json'
+        f = self.pl_manager.get_plugin_descriptor_file(arg)
+        self.assertEqual(self.plg_repr, json.load(f))

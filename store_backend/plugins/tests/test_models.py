@@ -54,7 +54,7 @@ class PluginModelTests(ModelTests):
             optional=self.plugin_parameters[0]['optional'],
             flag=self.plugin_parameters[0]['flag'])
         param_names = plugin.get_plugin_parameter_names()
-        self.assertEquals(param_names, [self.plugin_parameters[0]['name']])
+        self.assertEqual(param_names, [self.plugin_parameters[0]['name']])
 
 
 class PluginFilterTests(ModelTests):
