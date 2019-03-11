@@ -138,14 +138,6 @@ class PluginManager(object):
             f.name = args.name + '.json'
         return f
 
-    @staticmethod
-    def read_plugin_descriptor_file(descriptor_file_path):
-        """
-        Read the plugin's descriptor json file given its path.
-        """
-        with open(descriptor_file_path) as descriptor_file:
-            return json.load(descriptor_file)
-
 
 
 # ENTRYPOINT
