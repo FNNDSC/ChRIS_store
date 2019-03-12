@@ -6,6 +6,7 @@ from unittest import mock
 from django.test import TestCase, tag
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
 
 from rest_framework import status
 
@@ -95,8 +96,12 @@ class UserPluginListViewTests(ViewTests):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_plugin_create_failure_missing_descriptor_file(self):
+        post = json.dumps({
+            "template": {"data": [{"name": "name", "value": "testplugin"},
+                                  {"name": "public_repo", "value": "http://localhost.com"},
+                                  {"name": "dock_image", "value": "pl-testplugin"}]}})
         self.client.login(username=self.username, password=self.password)
-        response = self.client.post(self.create_read_url, data=self.post,
+        response = self.client.post(self.create_read_url, data=post,
                                     content_type=self.content_type)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -143,32 +148,62 @@ class PluginDetailViewTests(ViewTests):
         super(PluginDetailViewTests, self).setUp()
 
         plugin = Plugin.objects.get(name=self.plugin_name)
-        self.read_update_url = reverse("plugin-detail", kwargs={"pk": plugin.id})
+        self.read_update_delete_url = reverse("plugin-detail", kwargs={"pk": plugin.id})
+
+        # create another chris store user
+        User.objects.create_user(username='another', email='another@babymri.org',
+                                 password='another-pass')
 
     def test_plugin_detail_success(self):
         self.client.login(username=self.username, password=self.password)
-        response = self.client.get(self.read_update_url)
+        response = self.client.get(self.read_update_delete_url)
         self.assertContains(response, self.plugin_name)
 
     def test_plugin_detail_failure_unauthenticated(self):
-        response = self.client.get(self.read_update_url)
+        response = self.client.get(self.read_update_delete_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_plugin_update_success(self):
-        pass # self.client limited as it doesn't support multipart data on PUT requests
+        plugin = Plugin.objects.get(name=self.plugin_name)
+        f = ContentFile(json.dumps(self.plg_repr).encode())
+        f.name = self.plugin_name + '.json'
+        plugin.descriptor_file = f
+        plugin.save()
+        put = json.dumps({
+            "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
+                                  {"name": "owner", "value": "another"},
+                                  {"name": "dock_image", "value": "pl-testplugin11"}]}})
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.put(self.read_update_delete_url, data=put,
+                                   content_type=self.content_type)
+        self.assertContains(response, "http://localhost11")
+        self.assertContains(response, "pl-testplugin11")
+        self.assertEqual(len(plugin.owner.all()), 2)
 
     def test_plugin_update_failure_unauthenticated(self):
-        response = self.client.put(self.read_update_url, data={},
+        response = self.client.put(self.read_update_delete_url, data={},
                                    content_type=self.content_type)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_plugin_update_failure_access_denied(self):
-        # create another chris store user
-        User.objects.create_user(username='another', email='another@babymri.org',
-                                 password='anotherpassword')
-        self.client.login(username='another', password='anotherpassword')
-        response = self.client.put(self.read_update_url, data={},
+        self.client.login(username='another', password='another-pass')
+        response = self.client.put(self.read_update_delete_url, data={},
                                    content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_plugin_delete_success(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Plugin.objects.count(), 0)
+
+    def test_plugin_delete_failure_unauthenticated(self):
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_delete_failure_access_denied(self):
+        self.client.login(username='another', password='another-pass')
+        response = self.client.delete(self.read_update_delete_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
@@ -191,11 +226,10 @@ class PluginListQuerySearchViewTests(ViewTests):
         self.assertContains(response, self.plugin_name)
 
     def test_plugin_list_query_search_across_name_title_category_success(self):
-        search_params = '?name=chris&title=chris&category=chris'
+        search_params = '?name_title_category=chris'
         list_url = reverse("plugin-list-query-search") + search_params
         response = self.client.get(list_url)
-        self.assertContains(response, 'chris')
-
+        self.assertContains(response, 'chris app')
 
 
 class PluginParameterListViewTests(ViewTests):
