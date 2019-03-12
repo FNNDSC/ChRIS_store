@@ -60,9 +60,11 @@ class UserPluginList(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """
-        Overriden to include required version descriptor in the request dict.
+        Overriden to include required version descriptor in the request dict before
+        serializer validation.
         """
-        request.data['version'] = '0.1'
+        # we can assign any string here that will unlikely be used as a version value
+        request.data['version'] = 'nullnull'
         return super(UserPluginList, self).create(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
@@ -124,7 +126,8 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
 
     def update(self, request, *args, **kwargs):
         """
-        Overriden to override descriptors that are not allowed to be updated.
+        Overriden to override descriptors that are not allowed to be updated before
+        serializer validation.
         """
         plugin = self.get_object()
         request.data['name'] = plugin.name
