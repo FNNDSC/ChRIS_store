@@ -92,12 +92,15 @@ class PluginFilter(FilterSet):
     owner_username = django_filters.CharFilter(field_name='owner__username',
                                                lookup_expr='icontains')
     name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
+    name_exact = django_filters.CharFilter(field_name='name', lookup_expr='exact')
     title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
     category = django_filters.CharFilter(field_name='category', lookup_expr='icontains')
     description = django_filters.CharFilter(field_name='description',
                                             lookup_expr='icontains')
     authors = django_filters.CharFilter(field_name='authors', lookup_expr='icontains')
     name_title_category = django_filters.CharFilter(method='search_name_title_category')
+    name_latest = django_filters.CharFilter(method='search_latest')
+    name_exact_latest = django_filters.CharFilter(method='search_latest')
 
     def search_name_title_category(self, queryset, name, value):
         """
@@ -108,12 +111,30 @@ class PluginFilter(FilterSet):
         lookup = models.Q(name__icontains=value) | models.Q(title__icontains=value)
         lookup = lookup | models.Q(category__icontains=value)
         return queryset.filter(lookup)
+
+    def search_latest(self, queryset, name, value):
+        """
+        Custom method to get a filtered queryset with the latest version according to
+        creation date of all plugins whose name matches the search value.
+        """
+        if name == 'name_exact_latest':
+            return queryset.filter(name=value).order_by('-creation_date')[:1]
+        else:
+            qs = queryset.filter(name__icontains=value).order_by('name', '-creation_date')
+            result_id_list = []
+            plg_name = ''
+            for plg in qs:
+                if plg.name != plg_name:
+                    result_id_list.append(plg.id)
+                    plg_name = plg.name
+            return qs.filter(pk__in=result_id_list)
     
     class Meta:
         model = Plugin
-        fields = ['id', 'name', 'dock_image', 'public_repo', 'type', 'category', 'authors',
+        fields = ['id', 'name', 'name_latest', 'name_exact', 'name_exact_latest',
+                  'dock_image', 'public_repo', 'type', 'category', 'authors',
                   'owner_username', 'min_creation_date', 'max_creation_date', 'title',
-                  'description', 'name_title_category']
+                  'version', 'description', 'name_title_category']
 
 
 class PluginParameter(models.Model):
