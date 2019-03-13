@@ -35,6 +35,10 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to validate and save all the plugin descriptors and parameters
         associated with the plugin when creating it.
         """
+        # assign the full list of owners for the plugin name or raise error
+        owner = validated_data['owner'][0]
+        validated_data['owner'] = self.validate_name_owner(owner, validated_data['name'])
+
         # run all default validators for the full set of plugin fields
         request_parameters = validated_data['parameters']
         del validated_data['parameters']
@@ -170,6 +174,21 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             # update the request data
             data.update(app_repr)
         return data
+
+    @staticmethod
+    def validate_name_owner(owner, name):
+        """
+        Custom method to check if plugin name already exists and this user is not an
+        owner.
+        """
+        plg = Plugin.objects.filter(name=name).first()
+        owners = [owner]
+        if plg:
+            owners = list(plg.owner.all())
+            if owner not in owners:
+                raise serializers.ValidationError(
+                    {'detail': "plugin name %s is already owned by another user" % name})
+        return owners
 
     @staticmethod
     def validate_new_owner(username):

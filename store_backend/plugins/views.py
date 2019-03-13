@@ -1,4 +1,5 @@
 
+from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.reverse import reverse
 
@@ -122,7 +123,12 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
             new_owner = serializer.validate_new_owner(username)
             owners = [o for o in plugin.owner.all()]
             owners.append(new_owner)
-            plugin.owner.set(owners)
+            # update list of owners for all plugins with same name
+            plg_list = Plugin.objects.filter(name=plugin.name)
+            for plg in plg_list:
+                plg.owner.set(owners)
+                plg.modification_date = timezone.now()
+                plg.save()
 
     def update(self, request, *args, **kwargs):
         """

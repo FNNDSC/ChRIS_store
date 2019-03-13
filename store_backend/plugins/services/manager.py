@@ -85,9 +85,12 @@ class PluginManager(object):
                 new_owner = plg_serializer.validate_new_owner(args.newowner)
                 owners = [o for o in plugin.owner.all()]
                 owners.append(new_owner)
-                plugin.owner.set(owners)
-        plugin.modification_date = timezone.now()
-        plugin.save()
+                # update list of owners for all plugins with same name
+                plg_list = Plugin.objects.filter(name=plugin.name)
+                for plg in plg_list:
+                    plg.owner.set(owners)
+                    plg.modification_date = timezone.now()
+                    plg.save()
 
     def remove_plugin(self, args):
         """
