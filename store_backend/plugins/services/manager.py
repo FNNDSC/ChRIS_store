@@ -15,7 +15,6 @@ if "DJANGO_SETTINGS_MODULE" not in os.environ:
     import django
     django.setup()
 
-from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.contrib.auth.models import User
 from plugins.models import Plugin
@@ -69,8 +68,7 @@ class PluginManager(object):
 
     def modify_plugin(self, args):
         """
-        Modify an existing/registered plugin and add the current date as a new plugin
-        modification date.
+        Modify an existing/registered plugin.
         """
         plugin = self.get_plugin(args.id)
         data = {'public_repo': args.publicrepo, 'dock_image': args.dockerimage,
@@ -78,19 +76,10 @@ class PluginManager(object):
                 'version': plugin.version}
         plg_serializer = PluginSerializer(plugin, data=data)
         plg_serializer.is_valid(raise_exception=True)
-        plg_serializer.save()
         if args.newowner:
-            owners = plugin.owner.values('username')
-            if {'username': args.newowner} not in owners:
-                new_owner = plg_serializer.validate_new_owner(args.newowner)
-                owners = [o for o in plugin.owner.all()]
-                owners.append(new_owner)
-                # update list of owners for all plugins with same name
-                plg_list = Plugin.objects.filter(name=plugin.name)
-                for plg in plg_list:
-                    plg.owner.set(owners)
-                    plg.modification_date = timezone.now()
-                    plg.save()
+            new_owner = plg_serializer.validate_new_owner(args.newowner)
+            plugin.add_owner(new_owner)
+        plg_serializer.save()
 
     def remove_plugin(self, args):
         """

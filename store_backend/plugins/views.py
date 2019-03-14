@@ -1,5 +1,4 @@
 
-from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.reverse import reverse
 
@@ -107,28 +106,11 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
         Overriden to update plugin's owners if requested by a PUT request.
         """
         if 'owner' in self.request.data:
-            self.update_owners(serializer)
+            new_owner_username = self.request.data.pop('owner')
+            new_owner = serializer.validate_new_owner(new_owner_username)
+            plugin = self.get_object()
+            plugin.add_owner(new_owner)
         super(PluginDetail, self).perform_update(serializer)
-
-    def update_owners(self, serializer):
-        """
-        Custom method to update the plugin's owners.
-        """
-        plugin = self.get_object()
-        owners = plugin.owner.values('username')
-        username = self.request.data.pop('owner')
-        if isinstance(username, list):
-            username = username[0]
-        if {'username': username} not in owners:
-            new_owner = serializer.validate_new_owner(username)
-            owners = [o for o in plugin.owner.all()]
-            owners.append(new_owner)
-            # update list of owners for all plugins with same name
-            plg_list = Plugin.objects.filter(name=plugin.name)
-            for plg in plg_list:
-                plg.owner.set(owners)
-                plg.modification_date = timezone.now()
-                plg.save()
 
     def update(self, request, *args, **kwargs):
         """
