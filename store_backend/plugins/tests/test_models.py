@@ -34,8 +34,9 @@ class ModelTests(TestCase):
                                  password=self.password)
 
         # create a plugin
-        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name)
+        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name, version='0.1')
         plugin.owner.set([user])
+
 
 class PluginModelTests(ModelTests):
 
@@ -55,6 +56,25 @@ class PluginModelTests(ModelTests):
             flag=self.plugin_parameters[0]['flag'])
         param_names = plugin.get_plugin_parameter_names()
         self.assertEqual(param_names, [self.plugin_parameters[0]['name']])
+
+    def test_add_owner(self):
+        """
+        Test whether custom add_owner method can add a new owner to a plugin and all
+        its versions.
+        """
+        plugin_v1 = Plugin.objects.get(name=self.plugin_name)
+        (plugin_v2, tf) = Plugin.objects.get_or_create(name=self.plugin_name, version='0.2')
+        user1 = User.objects.get(username=self.username)
+        plugin_v2.owner.set([user1])
+        user2 = User.objects.create_user(username='another', email='another@babymri.org',
+                                 password='another-pass')
+        plugin_v2.add_owner(user2)
+        plugin_v1_owners = plugin_v1.owner.all()
+        plugin_v2_owners = plugin_v2.owner.all()
+        self.assertIn(user1, plugin_v1_owners)
+        self.assertIn(user2, plugin_v2_owners)
+        self.assertIn(user1, plugin_v1_owners)
+        self.assertIn(user2, plugin_v2_owners)
 
 
 class PluginFilterTests(ModelTests):
