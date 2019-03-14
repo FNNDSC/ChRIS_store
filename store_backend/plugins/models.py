@@ -83,6 +83,20 @@ class Plugin(models.Model):
         params = self.parameters.all()
         return [param.name for param in params]
 
+    def add_owner(self, new_owner):
+        """
+        Custom method to add a new owner to the plugin.
+        """
+        owners = [o for o in self.owner.all()]
+        if new_owner not in owners:
+            owners.append(new_owner)
+            # update list of owners for all plugins with same name
+            plg_list = Plugin.objects.filter(name=self.name)
+            for plg in plg_list:
+                plg.owner.set(owners)
+                plg.modification_date = timezone.now()
+                plg.save()
+
 
 class PluginFilter(FilterSet):
     min_creation_date = django_filters.DateFilter(field_name='creation_date',
