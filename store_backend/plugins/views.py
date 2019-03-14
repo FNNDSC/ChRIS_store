@@ -58,6 +58,15 @@ class UserPluginList(generics.ListCreateAPIView):
         """
         serializer.save(owner=[self.request.user])
 
+    def create(self, request, *args, **kwargs):
+        """
+        Overriden to include required version descriptor in the request dict before
+        serializer validation.
+        """
+        # we can assign any string here that will unlikely be used as a version value
+        request.data['version'] = 'nullnull'
+        return super(UserPluginList, self).create(request, *args, **kwargs)
+
     def list(self, request, *args, **kwargs):
         """
         Overriden to append document-level link relations and a collection+json template
@@ -97,31 +106,29 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
         Overriden to update plugin's owners if requested by a PUT request.
         """
         if 'owner' in self.request.data:
-            self.update_owners(serializer)
+            new_owner_username = self.request.data.pop('owner')
+            new_owner = serializer.validate_new_owner(new_owner_username)
+            plugin = self.get_object()
+            plugin.add_owner(new_owner)
         super(PluginDetail, self).perform_update(serializer)
 
-    def update_owners(self, serializer):
+    def update(self, request, *args, **kwargs):
         """
-        Custom method to update the plugin's owners.
+        Overriden to override descriptors that are not allowed to be updated before
+        serializer validation.
         """
         plugin = self.get_object()
-        owners = plugin.owner.values('username')
-        username = self.request.data.pop('owner')
-        if isinstance(username, list):
-            username = username[0]
-        if {'username': username} not in owners:
-            new_owner = serializer.validate_new_owner(username)
-            owners = [o for o in plugin.owner.all()]
-            owners.append(new_owner)
-            plugin.owner.set(owners)
+        request.data['name'] = plugin.name
+        request.data['descriptor_file'] = plugin.descriptor_file
+        request.data['version'] = plugin.version
+        return super(PluginDetail, self).update(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         """
         Overriden to append a collection+json template.
         """
         response = super(PluginDetail, self).retrieve(request, *args, **kwargs)
-        template_data = {'name': '', 'dock_image': '', 'public_repo': '',
-                         'descriptor_file': '', 'owner': ''}
+        template_data = {'dock_image': '', 'public_repo': '', 'owner': ''}
         return services.append_collection_template(response, template_data)
 
 

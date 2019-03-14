@@ -92,30 +92,30 @@ Open another terminal and run
 ```bash
 docker ps
 ```
-Find out from the previous output the name of the container running the Django server in interactive mode (usually *chrisstore_chris_store_dev_run_1*) and run the Unit tests and Integration tests within that container. For instance to run only the Unit tests:
+Find out from the previous output the name of the container running the Django server in interactive mode (usually *chris_store_chris_store_dev_run_1*) and run the Unit tests and Integration tests within that container. For instance to run only the Unit tests:
 
 ```bash
-docker exec -it chrisstore_chris_store_dev_run_1 python manage.py test --exclude-tag integration
+docker exec -it chris_store_chris_store_dev_run_1 python manage.py test --exclude-tag integration
 ```
 
 To run only the Integration tests:
 
 ```bash
-docker exec -it chrisstore_chris_store_dev_run_1 python manage.py test --tag integration
+docker exec -it chris_store_chris_store_dev_run_1 python manage.py test --tag integration
 ```
 
 To run all the tests:
 
 ```bash
-docker exec -it chrisstore_chris_store_dev_run_1 python manage.py test 
+docker exec -it chris_store_chris_store_dev_run_1 python manage.py test
 ```
 
 ### Check code coverage of the automated tests
 Make sure the **store_backend/** dir is world writable. Then type:
 
 ```bash
-docker exec -it chrisstore_chris_store_dev_run_1 coverage run --source=plugins,users manage.py test
-docker exec -it chrisstore_chris_store_dev_run_1 coverage report
+docker exec -it chris_store_chris_store_dev_run_1 coverage run --source=plugins,users manage.py test
+docker exec -it chris_store_chris_store_dev_run_1 coverage report
 ```
 
 ### Using httpie to play with the REST API 

@@ -39,10 +39,11 @@ class Plugin(models.Model):
                }
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     dock_image = models.CharField(max_length=500)
     public_repo = models.URLField(max_length=300)
     descriptor_file = models.FileField(max_length=512, upload_to=uploaded_file_path)
+    version = models.CharField(max_length=10)
     type = models.CharField(choices=PLUGIN_TYPE_CHOICES, default='ds', max_length=4)
     icon = models.URLField(max_length=300, blank=True)
     execshell = models.CharField(max_length=50, blank=True)
@@ -54,7 +55,6 @@ class Plugin(models.Model):
     description = models.CharField(max_length=800, blank=True)
     documentation = models.CharField(max_length=800, blank=True)
     license = models.CharField(max_length=50, blank=True)
-    version = models.CharField(max_length=10, blank=True)
     min_gpu_limit = models.IntegerField(null=True, blank=True)
     max_gpu_limit = models.IntegerField(null=True, blank=True)
     min_number_of_workers = models.IntegerField(null=True, blank=True, default=1)
@@ -70,6 +70,7 @@ class Plugin(models.Model):
     owner = models.ManyToManyField('auth.User', related_name='plugin')
 
     class Meta:
+        unique_together = ('name', 'version',)
         ordering = ('type',)
 
     def __str__(self):
@@ -82,6 +83,20 @@ class Plugin(models.Model):
         params = self.parameters.all()
         return [param.name for param in params]
 
+    def add_owner(self, new_owner):
+        """
+        Custom method to add a new owner to the plugin.
+        """
+        owners = [o for o in self.owner.all()]
+        if new_owner not in owners:
+            owners.append(new_owner)
+            # update list of owners for all plugins with same name
+            plg_list = Plugin.objects.filter(name=self.name)
+            for plg in plg_list:
+                plg.owner.set(owners)
+                plg.modification_date = timezone.now()
+                plg.save()
+
 
 class PluginFilter(FilterSet):
     min_creation_date = django_filters.DateFilter(field_name='creation_date',
@@ -91,12 +106,15 @@ class PluginFilter(FilterSet):
     owner_username = django_filters.CharFilter(field_name='owner__username',
                                                lookup_expr='icontains')
     name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
+    name_exact = django_filters.CharFilter(field_name='name', lookup_expr='exact')
     title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
     category = django_filters.CharFilter(field_name='category', lookup_expr='icontains')
     description = django_filters.CharFilter(field_name='description',
                                             lookup_expr='icontains')
     authors = django_filters.CharFilter(field_name='authors', lookup_expr='icontains')
     name_title_category = django_filters.CharFilter(method='search_name_title_category')
+    name_latest = django_filters.CharFilter(method='search_latest')
+    name_exact_latest = django_filters.CharFilter(method='search_latest')
 
     def search_name_title_category(self, queryset, name, value):
         """
@@ -107,12 +125,30 @@ class PluginFilter(FilterSet):
         lookup = models.Q(name__icontains=value) | models.Q(title__icontains=value)
         lookup = lookup | models.Q(category__icontains=value)
         return queryset.filter(lookup)
+
+    def search_latest(self, queryset, name, value):
+        """
+        Custom method to get a filtered queryset with the latest version according to
+        creation date of all plugins whose name matches the search value.
+        """
+        if name == 'name_exact_latest':
+            return queryset.filter(name=value).order_by('-creation_date')[:1]
+        else:
+            qs = queryset.filter(name__icontains=value).order_by('name', '-creation_date')
+            result_id_list = []
+            plg_name = ''
+            for plg in qs:
+                if plg.name != plg_name:
+                    result_id_list.append(plg.id)
+                    plg_name = plg.name
+            return qs.filter(pk__in=result_id_list)
     
     class Meta:
         model = Plugin
-        fields = ['id', 'name', 'dock_image', 'public_repo', 'type', 'category', 'authors',
+        fields = ['id', 'name', 'name_latest', 'name_exact', 'name_exact_latest',
+                  'dock_image', 'public_repo', 'type', 'category', 'authors',
                   'owner_username', 'min_creation_date', 'max_creation_date', 'title',
-                  'description', 'name_title_category']
+                  'version', 'description', 'name_title_category']
 
 
 class PluginParameter(models.Model):

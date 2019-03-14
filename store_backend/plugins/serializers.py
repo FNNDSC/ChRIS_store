@@ -35,6 +35,10 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to validate and save all the plugin descriptors and parameters
         associated with the plugin when creating it.
         """
+        # assign the full list of owners for the plugin name or raise error
+        owner = validated_data['owner'][0]
+        validated_data['owner'] = self.validate_name_owner(owner, validated_data['name'])
+
         # run all default validators for the full set of plugin fields
         request_parameters = validated_data['parameters']
         del validated_data['parameters']
@@ -69,44 +73,10 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Overriden to validate and save all the plugin descriptors and parameters
-        associated with the plugin when updating it.
+        Overriden to add modification date.
         """
-        # run all default validators for the full set of plugin fields
-        request_parameters = validated_data['parameters']
-        del validated_data['parameters']
-        new_plg_serializer = PluginSerializer(instance, data=validated_data)
-        new_plg_serializer.validate = lambda x: x  # no need to rerun custom validators
-        new_plg_serializer.is_valid(raise_exception=True)
-
         validated_data.update({'modification_date': timezone.now()})
-        plugin = super(PluginSerializer, self).update(instance, validated_data)
-
-        # validate and save all the plugin parameters and their default values
-        db_parameters = plugin.parameters.all()
-        for request_param in request_parameters:
-            default = request_param['default'] if 'default' in request_param else None
-            del request_param['default']
-            db_param = [p for p in db_parameters if p.name == request_param['name']]
-            if db_param:
-                param_serializer = PluginParameterSerializer(db_param[0],
-                                                             data=request_param)
-            else:
-                param_serializer = PluginParameterSerializer(data=request_param)
-            param_serializer.is_valid(raise_exception=True)
-            param = param_serializer.save(plugin=plugin)
-            if default is not None:
-                if hasattr(param, param.type + '_default'): # check if a default in DB
-                    db_default = getattr(param, param.type + '_default')
-                    default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param.type](
-                        db_default, data={'value': default})
-                else:
-                    default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param.type](
-                        data={'value': default})
-                default_param_serializer.is_valid(raise_exception=True)
-                default_param_serializer.save(plugin_param=param)
-
-        return plugin
+        return super(PluginSerializer, self).update(instance, validated_data)
 
     @collection_serializer_is_valid
     def is_valid(self, raise_exception=False):
@@ -119,88 +89,106 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         Overriden to validate descriptors in the plugin app representation.
         """
-        app_repr = self.read_app_representation(data['descriptor_file'])
+        if not self.instance:
+            app_repr = self.read_app_representation(data['descriptor_file'])
 
-        # check for required descriptors in the app representation
-        self.check_required_descriptor(app_repr, 'execshell')
-        self.check_required_descriptor(app_repr, 'selfpath')
-        self.check_required_descriptor(app_repr, 'selfexec')
-        self.check_required_descriptor(app_repr, 'parameters')
+            # check for required descriptors in the app representation
+            self.check_required_descriptor(app_repr, 'version')
+            self.check_required_descriptor(app_repr, 'execshell')
+            self.check_required_descriptor(app_repr, 'selfpath')
+            self.check_required_descriptor(app_repr, 'selfexec')
+            self.check_required_descriptor(app_repr, 'parameters')
 
-        # delete from the request those integer descriptors with an empty string or
-        # otherwise validate them
-        if ('min_number_of_workers' in app_repr) and (app_repr['min_number_of_workers'] == ''):
-            del app_repr['min_number_of_workers']
-        elif 'min_number_of_workers' in app_repr:
-            app_repr['min_number_of_workers'] = self.validate_app_workers_descriptor(
-                app_repr['min_number_of_workers'])
+            # delete from the request those integer descriptors with an empty string or
+            # otherwise validate them
+            if ('min_number_of_workers' in app_repr) and (
+                    app_repr['min_number_of_workers'] == ''):
+                del app_repr['min_number_of_workers']
+            elif 'min_number_of_workers' in app_repr:
+                app_repr['min_number_of_workers'] = self.validate_app_workers_descriptor(
+                    app_repr['min_number_of_workers'])
 
-        if ('max_number_of_workers' in app_repr) and (app_repr['max_number_of_workers'] == ''):
-            del app_repr['max_number_of_workers']
-        elif 'max_number_of_workers' in app_repr:
-            app_repr['max_number_of_workers'] = self.validate_app_workers_descriptor(
-                app_repr['max_number_of_workers'])
+            if ('max_number_of_workers' in app_repr) and (
+                    app_repr['max_number_of_workers'] == ''):
+                del app_repr['max_number_of_workers']
+            elif 'max_number_of_workers' in app_repr:
+                app_repr['max_number_of_workers'] = self.validate_app_workers_descriptor(
+                    app_repr['max_number_of_workers'])
 
-        if ('min_gpu_limit' in app_repr) and (app_repr['min_gpu_limit'] == ''):
-            del app_repr['min_gpu_limit']
-        elif 'min_gpu_limit' in app_repr:
-            app_repr['min_gpu_limit'] = self.validate_app_gpu_descriptor(
-                app_repr['min_gpu_limit'])
+            if ('min_gpu_limit' in app_repr) and (app_repr['min_gpu_limit'] == ''):
+                del app_repr['min_gpu_limit']
+            elif 'min_gpu_limit' in app_repr:
+                app_repr['min_gpu_limit'] = self.validate_app_gpu_descriptor(
+                    app_repr['min_gpu_limit'])
 
-        if ('max_gpu_limit' in app_repr) and (app_repr['max_gpu_limit'] == ''):
-            del app_repr['max_gpu_limit']
-        elif 'max_gpu_limit' in app_repr:
-            app_repr['max_gpu_limit'] = self.validate_app_gpu_descriptor(
-                app_repr['max_gpu_limit'])
+            if ('max_gpu_limit' in app_repr) and (app_repr['max_gpu_limit'] == ''):
+                del app_repr['max_gpu_limit']
+            elif 'max_gpu_limit' in app_repr:
+                app_repr['max_gpu_limit'] = self.validate_app_gpu_descriptor(
+                    app_repr['max_gpu_limit'])
 
-        if ('min_cpu_limit' in app_repr) and (app_repr['min_cpu_limit'] == ''):
-            del app_repr['min_cpu_limit']
-        elif 'min_cpu_limit' in app_repr:
-            app_repr['min_cpu_limit'] = self.validate_app_cpu_descriptor(
-                app_repr['min_cpu_limit'])
+            if ('min_cpu_limit' in app_repr) and (app_repr['min_cpu_limit'] == ''):
+                del app_repr['min_cpu_limit']
+            elif 'min_cpu_limit' in app_repr:
+                app_repr['min_cpu_limit'] = self.validate_app_cpu_descriptor(
+                    app_repr['min_cpu_limit'])
 
-        if ('max_cpu_limit' in app_repr) and (app_repr['max_cpu_limit'] == ''):
-            del app_repr['max_cpu_limit']
-        elif 'max_cpu_limit' in app_repr:
-            app_repr['max_cpu_limit'] = self.validate_app_cpu_descriptor(
-                app_repr['max_cpu_limit'])
+            if ('max_cpu_limit' in app_repr) and (app_repr['max_cpu_limit'] == ''):
+                del app_repr['max_cpu_limit']
+            elif 'max_cpu_limit' in app_repr:
+                app_repr['max_cpu_limit'] = self.validate_app_cpu_descriptor(
+                    app_repr['max_cpu_limit'])
 
-        if ('min_memory_limit' in app_repr) and app_repr['min_memory_limit'] == '':
-            del app_repr['min_memory_limit']
-        elif 'min_memory_limit' in app_repr:
-            app_repr['min_memory_limit'] = self.validate_app_memory_descriptor(
-                app_repr['min_memory_limit'])
+            if ('min_memory_limit' in app_repr) and app_repr['min_memory_limit'] == '':
+                del app_repr['min_memory_limit']
+            elif 'min_memory_limit' in app_repr:
+                app_repr['min_memory_limit'] = self.validate_app_memory_descriptor(
+                    app_repr['min_memory_limit'])
 
-        if ('max_memory_limit' in app_repr) and app_repr['max_memory_limit'] == '':
-            del app_repr['max_memory_limit']
-        elif 'max_memory_limit' in app_repr:
-            app_repr['max_memory_limit'] = self.validate_app_memory_descriptor(
-                app_repr['max_memory_limit'])
+            if ('max_memory_limit' in app_repr) and app_repr['max_memory_limit'] == '':
+                del app_repr['max_memory_limit']
+            elif 'max_memory_limit' in app_repr:
+                app_repr['max_memory_limit'] = self.validate_app_memory_descriptor(
+                    app_repr['max_memory_limit'])
 
-        # validate limits
-        err_msg = "Minimum number of workers should be less than maximum number of workers"
-        self.validate_app_descriptor_limits(app_repr, 'min_number_of_workers',
-                                            'max_number_of_workers', err_msg)
+            # validate limits
+            err_msg = "The minimum number of workers should be less than the maximum"
+            self.validate_app_descriptor_limits(app_repr, 'min_number_of_workers',
+                                                'max_number_of_workers', err_msg)
 
-        err_msg = "Minimum cpu limit should be less than maximum cpu limit"
-        self.validate_app_descriptor_limits(app_repr, 'min_cpu_limit', 'max_cpu_limit',
-                                            err_msg)
+            err_msg = "Minimum cpu limit should be less than maximum cpu limit"
+            self.validate_app_descriptor_limits(app_repr, 'min_cpu_limit',
+                                                'max_cpu_limit', err_msg)
 
-        err_msg = "Minimum memory limit should be less than maximum memory limit"
-        self.validate_app_descriptor_limits(app_repr, 'min_memory_limit',
-                                            'max_memory_limit', err_msg)
+            err_msg = "Minimum memory limit should be less than maximum memory limit"
+            self.validate_app_descriptor_limits(app_repr, 'min_memory_limit',
+                                                'max_memory_limit', err_msg)
 
-        err_msg = "Minimum gpu limit should be less than maximum gpu limit"
-        self.validate_app_descriptor_limits(app_repr, 'min_gpu_limit', 'max_gpu_limit',
-                                            err_msg)
+            err_msg = "Minimum gpu limit should be less than maximum gpu limit"
+            self.validate_app_descriptor_limits(app_repr, 'min_gpu_limit',
+                                                'max_gpu_limit', err_msg)
 
-        # validate plugin parameters in the request data
-        app_repr['parameters'] = self.validate_app_parameters(app_repr['parameters'])
+            # validate plugin parameters in the request data
+            app_repr['parameters'] = self.validate_app_parameters(app_repr['parameters'])
 
-        # update the request data
-        data.update(app_repr)
-
+            # update the request data
+            data.update(app_repr)
         return data
+
+    @staticmethod
+    def validate_name_owner(owner, name):
+        """
+        Custom method to check if plugin name already exists and this user is not an
+        owner.
+        """
+        plg = Plugin.objects.filter(name=name).first()
+        owners = [owner]
+        if plg:
+            owners = list(plg.owner.all())
+            if owner not in owners:
+                raise serializers.ValidationError(
+                    {'detail': "plugin name %s is already owned by another user" % name})
+        return owners
 
     @staticmethod
     def validate_new_owner(username):
@@ -305,12 +293,11 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         Custom method to read the submitted plugin app representation file.
         """
-        app_repr = {}
         try:
             app_repr = json.loads(app_representation_file.read().decode())
             app_representation_file.seek(0)
         except Exception:
-            serializers.ValidationError("Invalid json representation file")
+            raise serializers.ValidationError("Invalid json representation file")
         return app_repr
 
 
