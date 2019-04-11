@@ -6,7 +6,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from rest_framework import serializers
-from collectionjson.services import collection_serializer_is_valid
 
 from .models import Plugin, PluginParameter, TYPES
 from .models import DefaultFloatParameter, DefaultIntParameter, DefaultBoolParameter
@@ -78,13 +77,6 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         validated_data.update({'modification_date': timezone.now()})
         return super(PluginSerializer, self).update(instance, validated_data)
 
-    @collection_serializer_is_valid
-    def is_valid(self, raise_exception=False):
-        """
-        Overriden to generate a properly formatted message for validation errors.
-        """
-        return super(PluginSerializer, self).is_valid(raise_exception=raise_exception)
-
     def validate(self, data):
         """
         Overriden to validate descriptors in the plugin app representation.
@@ -152,19 +144,19 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                     app_repr['max_memory_limit'])
 
             # validate limits
-            err_msg = "The minimum number of workers should be less than the maximum"
+            err_msg = "The minimum number of workers should be less than the maximum."
             self.validate_app_descriptor_limits(app_repr, 'min_number_of_workers',
                                                 'max_number_of_workers', err_msg)
 
-            err_msg = "Minimum cpu limit should be less than maximum cpu limit"
+            err_msg = "Minimum cpu limit should be less than maximum cpu limit."
             self.validate_app_descriptor_limits(app_repr, 'min_cpu_limit',
                                                 'max_cpu_limit', err_msg)
 
-            err_msg = "Minimum memory limit should be less than maximum memory limit"
+            err_msg = "Minimum memory limit should be less than maximum memory limit."
             self.validate_app_descriptor_limits(app_repr, 'min_memory_limit',
                                                 'max_memory_limit', err_msg)
 
-            err_msg = "Minimum gpu limit should be less than maximum gpu limit"
+            err_msg = "Minimum gpu limit should be less than maximum gpu limit."
             self.validate_app_descriptor_limits(app_repr, 'min_gpu_limit',
                                                 'max_gpu_limit', err_msg)
 
@@ -187,7 +179,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             owners = list(plg.owner.all())
             if owner not in owners:
                 raise serializers.ValidationError(
-                    {'detail': "plugin name %s is already owned by another user" % name})
+                    {'name': ["Plugin name %s is already owned by another user." % name]})
         return owners
 
     @staticmethod
@@ -200,7 +192,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             new_owner = User.objects.get(username=username)
         except ObjectDoesNotExist:
             raise serializers.ValidationError(
-                {'detail': "%s is not a registered user" % username})
+                {'owner': ["User %s is not a registered user." % username]})
         return new_owner
 
     @staticmethod
@@ -212,8 +204,8 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             # translate from back-end type to front-end type, eg. bool->boolean
             param_type = [key for key in TYPES if TYPES[key] == param['type']]
             if not param_type:
-                raise serializers.ValidationError("Invalid parameter type %s" %
-                                                  param['type'])
+                raise serializers.ValidationError(
+                    {'descriptor_file': ["Invalid parameter type %s." % param['type']]})
             param['type'] = param_type[0]
         return parameter_list
 
@@ -222,10 +214,10 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         Custom method to validate plugin maximum and minimum workers descriptors.
         """
-        error_msg = "Minimum and maximum number of workers must be positive integers"
+        error_msg = "Minimum and maximum number of workers must be positive integers."
         int_d = PluginSerializer.validate_app_int_descriptor(descriptor, error_msg)
         if int_d < 1:
-            raise serializers.ValidationError(error_msg)
+            raise serializers.ValidationError({'descriptor_file': [error_msg]})
         return int_d
 
     @staticmethod
@@ -236,7 +228,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         try:
             return CPUInt(descriptor)
         except ValueError as e:
-            raise serializers.ValidationError(str(e))
+            raise serializers.ValidationError({'descriptor_file': [str(e)]})
 
     @staticmethod
     def validate_app_memory_descriptor(descriptor):
@@ -246,14 +238,14 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         try:
             return MemoryInt(descriptor)
         except ValueError as e:
-            raise serializers.ValidationError(str(e))
+            raise serializers.ValidationError({'descriptor_file': [str(e)]})
 
     @staticmethod
     def validate_app_gpu_descriptor(descriptor):
         """
         Custom method to validate plugin maximum and minimum gpu descriptors.
         """
-        error_msg = "Minimum and maximum gpu must be non-negative integers"
+        error_msg = "Minimum and maximum gpu must be non-negative integers."
         return PluginSerializer.validate_app_int_descriptor(descriptor, error_msg)
 
     @staticmethod
@@ -265,7 +257,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             int_d = int(descriptor)
             assert int_d >= 0
         except (ValueError, AssertionError):
-            raise serializers.ValidationError(error_msg)
+            raise serializers.ValidationError({'descriptor_file': [error_msg]})
         return int_d
 
     @staticmethod
@@ -276,7 +268,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         if (min_descriptor_name in app_repr) and (max_descriptor_name in app_repr) \
                 and (app_repr[max_descriptor_name] < app_repr[min_descriptor_name]):
-            raise serializers.ValidationError(error_msg)
+            raise serializers.ValidationError({'descriptor_file': [error_msg]})
 
     @staticmethod
     def check_required_descriptor(app_repr, descriptor_name):
@@ -285,8 +277,9 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         representation.
         """
         if not (descriptor_name in app_repr):
-            raise serializers.ValidationError("%s must be a key of the app representation"
-                                              " dictionary" % descriptor_name)
+            error_msg = "Descriptor %s must be in the app representation dictionary." \
+                        % descriptor_name
+            raise serializers.ValidationError({'descriptor_file': [error_msg]})
 
     @staticmethod
     def read_app_representation(app_representation_file):
@@ -297,7 +290,8 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             app_repr = json.loads(app_representation_file.read().decode())
             app_representation_file.seek(0)
         except Exception:
-            raise serializers.ValidationError("Invalid json representation file")
+            error_msg = "Invalid json representation file."
+            raise serializers.ValidationError({'descriptor_file': [error_msg]})
         return app_repr
 
 
@@ -310,14 +304,6 @@ class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
         model = PluginParameter
         fields = ('url', 'id', 'name', 'type', 'optional', 'default', 'flag', 'action',
                   'help', 'plugin')
-
-    @collection_serializer_is_valid
-    def is_valid(self, raise_exception=False):
-        """
-        Overriden to generate a properly formatted message for validation errors.
-        """
-        return super(PluginParameterSerializer, self).is_valid(
-            raise_exception=raise_exception)
 
     def get_default(self, obj):
         """

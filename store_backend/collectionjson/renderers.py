@@ -1,3 +1,6 @@
+
+import json
+
 from rest_framework.serializers import HyperlinkedRelatedField, HyperlinkedIdentityField
 from rest_framework.serializers import HyperlinkedModelSerializer, ManyRelatedField
 from rest_framework.renderers import JSONRenderer
@@ -93,9 +96,10 @@ class CollectionJsonRenderer(JSONRenderer):
         return data.get('results')
 
     def _get_error(self, data):
+        msg = data['detail'] if 'detail' in data else data
         return {
             'error': {
-                'message': data['detail']
+                'message': json.dumps(msg)
             }
         }
 

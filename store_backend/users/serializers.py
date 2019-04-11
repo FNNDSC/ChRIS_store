@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from collectionjson.services import collection_serializer_is_valid
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -21,13 +20,6 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
-
-    @collection_serializer_is_valid
-    def is_valid(self, raise_exception=False):
-        """
-        Overriden to generate a properly formatted message for validation errors
-        """
-        return super(UserSerializer, self).is_valid(raise_exception=raise_exception)
 
     class Meta:
         model = User
