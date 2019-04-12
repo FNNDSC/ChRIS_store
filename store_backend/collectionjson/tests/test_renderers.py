@@ -1,6 +1,4 @@
 
-import json
-
 from django.conf.urls import url, include
 from django.test.utils import override_settings
 from django.test import TestCase
@@ -142,7 +140,7 @@ class TestErrorHandling(SimpleGetTest):
     endpoint = '/rest-api/parse-error/'
 
     def test_errors_are_reported(self):
-        self.assertEqual(json.loads(self.collection.error.message), 'lol nice one')
+        self.assertEqual(self.collection.error.message, 'lol nice one')
 
 
 class TestUrlRewrite(SimpleGetTest):
@@ -175,4 +173,3 @@ urlpatterns = [
     url(r'^rest-api/url-rewrite/', views.UrlRewriteView.as_view()),
     url(r'^rest-api/empty/', views.EmptyView.as_view()),
 ]
-

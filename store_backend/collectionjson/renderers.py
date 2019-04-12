@@ -96,10 +96,10 @@ class CollectionJsonRenderer(JSONRenderer):
         return data.get('results')
 
     def _get_error(self, data):
-        msg = data['detail'] if 'detail' in data else data
+        message = data['detail'] if 'detail' in data else json.dumps(data)
         return {
             'error': {
-                'message': json.dumps(msg)
+                'message': message
             }
         }
 
