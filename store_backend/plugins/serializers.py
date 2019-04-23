@@ -45,28 +45,39 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         new_plg_serializer.validate = lambda x: x  # no need to rerun custom validators
         new_plg_serializer.is_valid(raise_exception=True)
 
+        # validate all the plugin parameters and their default values
+        parameters_serializers = []
+        for request_param in request_parameters:
+            default = None
+            if 'default' in request_param:
+                default = request_param['default']
+                del request_param['default']
+            param_serializer = PluginParameterSerializer(data=request_param)
+            param_serializer.is_valid(raise_exception=True)
+            serializer_dict = {'serializer': param_serializer,
+                               'default_serializer': None}
+            if default is not None:
+                param_type = request_param['type']
+                default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param_type](
+                    data={'value': default})
+                default_param_serializer.is_valid(raise_exception=True)
+                serializer_dict['default_serializer'] = default_param_serializer
+            parameters_serializers.append(serializer_dict)
+
+        # if no validation errors at this point then save to the DB
+
         # this is necessary because the descriptor_file's FileField needs an instance of
         # a plugin before saving to the the DB since its "uploaded_file_path" function
         # needs to access instance.owner (now an m2m relationship)
         descriptor_file = validated_data['descriptor_file']
         del validated_data['descriptor_file']
-
         plugin = super(PluginSerializer, self).create(validated_data)
         plugin.descriptor_file = descriptor_file
         plugin.save()
-
-        # validate and save all the plugin parameters and their default values
-        for request_param in request_parameters:
-            default = request_param['default'] if 'default' in request_param else None
-            del request_param['default']
-            param_serializer = PluginParameterSerializer(data=request_param)
-            param_serializer.is_valid(raise_exception=True)
-            param = param_serializer.save(plugin=plugin)
-            if default is not None:
-                default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param.type](
-                    data={'value': default})
-                default_param_serializer.is_valid(raise_exception=True)
-                default_param_serializer.save(plugin_param=param)
+        for param_serializer_dict in parameters_serializers:
+            param = param_serializer_dict['serializer'].save(plugin=plugin)
+            if param_serializer_dict['default_serializer'] is not None:
+                param_serializer_dict['default_serializer'].save(plugin_param=param)
 
         return plugin
 
@@ -201,6 +212,9 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         Custom method to validate plugin parameters.
         """
         for param in parameter_list:
+            if 'type' not in param:
+                raise serializers.ValidationError(
+                    {'descriptor_file': ["Parameter type is required."]})
             # translate from back-end type to front-end type, eg. bool->boolean
             param_type = [key for key in TYPES if TYPES[key] == param['type']]
             if not param_type:
