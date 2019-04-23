@@ -48,7 +48,7 @@ class UserPluginList(generics.ListCreateAPIView):
         """
         user = self.request.user
         # if the user is chris then return all the plugins in the system
-        if (user.username == 'chris'):
+        if user.username == 'chris':
             return Plugin.objects.all()
         return Plugin.objects.filter(owner=user)
 
