@@ -105,6 +105,8 @@ class PluginFilter(FilterSet):
                                                   lookup_expr='lte')
     owner_username = django_filters.CharFilter(field_name='owner__username',
                                                lookup_expr='icontains')
+    owner_username_exact = django_filters.CharFilter(field_name='owner__username',
+                                               lookup_expr='exact')
     name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
     name_exact = django_filters.CharFilter(field_name='name', lookup_expr='exact')
     title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
@@ -147,8 +149,9 @@ class PluginFilter(FilterSet):
         model = Plugin
         fields = ['id', 'name', 'name_latest', 'name_exact', 'name_exact_latest',
                   'dock_image', 'public_repo', 'type', 'category', 'authors',
-                  'owner_username', 'min_creation_date', 'max_creation_date', 'title',
-                  'version', 'description', 'name_title_category']
+                  'owner_username', 'owner_username_exact', 'min_creation_date',
+                  'max_creation_date', 'title', 'version', 'description',
+                  'name_title_category']
 
 
 class PluginParameter(models.Model):
