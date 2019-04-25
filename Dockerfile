@@ -25,6 +25,7 @@ MAINTAINER fnndsc "dev@babymri.org"
 ENV APPROOT="/usr/src/store_backend" REQPATH="/usr/src/requirements" VERSION="0.1"
 COPY ["./requirements", "${REQPATH}"]
 COPY ["./store_backend", "${APPROOT}"]
+COPY ["./docker-entrypoint.sh", "/usr/src"]
 
 # Pass a UID on build command line (see above) to set internal UID
 ARG UID=1001
@@ -44,6 +45,7 @@ RUN apt-get update \
   && echo "localuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 WORKDIR $APPROOT
+ENTRYPOINT ["/usr/src/docker-entrypoint.sh"]
 EXPOSE 8010
 
 # Start as user $UID
@@ -51,4 +53,4 @@ EXPOSE 8010
 # easily write to the managed db volume.
 # USER $UID
 
-CMD ["manage.py", "runserver", "0.0.0.0:8010"]
+#CMD ["manage.py", "runserver", "0.0.0.0:8010"]

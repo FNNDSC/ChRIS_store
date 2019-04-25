@@ -24,10 +24,6 @@ docker-compose exec chris_store_dev_db sh -c 'while ! mysqladmin -uroot -prootp 
 docker-compose exec chris_store_dev_db mysql -uroot -prootp -e 'GRANT ALL PRIVILEGES ON *.* TO "chris"@"%"'
 windowBottom
 
-title -d 1 "Applying migrations..."
-docker-compose exec chris_store_dev python manage.py migrate
-windowBottom
-
 title -d 1 "Running Django Unit tests..."
 docker-compose exec chris_store_dev python manage.py test --exclude-tag integration
 windowBottom
