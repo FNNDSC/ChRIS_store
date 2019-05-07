@@ -24,7 +24,7 @@ class ModelTests(TestCase):
         self.plg_repr['category'] = 'Dir'
         self.plg_repr['description'] = 'Dir test plugin'
         self.plg_repr['license'] = 'MIT'
-        self.plg_repr['version'] = 'v0.1'
+        self.plg_repr['version'] = '0.1'
         self.plg_repr['execshell'] = 'python3'
         self.plg_repr['selfpath'] = '/usr/src/simplefsapp'
         self.plg_repr['selfexec'] = 'simplefsapp.py'

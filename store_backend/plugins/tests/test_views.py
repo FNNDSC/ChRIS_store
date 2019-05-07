@@ -20,7 +20,7 @@ class ViewTests(TestCase):
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
         self.plugin_name = 'simplefsapp'
-        self.plugin_version = 'v0.1'
+        self.plugin_version = '0.1'
         self.content_type = 'application/vnd.collection+json'
 
         plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
@@ -33,7 +33,7 @@ class ViewTests(TestCase):
         plg_repr['title'] = 'Dir plugin'
         plg_repr['description'] = 'Dir test plugin'
         plg_repr['license'] = 'MIT'
-        plg_repr['version'] = 'v0.2'
+        plg_repr['version'] = '0.2'
         plg_repr['execshell'] = 'python3'
         plg_repr['selfpath'] = '/usr/src/simplefsapp'
         plg_repr['selfexec'] = 'simplefsapp.py'
@@ -48,6 +48,10 @@ class ViewTests(TestCase):
         # create a plugin
         (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name, version=self.plugin_version,
                                                     title='chris app', type='fs')
+        plugin.public_repo = 'http://gitgub.com'
+        plugin.dock_image = 'fnndsc/pl-testapp'
+        plugin.descriptor_file.name = self.plugin_name + '.json'
+        plugin.save()
         plugin.owner.set([user])
 
 
@@ -176,13 +180,11 @@ class PluginDetailViewTests(ViewTests):
         plugin.save()
         put = json.dumps({
             "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
-                                  {"name": "owner", "value": "another"},
-                                  {"name": "dock_image", "value": "pl-testplugin11"}]}})
+                                  {"name": "owner", "value": "another"}]}})
         self.client.login(username=self.username, password=self.password)
         response = self.client.put(self.read_update_delete_url, data=put,
                                    content_type=self.content_type)
         self.assertContains(response, "http://localhost11")
-        self.assertContains(response, "pl-testplugin11")
         self.assertEqual(len(plugin.owner.all()), 2)
         self.assertEqual(len(plugin_v2.owner.all()), 2)
 
@@ -194,8 +196,7 @@ class PluginDetailViewTests(ViewTests):
         plugin.save()
         put = json.dumps({
             "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
-                                  {"name": "owner", "value": "unregistered"},
-                                  {"name": "dock_image", "value": "pl-testplugin11"}]}})
+                                  {"name": "owner", "value": "unregistered"}]}})
         self.client.login(username=self.username, password=self.password)
         response = self.client.put(self.read_update_delete_url, data=put,
                                    content_type=self.content_type)

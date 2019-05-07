@@ -63,7 +63,8 @@ class UserPluginList(generics.ListCreateAPIView):
         Overriden to include required version descriptor in the request dict before
         serializer validation.
         """
-        # we can assign any string here that will unlikely be used as a version value
+        # we can assign any string here, this is required because of the
+        # name,version unique together constraint in the model
         request.data['version'] = 'nullnull'
         return super(UserPluginList, self).create(request, *args, **kwargs)
 
@@ -119,6 +120,7 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
         """
         plugin = self.get_object()
         request.data['name'] = plugin.name
+        request.data['dock_image'] = plugin.dock_image
         request.data['descriptor_file'] = plugin.descriptor_file
         request.data['version'] = plugin.version
         return super(PluginDetail, self).update(request, *args, **kwargs)
@@ -128,7 +130,7 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
         Overriden to append a collection+json template.
         """
         response = super(PluginDetail, self).retrieve(request, *args, **kwargs)
-        template_data = {'dock_image': '', 'public_repo': '', 'owner': ''}
+        template_data = {'public_repo': '', 'owner': ''}
         return services.append_collection_template(response, template_data)
 
 

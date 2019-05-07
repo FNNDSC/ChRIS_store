@@ -29,7 +29,7 @@ class PluginManagerTests(TestCase):
         self.plg_repr['category'] = 'Dir'
         self.plg_repr['description'] = 'Dir test plugin'
         self.plg_repr['license'] = 'MIT'
-        self.plg_repr['version'] = 'v0.1'
+        self.plg_repr['version'] = '0.1'
         self.plg_repr['execshell'] = 'python3'
         self.plg_repr['selfpath'] = '/usr/src/simplefsapp'
         self.plg_repr['selfexec'] = 'simplefsapp.py'
@@ -43,6 +43,8 @@ class PluginManagerTests(TestCase):
         del data['parameters']
         data['name'] = self.plugin_name
         (plugin, tf) = Plugin.objects.get_or_create(**data)
+        plugin.public_repo = 'http://gitgub.com'
+        plugin.dock_image = 'fnndsc/pl-testapp'
         #f = ContentFile(self.plg_repr)
         #f.name = self.plugin_name + '.json'
         plugin.descriptor_file.name = self.plugin_name + '.json'
@@ -83,7 +85,7 @@ class PluginManagerTests(TestCase):
         plugin.save()
         initial_modification_date = plugin.modification_date
         self.pl_manager.run(['modify', str(plugin.id), 'http://github.com/repo',
-                             'fnndsc/pl-testapp', '--newowner', user.username])
+                             '--newowner', user.username])
         plugin = Plugin.objects.get(name=self.plugin_name)
         self.assertTrue(plugin.modification_date > initial_modification_date)
         user1 = User.objects.get(username=self.username)

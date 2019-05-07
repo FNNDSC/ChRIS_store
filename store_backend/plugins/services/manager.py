@@ -45,7 +45,6 @@ class PluginManager(object):
         parser_modify = subparsers.add_parser('modify', help='Modify existing plugin')
         parser_modify.add_argument('id', type=int, help="Plugin's id")
         parser_modify.add_argument('publicrepo', help="Plugin's new public repo url")
-        parser_modify.add_argument('dockerimage', help="Plugin's new docker image name")
         parser_modify.add_argument('--newowner', help="Plugin's new owner username")
 
         # create the parser for the "remove" command
@@ -71,7 +70,7 @@ class PluginManager(object):
         Modify an existing/registered plugin.
         """
         plugin = self.get_plugin(args.id)
-        data = {'public_repo': args.publicrepo, 'dock_image': args.dockerimage,
+        data = {'public_repo': args.publicrepo, 'dock_image': plugin.dock_image,
                 'name': plugin.name, 'descriptor_file': plugin.descriptor_file,
                 'version': plugin.version}
         plg_serializer = PluginSerializer(plugin, data=data)
