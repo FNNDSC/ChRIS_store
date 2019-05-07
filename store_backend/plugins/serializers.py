@@ -1,5 +1,6 @@
 
 import json
+import re
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
@@ -102,6 +103,8 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             self.check_required_descriptor(app_repr, 'selfexec')
             self.check_required_descriptor(app_repr, 'parameters')
 
+            self.validate_app_version(app_repr['version'])
+
             # delete from the request those integer descriptors with an empty string or
             # otherwise validate them
             if ('min_number_of_workers' in app_repr) and (
@@ -177,6 +180,17 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             # update the request data
             data.update(app_repr)
         return data
+
+    @staticmethod
+    def validate_app_version(version):
+        """
+        Custom method to check that a proper version number format has been submitted.
+        """
+        if not re.match(r"^[0-9.]+$", version):
+            raise serializers.ValidationError(
+                {'descriptor_file':
+                     ["Invalid plugin app version number format %s." % version]})
+        return version
 
     @staticmethod
     def validate_name_owner(owner, name):
