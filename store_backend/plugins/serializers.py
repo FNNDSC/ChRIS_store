@@ -10,7 +10,7 @@ from rest_framework import serializers
 
 from .models import Plugin, PluginParameter, TYPES
 from .models import DefaultFloatParameter, DefaultIntParameter, DefaultBoolParameter
-from .models import DefaultPathParameter, DefaultStringParameter
+from .models import DefaultPathParameter, DefaultStrParameter
 from .fields import CPUInt, MemoryInt
 
 
@@ -337,11 +337,11 @@ class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
         """
         Overriden to get the default parameter value regardless of type.
         """
-        default_parameter = getattr(obj, obj.type + '_default', None)
-        return default_parameter.value if default_parameter else None
+        default = obj.get_default()
+        return default.value if default else None
 
 
-class DefaultStringParameterSerializer(serializers.HyperlinkedModelSerializer):
+class DefaultStrParameterSerializer(serializers.HyperlinkedModelSerializer):
     param_name = serializers.ReadOnlyField(source='plugin_param.name')
     type = serializers.SerializerMethodField()
     plugin_param = serializers.HyperlinkedRelatedField(view_name='pluginparameter-detail',
@@ -352,7 +352,7 @@ class DefaultStringParameterSerializer(serializers.HyperlinkedModelSerializer):
         return obj.plugin_param.type
 
     class Meta:
-        model = DefaultStringParameter
+        model = DefaultStrParameter
         fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
 
 
@@ -416,7 +416,7 @@ class DefaultPathParameterSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
 
 
-DEFAULT_PARAMETER_SERIALIZERS = {'string': DefaultStringParameterSerializer,
+DEFAULT_PARAMETER_SERIALIZERS = {'string': DefaultStrParameterSerializer,
                          'integer': DefaultIntParameterSerializer,
                          'float': DefaultFloatParameterSerializer,
                          'boolean': DefaultBoolParameterSerializer,
