@@ -62,28 +62,7 @@ class PluginListViewTests(ViewTests):
 
     def setUp(self):
         super(PluginListViewTests, self).setUp()
-        self.list_url = reverse("plugin-list")
-
-    def test_plugin_list_success_authenticated(self):
-        self.client.login(username=self.username, password=self.password)
-        response = self.client.get(self.list_url)
-        self.assertContains(response, self.plugin_name)
-        self.assertContains(response, 'user_plugins')
-
-    def test_plugin_list_success_unauthenticated(self):
-        response = self.client.get(self.list_url)
-        self.assertContains(response, self.plugin_name)
-        self.assertNotContains(response, 'user_plugins')
-
-
-class UserPluginListViewTests(ViewTests):
-    """
-    Test the user-plugin-list view.
-    """
-
-    def setUp(self):
-        super(UserPluginListViewTests, self).setUp()
-        self.create_read_url = reverse("user-plugin-list")
+        self.create_read_url = reverse("plugin-list")
         self.post = {"descriptor_file": "", "name": self.plugin_name,
                      "public_repo": "http://localhost", "dock_image": "pl-testplugin"}
 
@@ -134,14 +113,14 @@ class UserPluginListViewTests(ViewTests):
         response = self.client.post(self.create_read_url, data={})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_plugin_list_success(self):
+    def test_plugin_list_success_authenticated(self):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.create_read_url)
         self.assertContains(response, self.plugin_name)
 
-    def test_plugin_list_failure_unauthenticated(self):
+    def test_plugin_list_success_unauthenticated(self):
         response = self.client.get(self.create_read_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertContains(response, self.plugin_name)
 
 
 class PluginDetailViewTests(ViewTests):
@@ -159,14 +138,14 @@ class PluginDetailViewTests(ViewTests):
         User.objects.create_user(username='another', email='another@babymri.org',
                                  password='another-pass')
 
-    def test_plugin_detail_success(self):
+    def test_plugin_detail_success_authenticated(self):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.read_update_delete_url)
         self.assertContains(response, self.plugin_name)
 
-    def test_plugin_detail_failure_unauthenticated(self):
+    def test_plugin_detail_success_unauthenticated(self):
         response = self.client.get(self.read_update_delete_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertContains(response, self.plugin_name)
 
     def test_plugin_update_success(self):
         plugin = Plugin.objects.get(name=self.plugin_name)
