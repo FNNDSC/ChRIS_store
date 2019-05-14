@@ -9,48 +9,13 @@ from .serializers import PluginSerializer,  PluginParameterSerializer
 from .permissions import IsOwnerOrChrisOrReadOnly
 
 
-class PluginList(generics.ListAPIView):
+class PluginList(generics.ListCreateAPIView):
     """
     A view for the collection of plugins.
     """
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
-
-    def list(self, request, *args, **kwargs):
-        """
-        Overriden to append document-level link relations.
-        """
-        response = super(PluginList, self).list(request, *args, **kwargs)
-        user = self.request.user
-        # append document-level link relations
-        if user.is_authenticated:
-            links = {'user_plugins': reverse('user-plugin-list', request=request),
-                     'user': reverse('user-detail', request=request,
-                                     kwargs={"pk": user.id})}
-            response = services.append_collection_links(response, links)
-        # append query list
-        query_list = [reverse('plugin-list-query-search', request=request)]
-        return services.append_collection_querylist(response, query_list)
-
-
-class UserPluginList(generics.ListCreateAPIView):
-    """
-    A view for the collection of plugins.
-    """
-    serializer_class = PluginSerializer
-    queryset = Plugin.objects.all()
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def get_queryset(self):
-        """
-        Overriden to return a custom queryset that is only comprised by the plugins
-        owned by the currently authenticated user.
-        """
-        user = self.request.user
-        # if the user is chris then return all the plugins in the system
-        if user.username == 'chris':
-            return Plugin.objects.all()
-        return Plugin.objects.filter(owner=user)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def perform_create(self, serializer):
         """
@@ -66,19 +31,24 @@ class UserPluginList(generics.ListCreateAPIView):
         # we can assign any string here, this is required because of the
         # name,version unique together constraint in the model
         request.data['version'] = 'nullnull'
-        return super(UserPluginList, self).create(request, *args, **kwargs)
+        return super(PluginList, self).create(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
         """
-        Overriden to append document-level link relations and a collection+json template
-        to the response.
+        Overriden to append document-level link relations, query list and a
+        collection+json template to the response.
         """
-        response = super(UserPluginList, self).list(request, *args, **kwargs)
-        user = self.request.user
+        response = super(PluginList, self).list(request, *args, **kwargs)
         # append document-level link relations
-        links = {'plugins': reverse('plugin-list', request=request),
-                 'user': reverse('user-detail', request=request, kwargs={"pk": user.id})}
+        links = {'pipelines': reverse('pipeline-list', request=request)}
+        user = self.request.user
+        if user.is_authenticated:
+            links['user'] = reverse('user-detail', request=request,
+                                    kwargs={"pk": user.id})
         response = services.append_collection_links(response, links)
+        # append query list
+        query_list = [reverse('plugin-list-query-search', request=request)]
+        response = services.append_collection_querylist(response, query_list)
         # append write template
         template_data = {'name': '', 'dock_image': '', 'public_repo': '',
                          'descriptor_file': ''}
@@ -100,7 +70,7 @@ class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
-    permission_classes = (permissions.IsAuthenticated, IsOwnerOrChrisOrReadOnly,)
+    permission_classes = (IsOwnerOrChrisOrReadOnly,)
 
     def perform_update(self, serializer):
         """
