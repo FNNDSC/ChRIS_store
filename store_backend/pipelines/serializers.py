@@ -61,43 +61,54 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
     def validate_plugin_id_tree(self, plugin_id_tree):
         """
         Overriden to validate the tree of plugin ids. It should be a list of dictionaries.
-        Each dictionary is a tree node containing a plugin id and the index of the
-        previous node in the list.
+        Each dictionary is a tree node containing the index of the previous node in the
+        list and either a plugin id or a plugin name and a plugin version.
         """
         try:
             plugin_id_list = list(json.loads(plugin_id_tree))
         except json.decoder.JSONDecodeError:
-            raise serializers.ValidationError(
-                {'plugin_id_tree': ["Invalid JSON string %s." % plugin_id_tree]})
+            # overriden validation methods automatically add the field name to the msg
+            msg = ["Invalid JSON string %s." % plugin_id_tree]
+            raise serializers.ValidationError(msg)
         except Exception:
-            raise serializers.ValidationError(
-                {'plugin_id_tree': ["Invalid tree list in %s" % plugin_id_tree]})
+            msg = ["Invalid tree list in %s" % plugin_id_tree]
+            raise serializers.ValidationError(msg)
         if len(plugin_id_list) == 0:
-            raise serializers.ValidationError(
-                {'plugin_id_tree': ["Invalid empty list in %s" % plugin_id_tree]})
+            msg = ["Invalid empty list in %s" % plugin_id_tree]
+            raise serializers.ValidationError(msg)
 
         for d in plugin_id_list:
             try:
                 prev_ix = d['previous_index']
-                plg_id = d['plugin_id']
-                plg = Plugin.objects.get(pk=plg_id)
+                if 'plugin_id' not in d:
+                    plg_name = d['plugin_name']
+                    plg_version = d['plugin_version']
+                    plg = Plugin.objects.get(name=plg_name, version=plg_version)
+                    d['plugin_id'] = plg.id
+                else:
+                    plg_id = d['plugin_id']
+                    plg = Plugin.objects.get(pk=plg_id)
             except ObjectDoesNotExist:
-                raise serializers.ValidationError(
-                    {'plugin_id_tree': ["Couldn't find any plugin with id %s" % plg_id]})
+                if 'plugin_id' not in d:
+                    msg = ["Couldn't find any plugin with name %s and version %s." %
+                     (plg_name, plg_version)]
+                else:
+                    msg = ["Couldn't find any plugin with id %s." % plg_id]
+                raise serializers.ValidationError(msg)
             except Exception:
-                raise serializers.ValidationError(
-                    {'plugin_id_tree':
-                         ["Object %s must be a JSON object with 'plugin_id' and "
-                          "'previous_index' properties." % d]})
+                msg = ["Object %s must be a JSON object with 'previous_index' and "
+                       "either 'plugin_id' or 'plugin_name' and 'plugin_version' "
+                       "properties." % d]
+                raise serializers.ValidationError(msg)
             if plg.type == 'fs':
-                raise serializers.ValidationError(
-                    {'plugin_id_tree': ["Plugin %s is of type 'fs' and therefore can "
-                                        "not be used to create a pipeline." % plg]})
+                msg = ["Plugin %s is of type 'fs' and therefore can not be used to "
+                       "create a pipeline." % plg]
+                raise serializers.ValidationError(msg)
         try:
             tree_dict = PipelineSerializer.get_tree(plugin_id_list)
             PipelineSerializer.validate_tree(tree_dict)
         except (ValueError, Exception) as e:
-            raise serializers.ValidationError({'plugin_id_tree': [str(e)]})
+            raise serializers.ValidationError([str(e)])
         return tree_dict
 
     def validate_locked(self, locked):

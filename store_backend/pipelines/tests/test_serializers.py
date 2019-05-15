@@ -138,6 +138,20 @@ class PipelineSerializerTests(SerializerTests):
         with self.assertRaises(serializers.ValidationError):
             pipeline_serializer.validate_plugin_id_tree(tree)
 
+    def test_validate_plugin_id_tree_has_plugin_name_and_plugin_version_or_plugin_id(self):
+        """
+        Test whether overriden validate_plugin_id_tree method validates that each
+        dictionary/node of the plugin tree contains properties plugin_id or plugin_name
+        and plugin_version.
+        """
+        pipeline = Pipeline.objects.get(name=self.pipeline_name)
+        pipeline_serializer = PipelineSerializer(pipeline)
+        tree = '[{"previous_index": null}]'
+        with self.assertRaises(serializers.ValidationError):
+            pipeline_serializer.validate_plugin_id_tree(tree)
+            tree = '[{"plugin_name": "test", "previous_index": null}]'
+            pipeline_serializer.validate_plugin_id_tree(tree)
+
     def test_validate_plugin_id_tree_plugins_exist_and_not_fs(self):
         """
         Test whether overriden validate_plugin_id_tree method validates that the plugin
