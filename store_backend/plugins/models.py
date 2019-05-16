@@ -104,8 +104,6 @@ class PluginFilter(FilterSet):
     max_creation_date = django_filters.DateFilter(field_name='creation_date',
                                                   lookup_expr='lte')
     owner_username = django_filters.CharFilter(field_name='owner__username',
-                                               lookup_expr='icontains')
-    owner_username_exact = django_filters.CharFilter(field_name='owner__username',
                                                lookup_expr='exact')
     name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
     name_exact = django_filters.CharFilter(field_name='name', lookup_expr='exact')
@@ -149,9 +147,8 @@ class PluginFilter(FilterSet):
         model = Plugin
         fields = ['id', 'name', 'name_latest', 'name_exact', 'name_exact_latest',
                   'dock_image', 'public_repo', 'type', 'category', 'authors',
-                  'owner_username', 'owner_username_exact', 'min_creation_date',
-                  'max_creation_date', 'title', 'version', 'description',
-                  'name_title_category']
+                  'owner_username', 'min_creation_date', 'max_creation_date', 'title',
+                  'version', 'description', 'name_title_category']
 
 
 class PluginParameter(models.Model):
@@ -170,8 +167,15 @@ class PluginParameter(models.Model):
     def __str__(self):
         return self.name
 
+    def get_default(self):
+        """
+        Custom method to get the default parameter instance regardless of its type.
+        """
+        default_attr_name = '%s_default' % self.type
+        return getattr(self, default_attr_name, None)
 
-class DefaultStringParameter(models.Model):
+
+class DefaultStrParameter(models.Model):
     value = models.CharField(max_length=200, blank=True)
     plugin_param = models.OneToOneField(PluginParameter, on_delete=models.CASCADE,
                                         related_name='string_default')
