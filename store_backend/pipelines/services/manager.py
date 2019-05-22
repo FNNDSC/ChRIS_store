@@ -4,8 +4,8 @@ Pipeline manager module that provides functionality to add, modify and delete pi
 
 import os
 import sys
+import json
 from argparse import ArgumentParser
-from chrisstoreclient.client import StoreClient
 
 if "DJANGO_SETTINGS_MODULE" not in os.environ:
     # django needs to be loaded (eg. when this script is run from the command line)
@@ -14,13 +14,12 @@ if "DJANGO_SETTINGS_MODULE" not in os.environ:
     import django
     django.setup()
 
-from django.utils import timezone
-
+from django.core.files.base import ContentFile
+from django.contrib.auth.models import User
 from plugins.models import Plugin
-from plugins.models import ComputeResource
-from plugins.serializers import PluginSerializer, PluginParameterSerializer
-from plugins.serializers import DEFAULT_PARAMETER_SERIALIZERS
+from plugins.serializers import PluginSerializer
 from pipelines.models import Pipeline
+from pipelines.serializers import PipelineSerializer
 
 
 class PipelineManager(object):
@@ -32,130 +31,61 @@ class PipelineManager(object):
                                            help='sub-command help')
 
         # create the parser for the "add" command
-        parser_add = subparsers.add_parser('add', help='Add a new plugin')
+        parser_add = subparsers.add_parser('add', help='Add a new pipeline')
         parser_add.add_argument('name', help="Plugin's name")
-        parser_add.add_argument('computeresource',
-                                help="Compute resource where the plugin's instances run")
-        parser_add.add_argument('storeurl',
-                                help="Url of ChRIS store where the plugin is registered")
-        parser_add.add_argument('--storeusername', help="Username for the ChRIS store")
-        parser_add.add_argument('--storepassword', help="Password for the ChRIS store")
-        parser_add.add_argument('--storetimeout', help="ChRIS store request timeout")
+        parser_add.add_argument('owner', help="Plugin's owner username")
+        parser_add.add_argument('publicrepo', help="Plugin's public repo url")
+        parser_add.add_argument('dockerimage', help="Plugin's docker image name")
+        group = parser_add.add_mutually_exclusive_group()
+        group.add_argument("--descriptorfile", dest='descriptorfile', type=str,
+                           help="A json descriptor file with the plugin representation")
+        group.add_argument("--descriptorstring", dest='descriptorstring', type=str,
+                           help="A json string with the plugin representation")
 
         # create the parser for the "modify" command
-        parser_modify = subparsers.add_parser('modify', help='Modify existing plugin')
-        parser_modify.add_argument('name', help="Plugin's name")
-        parser_modify.add_argument('--computeresource',
-                                help="Compute resource where the plugin's instances run")
-        parser_modify.add_argument('--storeurl',
-                                help="Url of ChRIS store where the plugin is registered")
-        parser_modify.add_argument('--storeusername', help="Username for the ChRIS store")
-        parser_modify.add_argument('--storepassword', help="Password for the ChRIS store")
-        parser_modify.add_argument('--storetimeout', help="ChRIS store request timeout")
+        parser_modify = subparsers.add_parser('modify', help='Modify existing pipeline')
+        parser_modify.add_argument('id', type=int, help="Plugin's id")
+        parser_modify.add_argument('publicrepo', help="Plugin's new public repo url")
+        parser_modify.add_argument('--newowner', help="Plugin's new owner username")
 
         # create the parser for the "remove" command
-        parser_remove = subparsers.add_parser('remove', help='Remove an existing plugin')
-        parser_remove.add_argument('name', help="Plugin's name")
+        parser_remove = subparsers.add_parser('remove', help='Remove an existing pipeline')
+        parser_remove.add_argument('id', type=int, help="Plugin's id")
 
         self.parser = parser
-        self.str_service        = ''
-
-        # Debug specifications
-        self.b_quiet            = False
-        self.b_useDebug         = True
-        self.str_debugFile      = '%s/tmp/debug-charm.log' % os.environ['HOME']
 
     def add_pipeline(self, args):
         """
         Register/add a new plugin to the system.
         """
-        timeout = 30
-        if args.storetimeout:
-            timeout = args.storetimeout
-        plg_repr = self.get_plugin_representation_from_store(args.name, args.storeurl,
-                                                             args.storeusername,
-                                                             args.storepassword, timeout)
-        parameters_data = plg_repr['parameters']
-        del plg_repr['parameters']
-        plg_serializer = PluginSerializer(data=plg_repr)
+        df = self.get_plugin_descriptor_file(args)
+        data = {'name': args.name, 'public_repo': args.publicrepo, 'version': 'nullnull',
+                'dock_image': args.dockerimage, 'descriptor_file': df}
+        plg_serializer = PluginSerializer(data=data)
         plg_serializer.is_valid(raise_exception=True)
-        (compute_resource, tf) = ComputeResource.objects.get_or_create(
-            compute_resource_identifier=args.computeresource)
-        plugin = plg_serializer.save(compute_resource=compute_resource)
-        # collect parameters and validate and save them to the DB
-        for parameter in parameters_data:
-            default = parameter['default'] if 'default' in parameter else None
-            del parameter['default']
-            parameter_serializer = PluginParameterSerializer(data=parameter)
-            parameter_serializer.is_valid(raise_exception=True)
-            param = parameter_serializer.save(plugin=plugin)
-            if default is not None:
-                default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param.type](
-                    data={'value': default})
-                default_param_serializer.is_valid(raise_exception=True)
-                default_param_serializer.save(plugin_param=param)
+        owner = User.objects.get(username=args.owner)
+        plg_serializer.save(owner=[owner])
 
     def modify_pipeline(self, args):
         """
-        Modify an existing/registered plugin and add the current date as a new plugin
-        modification date.
+        Modify an existing/registered plugin.
         """
-        plugin = self.get_plugin(args.name)
-        compute_resource = None
-        plg_repr = None
-        if args.computeresource:
-            (compute_resource, tf) = ComputeResource.objects.get_or_create(
-                compute_resource_identifier=args.computeresource)
-        if args.storeurl:
-            timeout = 30
-            if args.storetimeout:
-                timeout = args.storetimeout
-            plg_repr = self.get_plugin_representation_from_store(args.name, args.storeurl,
-                                                                 args.storeusername,
-                                                                 args.storepassword,
-                                                                 timeout)
-        if plg_repr:
-            parameters_data = plg_repr['parameters']
-            del plg_repr['parameters']
-            plg_serializer = PluginSerializer(plugin, data=plg_repr)
-            plg_serializer.is_valid(raise_exception=True)
-            plugin = plg_serializer.save(compute_resource=compute_resource)
-            # collect existing and new parameters and validate and save them to the DB
-            db_parameters = plugin.parameters.all()
-            for parameter in parameters_data:
-                default = parameter['default'] if 'default' in parameter else None
-                del parameter['default']
-                db_param = [p for p in db_parameters if p.name == parameter['name']]
-                if db_param:
-                    parameter_serializer = PluginParameterSerializer(db_param[0],
-                                                                     data=parameter)
-                else:
-                    parameter_serializer = PluginParameterSerializer(data=parameter)
-                parameter_serializer.is_valid(raise_exception=True)
-                param = parameter_serializer.save(plugin=plugin)
-                if default is not None:
-                    db_default = param.get_default()
-                    if db_default is not None: # check if there is already a default in DB
-                        default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[
-                            param.type](db_default, data={'value': default})
-                    else:
-                        default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[
-                            param.type](data={'value': default})
-                    default_param_serializer.is_valid(raise_exception=True)
-                    default_param_serializer.save(plugin_param=param)
-        elif compute_resource:
-            plg_serializer = PluginSerializer(plugin)
-            plugin = plg_serializer.save(compute_resource=compute_resource)
-
-        if plg_repr or compute_resource:
-            plugin.modification_date = timezone.now()
-            plugin.save()
+        plugin = self.get_plugin(args.id)
+        data = {'public_repo': args.publicrepo, 'dock_image': plugin.dock_image,
+                'name': plugin.name, 'descriptor_file': plugin.descriptor_file,
+                'version': plugin.version}
+        plg_serializer = PluginSerializer(plugin, data=data)
+        plg_serializer.is_valid(raise_exception=True)
+        if args.newowner:
+            new_owner = plg_serializer.validate_new_owner(args.newowner)
+            plugin.add_owner(new_owner)
+        plg_serializer.save()
 
     def remove_pipeline(self, args):
         """
         Remove an existing/registered plugin from the system.
         """
-        plugin = self.get_plugin(args.name)
+        plugin = self.get_plugin(args.id)
         plugin.delete()
 
     def run(self, args=None):
@@ -163,32 +93,41 @@ class PipelineManager(object):
         Parse the arguments passed to the manager and perform the appropriate action.
         """
         options = self.parser.parse_args(args)
+        if (options.subparser_name == 'add') and (not options.descriptorfile) and (
+                not options.descriptorstring):
+                self.parser.error("Either --descriptorFile or --descriptorString must be "
+                                  "specified")
         if options.subparser_name == 'add':
-            self.add_plugin(options)
+            self.add_pipeline(options)
         elif options.subparser_name == 'modify':
-            self.modify_plugin(options)
+            self.modify_pipeline(options)
         elif options.subparser_name == 'remove':
-            self.remove_plugin(options)
+            self.remove_pipeline(options)
 
     @staticmethod
-    def get_plugin_representation_from_store(name, store_url, username=None,
-                                             password=None, timeout=30):
-        """
-        Get a plugin app representation from the ChRIS store.
-        """
-        store_client = StoreClient(store_url, username, password, timeout)
-        return store_client.get_plugin(name)
-
-    @staticmethod
-    def get_plugin(name):
+    def get_plugin(id):
         """
         Get an existing plugin.
         """
         try:
-            plugin = Plugin.objects.get(name=name)
+            plugin = Plugin.objects.get(pk=id)
         except Plugin.DoesNotExist:
-            raise NameError("Couldn't find '%s' plugin in the system" % name)
+            raise NameError("Couldn't find plugin with id '%s' in the system" % id)
         return plugin
+
+    @staticmethod
+    def get_plugin_descriptor_file(args):
+        """
+        Get the plugin descriptor file from the arguments.
+        """
+        if args.descriptorfile:
+            f = args.descriptorfile
+        else:
+            app_repr = json.loads(args.descriptorstring)
+            f = ContentFile(json.dumps(app_repr).encode())
+            f.name = args.name + '.json'
+        return f
+
 
 
 # ENTRYPOINT

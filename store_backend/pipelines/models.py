@@ -1,5 +1,6 @@
 
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
 
 import django_filters
 from django_filters.rest_framework import FilterSet
@@ -63,13 +64,13 @@ class Pipeline(models.Model):
                     tree[prev_id] = {'piping': pip.previous, 'child_ids': [pip.id]}
         return {'root_id': root_id, 'tree': tree}
 
-    def check_parameter_default_values(self):
+    def check_parameter_defaults(self):
         """
         Custom method to raise an exception if any of the plugin parameters associated to
         any of the pipings in the pipeline doesn't have a default value.
         """
         for piping in self.plugin_pipings.all():
-            piping.check_parameter_default_values()
+            piping.check_parameter_defaults()
 
     @staticmethod
     def get_accesible_pipelines(user):
@@ -123,22 +124,39 @@ class PluginPiping(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Overriden to save the default plugin parameters' values associated with this
+        Overriden to save the default plugin parameter values associated with this
         piping.
         """
+        param_defaults = []
+        if 'parameter_defaults' in kwargs:
+            param_defaults = kwargs['parameter_defaults']
+            del kwargs['parameter_defaults']
         super(PluginPiping, self).save(*args, **kwargs)
         plugin = self.plugin
         parameters = plugin.parameters.all()
         for parameter in parameters:
-            default_piping_param = DEFAULT_PIPING_PARAMETER_MODELS[parameter.type]()
-            default_piping_param.plugin_piping = self
-            default_piping_param.plugin_param = parameter
-            default = parameter.get_default()
-            # use plugin's parameter default for piping's default
-            default_piping_param.value = default.value if default else None
-            default_piping_param.save()
+            param = [d for d in param_defaults if d['name'] == parameter.name]
+            default_model_class = DEFAULT_PIPING_PARAMETER_MODELS[parameter.type]
+            try:
+                default_piping_param = default_model_class.objects.get(
+                    plugin_piping=self, plugin_param=parameter)
+            except ObjectDoesNotExist:
+                default_piping_param = default_model_class()
+                default_piping_param.plugin_piping = self
+                default_piping_param.plugin_param = parameter
+                if param:
+                    default_piping_param.value = param[0]['default']
+                else:
+                    # use plugin parameter's default for piping's default
+                    default = parameter.get_default()
+                    default_piping_param.value = default.value if default else None
+                default_piping_param.save()
+            else:
+                if param:
+                    default_piping_param.value = param[0]['default']
+                    default_piping_param.save()
 
-    def check_parameter_default_values(self):
+    def check_parameter_defaults(self):
         """
         Custom method to raise an exception if any of the plugin parameters associated to
         the piping doesn't have a default value.
@@ -158,6 +176,9 @@ class DefaultPipingStrParameter(models.Model):
     plugin_param = models.ForeignKey(PluginParameter, on_delete=models.CASCADE,
                                      related_name='string_piping_default')
 
+    class Meta:
+        unique_together = ('plugin_piping', 'plugin_param',)
+
     def __str__(self):
         return self.value
 
@@ -168,6 +189,9 @@ class DefaultPipingIntParameter(models.Model):
                                     related_name='integer_param')
     plugin_param = models.ForeignKey(PluginParameter, on_delete=models.CASCADE,
                                      related_name='integer_piping_default')
+
+    class Meta:
+        unique_together = ('plugin_piping', 'plugin_param',)
 
     def __str__(self):
         return str(self.value)
@@ -180,6 +204,9 @@ class DefaultPipingFloatParameter(models.Model):
     plugin_param = models.ForeignKey(PluginParameter, on_delete=models.CASCADE,
                                      related_name='float_piping_default')
 
+    class Meta:
+        unique_together = ('plugin_piping', 'plugin_param',)
+
     def __str__(self):
         return str(self.value)
 
@@ -191,6 +218,9 @@ class DefaultPipingBoolParameter(models.Model):
     plugin_param = models.ForeignKey(PluginParameter, on_delete=models.CASCADE,
                                      related_name='boolean_piping_default')
 
+    class Meta:
+        unique_together = ('plugin_piping', 'plugin_param',)
+
     def __str__(self):
         return str(self.value)
 
@@ -201,6 +231,9 @@ class DefaultPipingPathParameter(models.Model):
                                     related_name='path_param')
     plugin_param = models.ForeignKey(PluginParameter, on_delete=models.CASCADE,
                                      related_name='path_piping_default')
+
+    class Meta:
+        unique_together = ('plugin_piping', 'plugin_param',)
 
     def __str__(self):
         return self.value

@@ -79,10 +79,10 @@ class PipelineSerializerTests(SerializerTests):
         plugin_ds1 = Plugin.objects.get(name=self.plugin_ds_name)
         (plugin_ds2, tf) = Plugin.objects.get_or_create(name="mri_analyze", type="ds")
         owner = User.objects.get(username=self.username)
-        plugin_id_tree = '[{"plugin_id": ' + str(plugin_ds1.id) + \
+        plugin_tree = '[{"plugin_id": ' + str(plugin_ds1.id) + \
                          ', "previous_index": null}, {"plugin_id": ' + \
                          str(plugin_ds2.id) + ', "previous_index": 0}]'
-        data = {'name': 'Pipeline2', 'plugin_id_tree': plugin_id_tree}
+        data = {'name': 'Pipeline2', 'plugin_tree': plugin_tree}
 
         pipeline_serializer = PipelineSerializer(data=data)
         pipeline_serializer.is_valid(raise_exception=True)
@@ -95,19 +95,17 @@ class PipelineSerializerTests(SerializerTests):
     def test_update(self):
         """
         Test whether overriden 'update' method successfully updates an existing pipeline
-        even when 'validated_data' argument contains 'plugin_id_tree' and
-        'plugin_inst_id'.
+        when 'validated_data' argument contains 'plugin_tree'.
         """
         pipeline = Pipeline.objects.get(name=self.pipeline_name)
         pipeline_serializer = PipelineSerializer(pipeline)
-        validated_data = {'name': 'Pipeline2', 'plugin_id_tree': {'root_index': 0},
-                          'plugin_inst_id': 1}
+        validated_data = {'name': 'Pipeline2', 'plugin_tree': {'root_index': 0}}
         pipeline_serializer.update(pipeline, validated_data)
         self.assertEqual(pipeline.name, 'Pipeline2')
 
     def test_validate_validates_required_fields_on_create(self):
         """
-        Test whether overriden validate method validates that 'plugin_id_tree' field
+        Test whether overriden validate method validates that 'plugin_tree' field
         must be provided when creating a new pipeline.
         """
         owner = User.objects.get(username=self.username)
@@ -116,31 +114,53 @@ class PipelineSerializerTests(SerializerTests):
         with self.assertRaises(serializers.ValidationError):
             pipeline_serializer.validate(data)
 
-    def test_validate_plugin_id_tree_is_json_string(self):
+    def test_validate_validates_all_defaults_can_be_defined_if_pipeline_unlocked(self):
         """
-        Test whether overriden validate_plugin_id_tree method validates that the plugin
+        Test whether overriden validate method validates that all parameter defaults
+        for the pipeline can be defined if the pipeline is unlocked.
+        """
+        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        # add a parameter without a default
+        PluginParameter.objects.get_or_create(
+            plugin=plugin_ds,
+            name='dummyFloat',
+            type='float',
+            optional=False
+        )
+        owner = User.objects.get(username=self.username)
+        plugin_tree = {'root_index': 0, 'tree': [{'plugin_id': plugin_ds.id,
+                                                  'child_indices': [],
+                                                  'plugin_parameter_defaults': []}]}
+        data = {'name': 'Pipeline2', 'owner': owner, 'plugin_tree': plugin_tree, 'locked': False}
+        pipeline_serializer = PipelineSerializer(data=data)
+        with self.assertRaises(serializers.ValidationError):
+            pipeline_serializer.validate(data)
+
+    def test_validate_plugin_tree_is_json_string(self):
+        """
+        Test whether overriden validate_plugin_tree method validates that the plugin
         tree string is a proper JSON string.
         """
         pipeline = Pipeline.objects.get(name=self.pipeline_name)
         pipeline_serializer = PipelineSerializer(pipeline)
         tree = '[{plugin_id: 8, "previous_index": null}]'
         with self.assertRaises(serializers.ValidationError):
-            pipeline_serializer.validate_plugin_id_tree(tree)
+            pipeline_serializer.validate_plugin_tree(tree)
 
-    def test_validate_plugin_id_tree_does_not_contain_empty_list(self):
+    def test_validate_plugin_tree_does_not_contain_empty_list(self):
         """
-        Test whether overriden validate_plugin_id_tree method validates that the plugin
+        Test whether overriden validate_plugin_tree method validates that the plugin
         tree is not an empty list.
         """
         pipeline = Pipeline.objects.get(name=self.pipeline_name)
         pipeline_serializer = PipelineSerializer(pipeline)
         tree = '[]'
         with self.assertRaises(serializers.ValidationError):
-            pipeline_serializer.validate_plugin_id_tree(tree)
+            pipeline_serializer.validate_plugin_tree(tree)
 
-    def test_validate_plugin_id_tree_has_plugin_name_and_plugin_version_or_plugin_id(self):
+    def test_validate_plugin_tree_has_plugin_name_and_plugin_version_or_plugin_id(self):
         """
-        Test whether overriden validate_plugin_id_tree method validates that each
+        Test whether overriden validate_plugin_tree method validates that each
         dictionary/node of the plugin tree contains properties plugin_id or plugin_name
         and plugin_version.
         """
@@ -148,13 +168,13 @@ class PipelineSerializerTests(SerializerTests):
         pipeline_serializer = PipelineSerializer(pipeline)
         tree = '[{"previous_index": null}]'
         with self.assertRaises(serializers.ValidationError):
-            pipeline_serializer.validate_plugin_id_tree(tree)
+            pipeline_serializer.validate_plugin_tree(tree)
             tree = '[{"plugin_name": "test", "previous_index": null}]'
-            pipeline_serializer.validate_plugin_id_tree(tree)
+            pipeline_serializer.validate_plugin_tree(tree)
 
-    def test_validate_plugin_id_tree_plugins_exist_and_not_fs(self):
+    def test_validate_plugin_tree_plugins_exist_and_not_fs(self):
         """
-        Test whether overriden validate_plugin_id_tree method validates that the plugin
+        Test whether overriden validate_plugin_tree method validates that the plugin
         tree contains existing plugins that are not of type 'fs'.
         """
         plugin_fs = Plugin.objects.get(name=self.plugin_fs_name)
@@ -162,14 +182,14 @@ class PipelineSerializerTests(SerializerTests):
         pipeline_serializer = PipelineSerializer(pipeline)
         tree = '[{"plugin_id": ' + str(plugin_fs.id + 100) + ', "previous_index": null}]'
         with self.assertRaises(serializers.ValidationError):
-            pipeline_serializer.validate_plugin_id_tree(tree)
+            pipeline_serializer.validate_plugin_tree(tree)
         tree = '[{"plugin_id": ' + str(plugin_fs.id) + ', "previous_index": null}]'
         with self.assertRaises(serializers.ValidationError):
-            pipeline_serializer.validate_plugin_id_tree(tree)
+            pipeline_serializer.validate_plugin_tree(tree)
 
-    def test_validate_plugin_id_tree_raises_validation_error_if_get_tree_raises_value_error(self):
+    def test_validate_plugin_tree_raises_validation_error_if_get_tree_raises_value_error(self):
         """
-        Test whether overriden validate_plugin_id_tree method raises ValidationError if
+        Test whether overriden validate_plugin_tree method raises ValidationError if
         internal call to get_tree method raises ValueError exception.
         """
         pipeline = Pipeline.objects.get(name=self.pipeline_name)
@@ -179,13 +199,14 @@ class PipelineSerializerTests(SerializerTests):
         with mock.patch('pipelines.serializers.PipelineSerializer.get_tree') as get_tree_mock:
             get_tree_mock.side_effect = ValueError
             with self.assertRaises(serializers.ValidationError):
-                pipeline_serializer.validate_plugin_id_tree(tree)
+                pipeline_serializer.validate_plugin_tree(tree)
             get_tree_mock.assert_called_with([{"plugin_id": plugin_ds.id,
+                                               "plugin_parameter_defaults": [],
                                                "previous_index": None}])
 
-    def test_validate_plugin_id_tree_raises_validation_error_if_validate_tree_raises_value_error(self):
+    def test_validate_plugin_tree_raises_validation_error_if_validate_tree_raises_value_error(self):
         """
-        Test whether overriden validate_plugin_id_tree method raises ValidationError if
+        Test whether overriden validate_plugin_tree method raises ValidationError if
         internal call to validate_tree method raises ValueError exception.
         """
         pipeline = Pipeline.objects.get(name=self.pipeline_name)
@@ -196,24 +217,43 @@ class PipelineSerializerTests(SerializerTests):
         with mock.patch('pipelines.serializers.PipelineSerializer.validate_tree') as validate_tree_mock:
             validate_tree_mock.side_effect = ValueError
             with self.assertRaises(serializers.ValidationError):
-                pipeline_serializer.validate_plugin_id_tree(tree)
+                pipeline_serializer.validate_plugin_tree(tree)
                 validate_tree_mock.assert_called_with(tree_dict)
 
-    def test_validate_tree(self):
+    def test_validate_plugin_parameter_defaults_raises_validation_error_if_missing_name_or_default(self):
         """
-        Test whether custom validate_tree method raises ValueError if the passed
-        dictionary represents a tree that is not connected.
+        Test whether custom validate_plugin_parameter_defaults method raises ValidationError if
+        'name' or 'default' properties are not included.
         """
-        pipeline = Pipeline.objects.get(name=self.pipeline_name)
-        pipeline_serializer = PipelineSerializer(pipeline)
-        plugin_ds1 = Plugin.objects.get(name=self.plugin_ds_name)
-        (plugin_ds2, tf) = Plugin.objects.get_or_create(name="mri_analyze", type="ds")
-        tree = [{"plugin_id": plugin_ds1.id, "child_indices": []},
-                {"plugin_id": plugin_ds2.id, "child_indices": [2]},
-                {"plugin_id": plugin_ds1.id, "child_indices": [1]}]
-        tree_dict = {'root_index': 0, 'tree': tree}
-        with self.assertRaises(ValueError):
-            pipeline_serializer.validate_tree(tree_dict)
+        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        parameter_defaults = [{'name': 'dummyInt'}]
+        with self.assertRaises(serializers.ValidationError):
+            PipelineSerializer.validate_plugin_parameter_defaults(plugin_ds, parameter_defaults)
+        parameter_defaults = [{'default': 3}]
+        with self.assertRaises(serializers.ValidationError):
+            PipelineSerializer.validate_plugin_parameter_defaults(plugin_ds, parameter_defaults)
+        parameter_defaults = [{'name': 'dummyInt', 'default': 3}]
+        PipelineSerializer.validate_plugin_parameter_defaults(plugin_ds, parameter_defaults)
+
+    def test_validate_plugin_parameter_defaults_raises_validation_error_if_parameter_not_found(self):
+        """
+        Test whether custom validate_plugin_parameter_defaults method raises ValidationError if
+        a parameter name is not found.
+        """
+        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        parameter_defaults = [{'name': 'randomInt', 'default': 3}]
+        with self.assertRaises(serializers.ValidationError):
+            PipelineSerializer.validate_plugin_parameter_defaults(plugin_ds, parameter_defaults)
+
+    def test_validate_plugin_parameter_defaults_raises_validation_error_if_invalid_default_value(self):
+        """
+        Test whether custom validate_plugin_parameter_defaults method raises ValidationError if
+        an invalid default value is provided for a parameter.
+        """
+        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        parameter_defaults = [{'name': 'dummyInt', 'default': True}]
+        with self.assertRaises(serializers.ValidationError):
+            PipelineSerializer.validate_plugin_parameter_defaults(plugin_ds, parameter_defaults)
 
     def test_get_tree(self):
         """
@@ -225,13 +265,25 @@ class PipelineSerializerTests(SerializerTests):
         plugin_ds1 = Plugin.objects.get(name=self.plugin_ds_name)
         (plugin_ds2, tf) = Plugin.objects.get_or_create(name="mri_analyze", type="ds")
 
-        tree_list = [{"plugin_id": plugin_ds1.id, "previous_index": None},
-                {"plugin_id": plugin_ds2.id, "previous_index": 0},
-                {"plugin_id": plugin_ds1.id, "previous_index": 1}]
+        tree_list = [{"plugin_id": plugin_ds1.id,
+                      "plugin_parameter_defaults": [],
+                      "previous_index": None},
+                {"plugin_id": plugin_ds2.id,
+                 "plugin_parameter_defaults": [],
+                 "previous_index": 0},
+                {"plugin_id": plugin_ds1.id,
+                 "plugin_parameter_defaults": [],
+                 "previous_index": 1}]
 
-        tree = [{"plugin_id": plugin_ds1.id, "child_indices": [1]},
-                {"plugin_id": plugin_ds2.id, "child_indices": [2]},
-                {"plugin_id": plugin_ds1.id, "child_indices": []}]
+        tree = [{"plugin_id": plugin_ds1.id,
+                 "plugin_parameter_defaults": [],
+                 "child_indices": [1]},
+                {"plugin_id": plugin_ds2.id,
+                 "plugin_parameter_defaults": [],
+                 "child_indices": [2]},
+                {"plugin_id": plugin_ds1.id,
+                 "plugin_parameter_defaults": [],
+                 "child_indices": []}]
         expected_tree_dict = {'root_index': 0, 'tree': tree}
 
         tree_dict = pipeline_serializer.get_tree(tree_list)
@@ -262,17 +314,45 @@ class PipelineSerializerTests(SerializerTests):
         plugin_ds1 = Plugin.objects.get(name=self.plugin_ds_name)
         (plugin_ds2, tf) = Plugin.objects.get_or_create(name="mri_analyze", type="ds")
 
-        tree_list = [{"plugin_id": plugin_ds1.id, "previous_index": None},
-                {"plugin_id": plugin_ds2.id, "previous_index": 0},
-                {"plugin_id": plugin_ds1.id, "previous_index": None}]
+        tree_list = [{"plugin_id": plugin_ds1.id,
+                      "plugin_parameter_defaults": [],
+                      "previous_index": None},
+                {"plugin_id": plugin_ds2.id,
+                 "plugin_parameter_defaults": [],
+                 "previous_index": 0},
+                {"plugin_id": plugin_ds1.id,
+                 "plugin_parameter_defaults": [],
+                 "previous_index": None}]
         with self.assertRaises(ValueError):
             pipeline_serializer.get_tree(tree_list)
 
-        tree_list = [{"plugin_id": plugin_ds1.id, "previous_index": None},
-                {"plugin_id": plugin_ds2.id, "previous_index": 3},
-                {"plugin_id": plugin_ds1.id, "previous_index": 1}]
+        tree_list = [{"plugin_id": plugin_ds1.id,
+                      "plugin_parameter_defaults": [],
+                      "previous_index": None},
+                {"plugin_id": plugin_ds2.id,
+                 "plugin_parameter_defaults": [],
+                 "previous_index": 3},
+                {"plugin_id": plugin_ds1.id,
+                 "plugin_parameter_defaults": [],
+                 "previous_index": 1}]
         with self.assertRaises(ValueError):
             pipeline_serializer.get_tree(tree_list)
+
+    def test_validate_tree(self):
+        """
+        Test whether custom validate_tree method raises ValueError if the passed
+        dictionary represents a tree that is not connected.
+        """
+        pipeline = Pipeline.objects.get(name=self.pipeline_name)
+        pipeline_serializer = PipelineSerializer(pipeline)
+        plugin_ds1 = Plugin.objects.get(name=self.plugin_ds_name)
+        (plugin_ds2, tf) = Plugin.objects.get_or_create(name="mri_analyze", type="ds")
+        tree = [{"plugin_id": plugin_ds1.id, "child_indices": []},
+                {"plugin_id": plugin_ds2.id, "child_indices": [2]},
+                {"plugin_id": plugin_ds1.id, "child_indices": [1]}]
+        tree_dict = {'root_index': 0, 'tree': tree}
+        with self.assertRaises(ValueError):
+            pipeline_serializer.validate_tree(tree_dict)
 
     def test__add_plugin_tree_to_pipeline(self):
         """
@@ -284,9 +364,15 @@ class PipelineSerializerTests(SerializerTests):
         plugin_ds1 = Plugin.objects.get(name=self.plugin_ds_name)
         (plugin_ds2, tf) = Plugin.objects.get_or_create(name="mri_analyze", type="ds")
 
-        tree = [{"plugin_id": plugin_ds1.id, "child_indices": [1]},
-                {"plugin_id": plugin_ds2.id, "child_indices": [2]},
-                {"plugin_id": plugin_ds1.id, "child_indices": []}]
+        tree = [{"plugin_id": plugin_ds1.id,
+                 "plugin_parameter_defaults": [],
+                 "child_indices": [1]},
+                {"plugin_id": plugin_ds2.id,
+                 "plugin_parameter_defaults": [],
+                 "child_indices": [2]},
+                {"plugin_id": plugin_ds1.id,
+                 "plugin_parameter_defaults": [],
+                 "child_indices": []}]
         tree_dict = {'root_index': 0, 'tree': tree}
 
         pipeline_serializer._add_plugin_tree_to_pipeline(pipeline, tree_dict)
