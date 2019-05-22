@@ -64,37 +64,6 @@ class ModelTests(TestCase):
 
 class PipelineModelTests(ModelTests):
 
-    def test_get_pipings_parameters_names(self):
-        """
-        Test whether custom get_pipings_parameters_names method returns the list of all
-        the plugin parameter names for all the associated plugin pipings. The name of the
-        parameters should be transformed to have the plugin id, piping id and previous
-        piping id as a prefix.
-        """
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
-        param = plugin_ds.parameters.get(name='prefix')
-        pipeline = Pipeline.objects.get(name=self.pipeline_name)
-        param_names = pipeline.get_pipings_parameters_names()
-        self.assertEqual(len(param_names), 2)
-        self.assertEqual(param_names[0], "%s_%s_%s_%s" %
-                         (plugin_ds.id, self.pips[0].id, "null", param.name))
-        self.assertEqual(param_names[1], "%s_%s_%s_%s" %
-                         (plugin_ds.id, self.pips[1].id, self.pips[0].id, param.name))
-
-    def test_get_pipings_tree(self):
-        """
-        Test whether custom get_pipings_tree method returns a dictionary containing a
-        dictionary representing a tree of pipings and the id of the piping that is the
-        root of the tree. The keys of the dictionary tree should be the pipings' ids and
-        the values the dictionaries containing the piping and the list of child pipings' ids.
-        """
-        pipeline = Pipeline.objects.get(name=self.pipeline_name)
-        tree_dict = pipeline.get_pipings_tree()
-        root_id = tree_dict['root_id']
-        tree = tree_dict['tree']
-        self.assertEqual(root_id, self.pips[0].id)
-        self.assertEqual(tree[root_id], {'piping': self.pips[0], 'child_ids': [self.pips[1].id]})
-
     def test_check_parameter_defaults(self):
         """
         Test whether custom check_parameter_defaults method raises an exception if
