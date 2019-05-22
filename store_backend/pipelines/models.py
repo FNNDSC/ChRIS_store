@@ -26,44 +26,6 @@ class Pipeline(models.Model):
     def __str__(self):
         return self.name
 
-    def get_pipings_parameters_names(self):
-        """
-        Custom method to get the list of all the plugin parameter names for all the
-        associated plugin pipings. The name of the parameters is transformed to have the
-        plugin id, piping id and previous piping id as a prefix.
-        """
-        pipings = self.plugin_pipings.all()
-        param_names = []
-        for pip in pipings:
-            plg = pip.plugin
-            prev_pip_id = pip.previous.id if pip.previous else 'null'
-            # param name becomes <plugin.id>_<piping.id>_<previous_piping.id>_<param.name>
-            param_names.extend(['%s_%s_%s_%s' % (plg.id, pip.id, prev_pip_id, param.name)
-                                for param in plg.parameters.all()])
-        return param_names
-
-    def get_pipings_tree(self):
-        """
-        Custom method to return a dictionary containing a dictionary representing a tree
-        of pipings and the id of the piping that is the root of the tree. The keys of the
-        dictionary tree are the pipings' ids and the values are dictionaries containing
-        the piping and the list of child pipings' ids.
-        """
-        pipings = list(self.plugin_pipings.all())
-        root_pip = [pip for pip in pipings if not pip.previous][0]
-        root_id = root_pip.id
-        tree = {}
-        tree[root_id] = {'piping': root_pip, 'child_ids':[]}
-        for pip in pipings:
-            if pip.id not in tree:
-                tree[pip.id] = {'piping': pip, 'child_ids': []}
-                prev_id = pip.previous.id
-                if prev_id in tree:
-                    tree[prev_id]['child_ids'].append(pip.id)
-                else:
-                    tree[prev_id] = {'piping': pip.previous, 'child_ids': [pip.id]}
-        return {'root_id': root_id, 'tree': tree}
-
     def check_parameter_defaults(self):
         """
         Custom method to raise an exception if any of the plugin parameters associated to
