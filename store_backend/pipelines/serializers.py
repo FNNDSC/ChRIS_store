@@ -2,6 +2,7 @@
 import json
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -27,8 +28,8 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Pipeline
         fields = ('url', 'id', 'name', 'locked', 'authors', 'category', 'description',
-                  'plugin_tree', 'owner_username', 'plugins', 'plugin_pipings',
-                  'default_parameters')
+                  'plugin_tree', 'owner_username', 'creation_date', 'modification_date',
+                  'plugins', 'plugin_pipings', 'default_parameters')
 
     def create(self, validated_data):
         """
@@ -42,9 +43,11 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Overriden to remove parameters that are not allowed to be used on update.
+        Overriden to remove parameters that are not allowed to be used on update to add
+        modification date.
         """
         validated_data.pop('plugin_tree', None)
+        validated_data.update({'modification_date': timezone.now()})
         return super(PipelineSerializer, self).update(instance, validated_data)
 
     def validate(self, data):
@@ -143,7 +146,7 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
         """
         error_msg = 'Pipeline can not be unlocked until all plugin parameters have ' \
                     'default values.'
-        if not locked and self.instance:
+        if not locked and self.instance: # this validation only happens on update
             try:
                 self.instance.check_parameter_defaults()
             except ValueError:
