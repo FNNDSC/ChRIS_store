@@ -68,6 +68,30 @@ for plugin in "${plugins[@]}"; do
 done
 windowBottom
 
+title -d 1 "Automatically creating a locked pipeline (mutable by the owner and not available to other users) in the ChRIS STORE"
+echo "Creating pipeline named 's3retrieve-simpledsapp-simpledsapp' ..."
+S3_PLUGIN_VER=$(docker run --rm fnndsc/pl-s3retrieve s3retrieve.py --version)
+SIMPLEDS_PLUGIN_VER=$(docker run --rm fnndsc/pl-simpledsapp simpledsapp.py --version)
+STR1='[{"plugin_name": "s3retrieve", "plugin_version": "'
+STR2='", "plugin_parameter_defaults": [{"name": "awssecretkey", "default": "somekey"},{"name": "awskeyid", "default": "somekeyid"}], "previous_index": null},
+{"plugin_name": "simpledsapp", "plugin_version": "'
+STR3='", "previous_index": 0}, {"plugin_name": "simpledsapp", "plugin_version": "'
+STR4='", "previous_index": 0}]'
+PLUGIN_TREE=${STR1}${S3_PLUGIN_VER}${STR2}${SIMPLEDS_PLUGIN_VER}${STR3}${SIMPLEDS_PLUGIN_VER}${STR4}
+
+docker-compose exec chris_store_dev python pipelines/services/manager.py add "s3retrieve-simpledsapp-simpledsapp" cubeadmin "${PLUGIN_TREE}"
+windowBottom
+
+title -d 1 "Automatically creating an unlocked pipeline (unmutable and available to all users) in the ChRIS STORE"
+echo "Creating pipeline named 'simpledsapp-simpledsapp' ..."
+STR1='[{"plugin_name": "simpledsapp", "plugin_version": "'
+STR2='", "previous_index": null},{"plugin_name": "simpledsapp", "plugin_version": "'
+STR3='", "previous_index": 0}]'
+PLUGIN_TREE=${STR1}${SIMPLEDS_PLUGIN_VER}${STR2}${SIMPLEDS_PLUGIN_VER}${STR3}
+
+docker-compose exec chris_store_dev python pipelines/services/manager.py add "simpledsapp-simpledsapp" cubeadmin "${PLUGIN_TREE}" --unlock
+windowBottom
+
 title -d 1 "Restarting ChRIS store's Django development server in interactive mode..."
 docker-compose stop chris_store_dev
 docker-compose rm -f chris_store_dev

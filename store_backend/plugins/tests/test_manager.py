@@ -1,4 +1,5 @@
 
+import logging
 import json
 from unittest import mock
 
@@ -13,6 +14,9 @@ from plugins.services import manager
 class PluginManagerTests(TestCase):
 
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.CRITICAL)
+
         self.username = 'foo'
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
@@ -60,6 +64,10 @@ class PluginManagerTests(TestCase):
             flag=parameters[0]['flag'])
 
         self.pl_manager = manager.PluginManager()
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.DEBUG)
 
     def test_mananger_can_add_plugin(self):
         """

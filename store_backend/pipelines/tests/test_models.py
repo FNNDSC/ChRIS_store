@@ -50,10 +50,10 @@ class ModelTests(TestCase):
         # create default values for the piping parameters as the corresponding plugin
         # didn't set a default
         param_type = self.plugin_ds_parameters['prefix']['type']
+        default_model_class = DEFAULT_PIPING_PARAMETER_MODELS[param_type]
         for i in range(2):
-            default_piping_param = DEFAULT_PIPING_PARAMETER_MODELS[param_type]()
-            default_piping_param.plugin_piping = self.pips[i]
-            default_piping_param.plugin_param = plg_param_ds
+            (default_piping_param, tf) = default_model_class.objects.get_or_create(
+                plugin_piping=self.pips[i], plugin_param=plg_param_ds)
             default_piping_param.value = "test" + str(i)
             default_piping_param.save()
 
@@ -64,40 +64,9 @@ class ModelTests(TestCase):
 
 class PipelineModelTests(ModelTests):
 
-    def test_get_pipings_parameters_names(self):
+    def test_check_parameter_defaults(self):
         """
-        Test whether custom get_pipings_parameters_names method returns the list of all
-        the plugin parameter names for all the associated plugin pipings. The name of the
-        parameters should be transformed to have the plugin id, piping id and previous
-        piping id as a prefix.
-        """
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
-        param = plugin_ds.parameters.get(name='prefix')
-        pipeline = Pipeline.objects.get(name=self.pipeline_name)
-        param_names = pipeline.get_pipings_parameters_names()
-        self.assertEqual(len(param_names), 2)
-        self.assertEqual(param_names[0], "%s_%s_%s_%s" %
-                         (plugin_ds.id, self.pips[0].id, "null", param.name))
-        self.assertEqual(param_names[1], "%s_%s_%s_%s" %
-                         (plugin_ds.id, self.pips[1].id, self.pips[0].id, param.name))
-
-    def test_get_pipings_tree(self):
-        """
-        Test whether custom get_pipings_tree method returns a dictionary containing a
-        dictionary representing a tree of pipings and the id of the piping that is the
-        root of the tree. The keys of the dictionary tree should be the pipings' ids and
-        the values the dictionaries containing the piping and the list of child pipings' ids.
-        """
-        pipeline = Pipeline.objects.get(name=self.pipeline_name)
-        tree_dict = pipeline.get_pipings_tree()
-        root_id = tree_dict['root_id']
-        tree = tree_dict['tree']
-        self.assertEqual(root_id, self.pips[0].id)
-        self.assertEqual(tree[root_id], {'piping': self.pips[0], 'child_ids': [self.pips[1].id]})
-
-    def test_check_parameter_default_values(self):
-        """
-        Test whether custom check_parameter_default_values method raises an exception if
+        Test whether custom check_parameter_defaults method raises an exception if
         any of the plugin parameters associated to any of the pipings in the pipeline
         doesn't have a default value.
         """
@@ -108,7 +77,7 @@ class PipelineModelTests(ModelTests):
         PluginPiping.objects.get_or_create(plugin=plugin_ds, pipeline=pipeline,
                                            previous=self.pips[1])
         with self.assertRaises(ValueError):
-            pipeline.check_parameter_default_values()
+            pipeline.check_parameter_defaults()
 
     def test_get_accesible_pipelines(self):
         """
@@ -149,10 +118,13 @@ class PluginPipingModelTests(ModelTests):
         defaults = pip.integer_param.all()
         self.assertEqual(len(defaults), 1)
         self.assertEqual(defaults[0].value, 1)
+        pip.save(parameter_defaults=[{'name': 'dummyInt', 'default': 2}])
+        defaults = pip.integer_param.all()
+        self.assertEqual(defaults[0].value, 2)
 
-    def test_check_parameter_default_values(self):
+    def test_check_parameter_defaults(self):
         """
-        Test whether custom check_parameter_default_values method raises an exception if
+        Test whether custom check_parameter_defaults method raises an exception if
         any of the plugin parameters associated to the piping doesn't have a default value.
         """
         pipeline = Pipeline.objects.get(name=self.pipeline_name)
@@ -162,4 +134,4 @@ class PluginPipingModelTests(ModelTests):
         (pip, tf) = PluginPiping.objects.get_or_create(plugin=plugin_ds, pipeline=pipeline,
                                            previous=self.pips[1])
         with self.assertRaises(ValueError):
-            pip.check_parameter_default_values()
+            pip.check_parameter_defaults()

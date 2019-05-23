@@ -50,7 +50,7 @@ class PipelineList(generics.ListCreateAPIView):
         response = services.append_collection_links(response, links)
         # append write template
         template_data = {'name': "", 'authors': "", 'category': "", 'description': "",
-                         'plugin_id_tree': ""}
+                         'locked': "", 'plugin_tree': ""}
         return services.append_collection_template(response, template_data)
 
 
