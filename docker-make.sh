@@ -69,27 +69,31 @@ done
 windowBottom
 
 title -d 1 "Automatically creating a locked pipeline (mutable by the owner and not available to other users) in the ChRIS STORE"
-echo "Creating pipeline named 's3retrieve-simpledsapp-simpledsapp' ..."
 S3_PLUGIN_VER=$(docker run --rm fnndsc/pl-s3retrieve s3retrieve.py --version)
 SIMPLEDS_PLUGIN_VER=$(docker run --rm fnndsc/pl-simpledsapp simpledsapp.py --version)
+PIPELINE_NAME="s3retrieve_v${S3_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
+echo "Creating pipeline named '$PIPELINE_NAME' ..."
+
 STR1='[{"plugin_name": "s3retrieve", "plugin_version": "'
 STR2='", "plugin_parameter_defaults": [{"name": "awssecretkey", "default": "somekey"},{"name": "awskeyid", "default": "somekeyid"}], "previous_index": null},
 {"plugin_name": "simpledsapp", "plugin_version": "'
-STR3='", "previous_index": 0}, {"plugin_name": "simpledsapp", "plugin_version": "'
-STR4='", "previous_index": 0}]'
-PLUGIN_TREE=${STR1}${S3_PLUGIN_VER}${STR2}${SIMPLEDS_PLUGIN_VER}${STR3}${SIMPLEDS_PLUGIN_VER}${STR4}
+STR3='", "previous_index": 0}]'
+PLUGIN_TREE=${STR1}${S3_PLUGIN_VER}${STR2}${SIMPLEDS_PLUGIN_VER}${STR3}
 
-docker-compose exec chris_store_dev python pipelines/services/manager.py add "s3retrieve-simpledsapp-simpledsapp" cubeadmin "${PLUGIN_TREE}"
+docker-compose exec chris_store_dev python pipelines/services/manager.py add "${PIPELINE_NAME}" cubeadmin "${PLUGIN_TREE}"
 windowBottom
 
 title -d 1 "Automatically creating an unlocked pipeline (unmutable and available to all users) in the ChRIS STORE"
-echo "Creating pipeline named 'simpledsapp-simpledsapp' ..."
-STR1='[{"plugin_name": "simpledsapp", "plugin_version": "'
-STR2='", "previous_index": null},{"plugin_name": "simpledsapp", "plugin_version": "'
-STR3='", "previous_index": 0}]'
-PLUGIN_TREE=${STR1}${SIMPLEDS_PLUGIN_VER}${STR2}${SIMPLEDS_PLUGIN_VER}${STR3}
+PIPELINE_NAME="simpledsapp_v${SIMPLEDS_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
+echo "Creating pipeline named '$PIPELINE_NAME' ..."
 
-docker-compose exec chris_store_dev python pipelines/services/manager.py add "simpledsapp-simpledsapp" cubeadmin "${PLUGIN_TREE}" --unlock
+STR4='[{"plugin_name": "simpledsapp", "plugin_version": "'
+STR5='", "previous_index": null},{"plugin_name": "simpledsapp", "plugin_version": "'
+STR6='", "previous_index": 0},{"plugin_name": "simpledsapp", "plugin_version": "'
+STR7='", "previous_index": 0}]'
+PLUGIN_TREE=${STR4}${SIMPLEDS_PLUGIN_VER}${STR5}${SIMPLEDS_PLUGIN_VER}${STR6}${SIMPLEDS_PLUGIN_VER}${STR7}
+
+docker-compose exec chris_store_dev python pipelines/services/manager.py add "${PIPELINE_NAME}" cubeadmin "${PLUGIN_TREE}" --unlock
 windowBottom
 
 title -d 1 "Restarting ChRIS store's Django development server in interactive mode..."
