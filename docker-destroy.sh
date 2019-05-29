@@ -2,6 +2,8 @@
 
 source ./decorate.sh
 
+declare -i STEP=0
+
 title -d 1 "Destroying ChRIS store containerized development environment" "from ./docker-compose.yml"
 windowBottom
 
@@ -10,7 +12,7 @@ title -d 1 "Stopping services..."
 windowBottom
 
 title -d 1 "Removing all containers..."
-    docker-compose rm -vf 
+    docker-compose rm -vf
 windowBottom
 
 title -d 1 "Destroying persistent volumes..."

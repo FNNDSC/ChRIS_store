@@ -7,6 +7,8 @@
 
 source ./decorate.sh
 
+declare -i STEP=0
+
 title -d 1 "Changing permissions to 755 on" " $(pwd)"
 echo "chmod -R 755 $(pwd)"
 chmod -R 755 $(pwd)
@@ -68,7 +70,7 @@ for plugin in "${plugins[@]}"; do
 done
 windowBottom
 
-title -d 1 "Automatically creating a locked pipeline (mutable by the owner and not available to other users) in the ChRIS STORE"
+title -d 1 "Automatically creating a locked pipeline in the ChRIS STORE" "(mutable by the owner and not available to other users)"
 S3_PLUGIN_VER=$(docker run --rm fnndsc/pl-s3retrieve s3retrieve.py --version)
 SIMPLEDS_PLUGIN_VER=$(docker run --rm fnndsc/pl-simpledsapp simpledsapp.py --version)
 PIPELINE_NAME="s3retrieve_v${S3_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
@@ -83,7 +85,7 @@ PLUGIN_TREE=${STR1}${S3_PLUGIN_VER}${STR2}${SIMPLEDS_PLUGIN_VER}${STR3}
 docker-compose exec chris_store_dev python pipelines/services/manager.py add "${PIPELINE_NAME}" cubeadmin "${PLUGIN_TREE}"
 windowBottom
 
-title -d 1 "Automatically creating an unlocked pipeline (unmutable and available to all users) in the ChRIS STORE"
+title -d 1 "Automatically creating an unlocked pipeline in the ChRIS STORE" "(unmutable and available to all users)"
 PIPELINE_NAME="simpledsapp_v${SIMPLEDS_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
 echo "Creating pipeline named '$PIPELINE_NAME' ..."
 
@@ -96,7 +98,7 @@ PLUGIN_TREE=${STR4}${SIMPLEDS_PLUGIN_VER}${STR5}${SIMPLEDS_PLUGIN_VER}${STR6}${S
 docker-compose exec chris_store_dev python pipelines/services/manager.py add "${PIPELINE_NAME}" cubeadmin "${PLUGIN_TREE}" --unlock
 windowBottom
 
-title -d 1 "Restarting ChRIS store's Django development server in interactive mode..."
+title -d 1 "Restarting ChRIS store's Django development server" "in interactive mode..."
 docker-compose stop chris_store_dev
 docker-compose rm -f chris_store_dev
 docker-compose run --service-ports chris_store_dev
