@@ -9,6 +9,11 @@ source ./decorate.sh
 
 declare -i STEP=0
 
+title -d 1 "Removing old cache files on" " $(pwd)"
+find . -iname ".pyc" -exec sudo rm -fr {} \; 2>/dev/null
+find . -type d -iname "*pycache*" -exec sudo rm -fr {} \; 2>/dev/null
+windowBottom
+
 title -d 1 "Changing permissions to 755 on" " $(pwd)"
 echo "chmod -R 755 $(pwd)"
 chmod -R 755 $(pwd)
@@ -74,6 +79,7 @@ title -d 1 "Automatically creating a locked pipeline in the ChRIS STORE" "(mutab
 S3_PLUGIN_VER=$(docker run --rm fnndsc/pl-s3retrieve s3retrieve.py --version)
 SIMPLEDS_PLUGIN_VER=$(docker run --rm fnndsc/pl-simpledsapp simpledsapp.py --version)
 PIPELINE_NAME="s3retrieve_v${S3_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
+echo "Creating pipeline named '$PIPELINE_NAME'"
 
 STR1='[{"plugin_name": "s3retrieve", "plugin_version": "'
 STR2='", "plugin_parameter_defaults": [{"name": "awssecretkey", "default": "somekey"},{"name": "awskeyid", "default": "somekeyid"}], "previous_index": null},
@@ -82,11 +88,11 @@ STR3='", "previous_index": 0}]'
 PLUGIN_TREE=${STR1}${S3_PLUGIN_VER}${STR2}${SIMPLEDS_PLUGIN_VER}${STR3}
 
 docker-compose exec chris_store_dev python pipelines/services/manager.py add "${PIPELINE_NAME}" cubeadmin "${PLUGIN_TREE}"
-echo "Created pipeline named '$PIPELINE_NAME'"
 windowBottom
 
 title -d 1 "Automatically creating an unlocked pipeline in the ChRIS STORE" "(unmutable and available to all users)"
 PIPELINE_NAME="simpledsapp_v${SIMPLEDS_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
+echo "Creating pipeline named '$PIPELINE_NAME'"
 
 STR4='[{"plugin_name": "simpledsapp", "plugin_version": "'
 STR5='", "previous_index": null},{"plugin_name": "simpledsapp", "plugin_version": "'
@@ -95,7 +101,6 @@ STR7='", "previous_index": 0}]'
 PLUGIN_TREE=${STR4}${SIMPLEDS_PLUGIN_VER}${STR5}${SIMPLEDS_PLUGIN_VER}${STR6}${SIMPLEDS_PLUGIN_VER}${STR7}
 
 docker-compose exec chris_store_dev python pipelines/services/manager.py add "${PIPELINE_NAME}" cubeadmin "${PLUGIN_TREE}" --unlock
-echo "Created pipeline named '$PIPELINE_NAME'"
 windowBottom
 
 title -d 1 "Restarting ChRIS store's Django development server" "in interactive mode..."
