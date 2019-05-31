@@ -271,6 +271,8 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
 
 class PluginPipingSerializer(serializers.HyperlinkedModelSerializer):
     plugin_id = serializers.ReadOnlyField(source='plugin.id')
+    plugin_name = serializers.ReadOnlyField(source='plugin.name')
+    plugin_version = serializers.ReadOnlyField(source='plugin.version')
     pipeline_id = serializers.ReadOnlyField(source='pipeline.id')
     previous_id = serializers.ReadOnlyField(source='previous.id')
     previous = serializers.HyperlinkedRelatedField(view_name='pluginpiping-detail',
@@ -282,8 +284,8 @@ class PluginPipingSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = PluginPiping
-        fields = ('url', 'id', 'plugin_id', 'pipeline_id', 'previous_id', 'previous',
-                  'plugin', 'pipeline')
+        fields = ('url', 'id', 'plugin_id', 'plugin_name', 'plugin_version',
+                  'pipeline_id', 'previous_id', 'previous', 'plugin', 'pipeline')
 
 
 class DefaultPipingStrParameterSerializer(serializers.HyperlinkedModelSerializer):
