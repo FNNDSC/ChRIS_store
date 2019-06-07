@@ -18,8 +18,8 @@ class PluginSerializerTests(TestCase):
         self.email = 'dev@babymri.org'
         self.plugin_name = 'simplefsapp'
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
-                                      'optional': False, 'flag':'--dir', 'default': '',
-                                      'help': 'test plugin'}]
+                                   'optional': True, 'flag':'--dir', 'default': './',
+                                   'help': 'test plugin', 'ui_exposed': True}]
         self.plg_repr = {}
         self.plg_repr['type'] = 'fs'
         self.plg_repr['icon'] = 'http://github.com/plugin'
@@ -129,7 +129,7 @@ class PluginSerializerTests(TestCase):
             self.assertEqual(100, PluginSerializer.validate_app_cpu_descriptor('100mi'))
             self.assertEqual(100, PluginSerializer.validate_app_cpu_descriptor('100gi'))
 
-    def test_validate_app_parameters(self):
+    def test_validate_app_parameters_type(self):
         """
         Test whether custom validate_app_parameters method raises a ValidationError when
         a plugin parameter has an unsupported type.
@@ -138,6 +138,18 @@ class PluginSerializerTests(TestCase):
         plg_serializer = PluginSerializer(plugin)
         parameter_list = self.plugin_parameters
         parameter_list[0]['type'] = 'booleano'
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_app_parameters(parameter_list)
+
+    def test_validate_app_parameters_default(self):
+        """
+        Test whether custom validate_app_parameters method raises a ValidationError when
+        an optional plugin parameter doesn't have a default value specified.
+        """
+        plugin = Plugin.objects.get(name=self.plugin_name)
+        plg_serializer = PluginSerializer(plugin)
+        parameter_list = self.plugin_parameters
+        parameter_list[0]['default'] = None
         with self.assertRaises(serializers.ValidationError):
             plg_serializer.validate_app_parameters(parameter_list)
 

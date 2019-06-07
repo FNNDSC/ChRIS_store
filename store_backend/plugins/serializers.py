@@ -49,10 +49,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         # validate all the plugin parameters and their default values
         parameters_serializers = []
         for request_param in request_parameters:
-            default = None
-            if 'default' in request_param:
-                default = request_param['default']
-                del request_param['default']
+            default = request_param.pop('default', None)
             param_serializer = PluginParameterSerializer(data=request_param)
             param_serializer.is_valid(raise_exception=True)
             serializer_dict = {'serializer': param_serializer,
@@ -70,8 +67,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         # this is necessary because the descriptor_file's FileField needs an instance of
         # a plugin before saving to the the DB since its "uploaded_file_path" function
         # needs to access instance.owner (now an m2m relationship)
-        descriptor_file = validated_data['descriptor_file']
-        del validated_data['descriptor_file']
+        descriptor_file = validated_data.pop('descriptor_file')
         plugin = super(PluginSerializer, self).create(validated_data)
         plugin.descriptor_file = descriptor_file
         plugin.save()
@@ -235,6 +231,19 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                 raise serializers.ValidationError(
                     {'descriptor_file': ["Invalid parameter type %s." % param['type']]})
             param['type'] = param_type[0]
+            default = None
+            if 'optional' in param and param['optional']:
+                if 'default' not in param:
+                    raise serializers.ValidationError(
+                        {'descriptor_file': ["A default value is required for optional "
+                                             "parameters."]})
+                default = param['default']
+                if default is None:
+                    raise serializers.ValidationError(
+                        {'descriptor_file': ["Default value for optional parameters "
+                                             "cannot be None."]})
+            if param['type'] == 'boolean' and 'action' not in param:
+                param['action'] = 'store_false' if default else 'store_true'
         return parameter_list
 
     @staticmethod
@@ -331,7 +340,7 @@ class PluginParameterSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = PluginParameter
         fields = ('url', 'id', 'name', 'type', 'optional', 'default', 'flag', 'action',
-                  'help', 'plugin')
+                  'help', 'ui_exposed', 'plugin')
 
     def get_default(self, obj):
         """
