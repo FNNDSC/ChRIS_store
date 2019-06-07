@@ -425,7 +425,7 @@ class DefaultPathParameterSerializer(serializers.HyperlinkedModelSerializer):
 
 
 DEFAULT_PARAMETER_SERIALIZERS = {'string': DefaultStrParameterSerializer,
-                         'integer': DefaultIntParameterSerializer,
-                         'float': DefaultFloatParameterSerializer,
-                         'boolean': DefaultBoolParameterSerializer,
-                         'path': DefaultPathParameterSerializer}
+                                 'integer': DefaultIntParameterSerializer,
+                                 'float': DefaultFloatParameterSerializer,
+                                 'boolean': DefaultBoolParameterSerializer,
+                                 'path': DefaultPathParameterSerializer}
