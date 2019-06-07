@@ -231,17 +231,16 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                 raise serializers.ValidationError(
                     {'descriptor_file': ["Invalid parameter type %s." % param['type']]})
             param['type'] = param_type[0]
-            default = None
-            if 'optional' in param and param['optional']:
-                if 'default' not in param:
-                    raise serializers.ValidationError(
-                        {'descriptor_file': ["A default value is required for optional "
-                                             "parameters."]})
-                default = param['default']
-                if default is None:
-                    raise serializers.ValidationError(
-                        {'descriptor_file': ["Default value for optional parameters "
-                                             "cannot be None."]})
+            default = param['default'] if 'default' in param else None
+            optional = param['optional'] if 'optional' in param else None
+            if optional and (default is None):
+                raise serializers.ValidationError(
+                    {'descriptor_file': ["A default value is required for optional "
+                                         "parameters."]})
+            if not optional and ('ui_exposed' in param) and not param['ui_exposed']:
+                raise serializers.ValidationError(
+                    {'descriptor_file': ["Any parameter that is not optional must be "
+                                         "exposed to the UI."]})
             if param['type'] == 'boolean' and 'action' not in param:
                 param['action'] = 'store_false' if default else 'store_true'
         return parameter_list

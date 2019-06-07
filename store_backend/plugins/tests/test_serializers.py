@@ -153,6 +153,19 @@ class PluginSerializerTests(TestCase):
         with self.assertRaises(serializers.ValidationError):
             plg_serializer.validate_app_parameters(parameter_list)
 
+    def test_validate_app_parameters_not_ui_exposed_and_not_optional(self):
+        """
+        Test whether custom validate_app_parameters method raises a ValidationError when
+        a plugin parameter that is not optional is not exposed to the ui.
+        """
+        plugin = Plugin.objects.get(name=self.plugin_name)
+        plg_serializer = PluginSerializer(plugin)
+        parameter_list = self.plugin_parameters
+        parameter_list[0]['optional'] = False
+        parameter_list[0]['ui_exposed'] = False
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_app_parameters(parameter_list)
+
     def test_validate_check_required_execshell(self):
         """
         Test whether the custom validate method raises a ValidationError when required
