@@ -1,11 +1,10 @@
+import logging
 
 from django.conf.urls import url, include
 from django.test.utils import override_settings
 from django.test import TestCase
 
 from rest_framework.routers import DefaultRouter
-
-from collection_json import Collection
 
 from collectionjson import services
 
@@ -14,13 +13,17 @@ from . import views
 
 
 @override_settings(ROOT_URLCONF='collectionjson.tests.test_parsers')
-
 class SimpleGetTest(TestCase):
     endpoint = ''
 
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.CRITICAL)
         self.response = self.client.get(self.endpoint)
-        self.collection = Collection.from_json(self.response.content.decode('utf8'))
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.DEBUG)
 
 
 class FunctionTests(SimpleGetTest):
@@ -29,14 +32,13 @@ class FunctionTests(SimpleGetTest):
     """
 
     endpoint = '/rest-api/moron/'
-    
+
     def setUp(self):
+        # create two objects
+        Moron.objects.get_or_create(name='bob')
+        Moron.objects.get_or_create(name='paul')
 
-       # create two objects
-       Moron.objects.get_or_create(name='bob')
-       Moron.objects.get_or_create(name='paul')
-
-       super(FunctionTests, self).setUp()
+        super(FunctionTests, self).setUp()
 
     def test_get_list_response(self):
         """
@@ -57,11 +59,10 @@ class FunctionTests(SimpleGetTest):
 
     def test_append_collection_links(self):
         """
-        Test whether services.append_collection_links() appends collection links 
+        Test whether services.append_collection_links() appends collection links
         to its response argument
         """
         response = self.response
-        request = response.renderer_context['request']
         links = {"morons": self.endpoint}
         response = services.append_collection_links(response, links)
         self.assertEqual(response.data['collection_links'],
@@ -69,11 +70,11 @@ class FunctionTests(SimpleGetTest):
 
     def test_append_collection_template(self):
         """
-        Test whether services.append_collection_template() appends a collection+json 
+        Test whether services.append_collection_template() appends a collection+json
         template to its response argument
         """
         response = self.response
-        template_data = {"name": ""} 
+        template_data = {"name": ""}
         response = services.append_collection_template(response, template_data)
         self.assertEqual(response.data['template'],
                          {'data': [{'name': 'name', 'value': ''}]})
@@ -84,7 +85,6 @@ class FunctionTests(SimpleGetTest):
         queries template list to it response argument
         """
         response = self.response
-        request = response.renderer_context['request']
         query_urls = [self.endpoint]
         response = services.append_collection_querylist(response, query_urls)
         self.assertEqual(response.data['queries'],

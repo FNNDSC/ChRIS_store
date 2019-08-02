@@ -1,4 +1,7 @@
 
+import logging
+import json
+
 from django.conf.urls import url, include
 from django.test.utils import override_settings
 from django.test import TestCase
@@ -7,7 +10,6 @@ from collection_json import Collection
 from rest_framework import status
 from rest_framework.routers import DefaultRouter
 
-from collectionjson.renderers import CollectionJsonRenderer
 from .models import Dummy, Idiot, Moron, Simple
 from . import views
 
@@ -17,15 +19,23 @@ def create_models():
     bob = Moron.objects.create(name='Bob LawLaw')
     dummy = Dummy.objects.create(name='Yolo McSwaggerson', moron=bob)
     dummy.idiots.add(Idiot.objects.create(name='frick'))
-    dummy.idiots.add(Idiot.objects.create(name='frack'))   
+    dummy.idiots.add(Idiot.objects.create(name='frack'))
 
 @override_settings(ROOT_URLCONF='collectionjson.tests.test_renderers')
 class SimpleGetTest(TestCase):
     endpoint = ''
 
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.CRITICAL)
         self.response = self.client.get(self.endpoint)
-        self.collection = Collection.from_json(self.response.content.decode('utf8'))
+        content = json.loads(self.response.content.decode('utf8'))
+        self.total = content['collection'].pop('total', None)  # remove the non-standard 'total' property
+        self.collection = Collection.from_json(json.dumps(content))
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.DEBUG)
 
 
 class TestCollectionJsonRenderer(SimpleGetTest):
@@ -48,6 +58,9 @@ class TestCollectionJsonRenderer(SimpleGetTest):
     def test_it_has_an_href(self):
         href = self.collection.href
         self.assertEqual(href, 'http://testserver/rest-api/dummy/')
+
+    def test_it_has_the_correct_total(self):
+        self.assertEqual(self.total, 1)
 
     def get_dummy(self):
         return self.collection.items[0]
@@ -173,3 +186,4 @@ urlpatterns = [
     url(r'^rest-api/url-rewrite/', views.UrlRewriteView.as_view()),
     url(r'^rest-api/empty/', views.EmptyView.as_view()),
 ]
+
