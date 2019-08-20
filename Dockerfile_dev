@@ -38,8 +38,8 @@ RUN apt-get update \
   && pip3 install -r ${REQPATH}/local.txt                           \
   && useradd -u $UID -ms /bin/bash localuser
 
-# Start as user $UID
-USER $UID
+# Start as user localuser
+USER localuser
 
 WORKDIR $APPROOT
 ENTRYPOINT ["/usr/src/docker-entrypoint_dev.sh"]

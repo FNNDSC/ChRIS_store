@@ -38,10 +38,10 @@ RUN apt-get update \
   && pip3 install -r ${REQPATH}/local.txt                           \
   && useradd -u $UID -ms /bin/bash localuser
 
-# Start as user $UID
-USER $UID
+# Start as user localuser
+USER localuser
 
-COPY --chown=$UID ["./store_backend", "${APPROOT}"]
+COPY --chown=localuser ["./store_backend", "${APPROOT}"]
 
 WORKDIR $APPROOT
 ENTRYPOINT ["/usr/src/docker-entrypoint.sh"]
