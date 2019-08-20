@@ -12,9 +12,9 @@ version: '3'
 
 services:
   chris_store_dev:
-    image:  ${CREPO}/chris_store:dev
+    image: ${CREPO}/chris_store:dev
     volumes:
-      - ./store_backend:/usr/src/store_backend
+      - ./store_backend:/home/localuser/store_backend
     ports:
       - "8010:8010"
     depends_on:
@@ -25,7 +25,7 @@ services:
       role: "Development server"
 
   chris_store_dev_db:
-    image:  mysql:5
+    image: mysql:5
     volumes:
       - chris_store_dev_db_data:/var/lib/mysql
     environment:
@@ -38,7 +38,7 @@ services:
       role: "Development database"
 
   swift_service:
-    image:  fnndsc/docker-swift-onlyone
+    image: fnndsc/docker-swift-onlyone
     volumes:
       - swift_storage:/srv
     ports:

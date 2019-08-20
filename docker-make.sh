@@ -9,11 +9,6 @@ source ./decorate.sh
 
 declare -i STEP=0
 
-title -d 1 "Removing old cache files on" " $(pwd)"
-find . -iname ".pyc" -exec sudo rm -fr {} \; 2>/dev/null
-find . -type d -iname "*pycache*" -exec sudo rm -fr {} \; 2>/dev/null
-windowBottom
-
 title -d 1 "Changing permissions to 755 on" " $(pwd)"
 echo "chmod -R 755 $(pwd)"
 chmod -R 755 $(pwd)

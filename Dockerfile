@@ -22,9 +22,10 @@
 FROM fnndsc/ubuntu-python3:latest
 MAINTAINER fnndsc "dev@babymri.org"
 
-ENV APPROOT="/usr/src/store_backend" REQPATH="/usr/src/requirements" VERSION="0.1"
+ENV VERSION="0.1"
+
+ENV APPROOT="/home/localuser/store_backend" REQPATH="/usr/src/requirements"
 COPY ["./requirements", "${REQPATH}"]
-COPY ["./store_backend", "${APPROOT}"]
 COPY ["./docker-entrypoint.sh", "/usr/src"]
 
 # Pass a UID on build command line (see above) to set internal UID
@@ -32,25 +33,16 @@ ARG UID=1001
 ENV UID=$UID
 
 RUN apt-get update \
-  && apt-get install sudo                                             \
-  && useradd -u $UID -ms /bin/bash localuser                          \
-  && addgroup localuser sudo                                          \
-  && echo "localuser:localuser" | chpasswd                            \
-  && adduser localuser sudo                                           \
   && apt-get install -y libmysqlclient-dev                            \
   && apt-get install -y apache2 apache2-dev                           \
-  && pip3 install -r ${REQPATH}/local.txt                             \
-  && mkdir /usr/users                                                 \
-  && chmod 777 /usr/users                                             \
-  && echo "localuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+  && pip3 install -r ${REQPATH}/local.txt                           \
+  && useradd -u $UID -ms /bin/bash localuser
+
+# Start as user $UID
+USER $UID
+
+COPY --chown=$UID ["./store_backend", "${APPROOT}"]
 
 WORKDIR $APPROOT
 ENTRYPOINT ["/usr/src/docker-entrypoint.sh"]
 EXPOSE 8010
-
-# Start as user $UID
-# For now this is disabled so the service runs as root to 
-# easily write to the managed db volume.
-# USER $UID
-
-#CMD ["manage.py", "runserver", "0.0.0.0:8010"]
