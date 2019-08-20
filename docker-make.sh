@@ -10,8 +10,10 @@ source ./decorate.sh
 declare -i STEP=0
 
 title -d 1 "Removing old cache files on" " $(pwd)"
-find . -iname ".pyc" -exec sudo rm -fr {} \; 2>/dev/null
-find . -type d -iname "*pycache*" -exec sudo rm -fr {} \; 2>/dev/null
+#find . -iname ".pyc" -exec sudo rm -fr {} \; 2>/dev/null
+#find . -type d -iname "*pycache*" -exec sudo rm -fr {} \; 2>/dev/null
+find . -iname ".pyc" -exec rm -fr {} \; 2>/dev/null
+find . -type d -iname "*pycache*" -exec rm -fr {} \; 2>/dev/null
 windowBottom
 
 title -d 1 "Changing permissions to 755 on" " $(pwd)"
@@ -36,7 +38,7 @@ docker-compose exec chris_store_dev python manage.py test --exclude-tag integrat
 windowBottom
 
 title -d 1 "Running Django Integration tests..."
-docker-compose exec chris_store_dev python manage.py test --tag integration
+#docker-compose exec chris_store_dev python manage.py test --tag integration
 windowBottom
 
 title -d 1 "Creating two ChRIS store API users"
@@ -58,11 +60,7 @@ title -d 1 "Automatically uploading some plugins to the ChRIS STORE..."
 # Add a new plugin name to the list if you want it to be automatically registered
 declare -a plugins=( "simplefsapp"
                      "simpledsapp"
-                     "pacsquery"
-                     "pacsretrieve"
                      "s3retrieve"
-                     "s3push"
-                     "dircopy"
 )
 declare -i i=1
 declare -i STEP=7
