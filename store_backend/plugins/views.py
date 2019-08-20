@@ -52,6 +52,7 @@ class PluginList(generics.ListCreateAPIView):
         # append write template
         template_data = {'name': '', 'dock_image': '', 'public_repo': '',
                          'descriptor_file': ''}
+        #import pdb; pdb.set_trace()
         return services.append_collection_template(response, template_data)
 
 
