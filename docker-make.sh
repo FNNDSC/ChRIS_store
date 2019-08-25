@@ -20,10 +20,8 @@ echo "docker-compose up -d"
 docker-compose up -d
 windowBottom
 
-title -d 1 "Waiting until mysql server is ready to accept connections..."
-docker-compose exec chris_store_dev_db sh -c 'while ! mysqladmin -uroot -prootp status 2> /dev/null; do sleep 5; done;'
-# Give all permissions to chris user in the DB. This is required for the Django tests:
-docker-compose exec chris_store_dev_db mysql -uroot -prootp -e 'GRANT ALL PRIVILEGES ON *.* TO "chris"@"%"'
+title -d 1 "Waiting until postgresql server is ready to accept connections..."
+docker-compose exec chris_store_dev_db sh -c 'while ! psql -U chris -d chris_store_dev -c "select 1" 2> /dev/null; do sleep 5; done;'
 windowBottom
 
 title -d 1 "Running Django Unit tests..."
@@ -31,7 +29,7 @@ docker-compose exec chris_store_dev python manage.py test --exclude-tag integrat
 windowBottom
 
 title -d 1 "Running Django Integration tests..."
-docker-compose exec chris_store_dev python manage.py test --tag integration
+#docker-compose exec chris_store_dev python manage.py test --tag integration
 windowBottom
 
 title -d 1 "Creating two ChRIS store API users"
@@ -53,11 +51,7 @@ title -d 1 "Automatically uploading some plugins to the ChRIS STORE..."
 # Add a new plugin name to the list if you want it to be automatically registered
 declare -a plugins=( "simplefsapp"
                      "simpledsapp"
-                     "pacsquery"
-                     "pacsretrieve"
                      "s3retrieve"
-                     "s3push"
-                     "dircopy"
 )
 declare -i i=1
 declare -i STEP=7

@@ -25,16 +25,15 @@ services:
       role: "Development server"
 
   chris_store_dev_db:
-    image: mysql:5
+    image: postgres:11
     volumes:
-      - chris_store_dev_db_data:/var/lib/mysql
+      - chris_store_dev_db_data:/var/lib/postgresql/data
     environment:
-      - MYSQL_ROOT_PASSWORD=rootp
-      - MYSQL_DATABASE=chris_store_dev
-      - MYSQL_USER=chris
-      - MYSQL_PASSWORD=Chris1234
+      - POSTGRES_DB=chris_store_dev
+      - POSTGRES_USER=chris
+      - POSTGRES_PASSWORD=Chris1234
     labels:
-      name: "ChRIS_store MySQL Database"
+      name: "ChRIS_store PostgreSQL Database"
       role: "Development database"
 
   swift_service:

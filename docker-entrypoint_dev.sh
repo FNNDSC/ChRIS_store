@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start ChRIS store development server
-python check_db_connection.py -u root -p rootp --host chris_store_dev_db --max-attempts 30
+python check_db_connection.py -u chris -p Chris1234 -d chris_store_dev --host chris_store_dev_db --max-attempts 30
 python manage.py migrate
 python manage.py runserver 0.0.0.0:8010
 #python manage.py collectstatic

@@ -33,7 +33,7 @@ COPY ["./requirements", "${REQPATH}"]
 COPY ["./docker-entrypoint_dev.sh", "/usr/src"]
 
 RUN apt-get update \
-  && apt-get install -y libmysqlclient-dev                            \
+  && apt-get install -y libpq-dev                            \
   && apt-get install -y apache2 apache2-dev                           \
   && pip3 install -r ${REQPATH}/local.txt                           \
   && useradd -u $UID -ms /bin/bash localuser
