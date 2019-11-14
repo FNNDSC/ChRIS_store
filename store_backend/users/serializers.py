@@ -1,25 +1,28 @@
 
 from django.contrib.auth.models import User
-
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     plugin = serializers.HyperlinkedRelatedField(many=True, view_name='plugin-detail',
-                                               read_only=True)
+                                                 read_only=True)
     username = serializers.CharField(max_length=32,
-                                     validators=[UniqueValidator(queryset=User.objects.all())])
+                                     validators=[UniqueValidator(
+                                         queryset=User.objects.all())])
     email = serializers.EmailField(required=True,
-                                   validators=[UniqueValidator(queryset=User.objects.all())]
-    )
-    password = serializers.CharField(min_length=6, max_length=100, write_only=True)
+                                   validators=[UniqueValidator(
+                                       queryset=User.objects.all())])
+    password = serializers.CharField(min_length=8, max_length=100, write_only=True)
 
     def create(self, validated_data):
-        user = User(username=validated_data['username'], email=validated_data['email'])
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
+        """
+        Overriden to take care of the password hashing.
+        """
+        username = validated_data.get('username')
+        email = validated_data.get('email')
+        password = validated_data.get('password')
+        return User.objects.create_user(username, email, password)
 
     class Meta:
         model = User
