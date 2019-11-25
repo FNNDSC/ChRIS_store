@@ -3,9 +3,8 @@
 __pycache__
 *.pyc
 docs/build
-secrets.json
+secrets/
 .coverage
 htmlcov
 .docker
 .idea
-FS/

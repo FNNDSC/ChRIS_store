@@ -13,11 +13,11 @@ This page describes how to quickly get the set of services comprising the backen
 ### Preconditions
 
 #### Install latest Docker and Docker Compose. Currently tested platforms
+* ``Ubuntu (16.04+) and MAC OS X 10.11+``
 * ``Docker 17.04.0+``
 * ``Docker Compose 1.10.0+``
-* ``Ubuntu (16.04/17.04/17.10) and MAC OS X 10.11+``
 
-#### Make sure to add your computer user to the ``docker group`` in your machine
+#### On a Linux machine make sure to add your computer user to the ``docker group`` 
 
 #### Install virtualenv
 ```bash
@@ -75,12 +75,12 @@ To list installed dependencies in chris_store_env:
 pip freeze --local
 ```
 
-### Instantiate ChRIS Store
+### Instantiate ChRIS Store dev environment
 
-Start ChRIS Store from the repository source directory by running the make bash script
+Start ChRIS Store services by running the make bash script from the repository source directory
 
 ```bash
-./docker-make.sh
+./docker-make.sh up
 ```
 All the steps performed by the above script are properly documented in the script itself. 
 
@@ -144,12 +144,12 @@ http POST http://localhost:8010/api/v1/users/ Content-Type:application/vnd.colle
 swift -A http://127.0.0.1:8080/auth/v1.0 -U chris:chris1234 -K testing list store_users
 ```
 
-### Destroy ChRIS Store
+### Destroy ChRIS Store dev environment
 
-Stop and remove ChRIS Store services by running the destroy bash script from the repository source directory
+Stop and remove ChRIS Store services by running the make bash script from the repository source directory
 
 ```bash
-./docker-destroy.sh
+./docker-make.sh down
 ```
 
 ### REST API Documentation
@@ -167,4 +167,3 @@ Build the html documentation
 cd docs/
 make html
 ```
-
