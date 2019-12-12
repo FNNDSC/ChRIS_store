@@ -38,6 +38,14 @@ if [[ "$1" == 'up' ]]; then
     echo "docker-compose up -d"
     docker-compose up -d
     windowBottom
+
+    title -d 1 "Waiting until mysql server is ready to accept connections..."
+    docker-compose exec chris_store_db sh -c 'while ! mysqladmin -uroot -p$MYSQL_ROOT_PASSWORD status 2> /dev/null; do sleep 5; done;'
+    windowBottom
+
+    title -d 1 "Creating superuser chris"
+    docker-compose exec chris_store sh -c 'python manage.py createsuperuser --username chris --email dev@babymri.org'
+    windowBottom
 fi
 
 if [[ "$1" == 'down' ]]; then
