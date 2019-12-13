@@ -34,6 +34,8 @@ declare -i STEP=0
 
 if [[ "$1" == 'up' ]]; then
     title -d 1 "Starting containerized production environment using " " ./docker-compose.yml"
+    docker pull mysql:5
+    docker pull fnndsc/docker-swift-onlyone
     docker pull fnndsc/chris_store
     echo "docker-compose up -d"
     docker-compose up -d
