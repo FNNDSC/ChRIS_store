@@ -38,6 +38,8 @@ if [[ "$1" == 'up' ]]; then
     windowBottom
 
     title -d 1 "Starting containerized development environment using " " ./docker-compose_dev.yml"
+    docker pull mysql:5
+    docker pull fnndsc/docker-swift-onlyone
     docker pull fnndsc/chris_store:dev
     echo "docker-compose -f docker-compose_dev.yml up -d"
     docker-compose -f docker-compose_dev.yml up -d
@@ -143,5 +145,3 @@ if [[ "$1" == 'down' ]]; then
     fi
     windowBottom
 fi
-
-
