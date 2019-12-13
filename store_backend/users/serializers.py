@@ -26,4 +26,4 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = User
-        fields = ('url', 'username', 'email', 'password', 'plugin')
+        fields = ('url', 'id', 'username', 'email', 'password', 'plugin')
