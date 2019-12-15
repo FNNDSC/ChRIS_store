@@ -41,8 +41,8 @@ if [[ "$1" == 'up' ]]; then
     docker-compose up -d
     windowBottom
 
-    title -d 1 "Waiting until mysql server is ready to accept connections..."
-    docker-compose exec chris_store_db sh -c 'while ! mysqladmin -uroot -p$MYSQL_ROOT_PASSWORD status 2> /dev/null; do sleep 5; done;'
+    title -d 1 "Waiting until ChRIS store is ready to accept connections..."
+    docker-compose exec chris_store sh -c 'while ! curl -sSf http://localhost:8010/api/v1/users/ 2> /dev/null; do sleep 5; done;'
     windowBottom
 
     title -d 1 "Creating superuser chris"
