@@ -45,7 +45,7 @@ if [[ "$1" == 'up' ]]; then
     docker-compose -f docker-compose_dev.yml up -d
     windowBottom
 
-    title -d 1 "Waiting until mysql server is ready to accept connections..."
+    title -d 1 "Waiting until ChRIS store database server is ready to accept connections..."
     docker-compose -f docker-compose_dev.yml exec chris_store_dev_db sh -c 'while ! mysqladmin -uroot -prootp status 2> /dev/null; do sleep 5; done;'
     # Give all permissions to chris user on the test DB. This is required for the Django tests:
     docker-compose -f docker-compose_dev.yml exec chris_store_dev_db mysql -uroot -prootp -e 'GRANT ALL PRIVILEGES ON test_chris_store_dev.* TO "chris"@"%"'
@@ -89,6 +89,7 @@ if [[ "$1" == 'up' ]]; then
     for plugin in "${plugins[@]}"; do
         echo "${STEP}.$i: Uploading $plugin representation to the ChRIS store..."
         PLUGIN_DOCK="fnndsc/pl-${plugin}"
+        docker pull "$PLUGIN_DOCK"
         PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${plugin}.py" --json 2> /dev/null;)
         docker-compose -f docker-compose_dev.yml exec chris_store_dev python plugins/services/manager.py add "${plugin}" cubeadmin https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP"
         ((i++))
