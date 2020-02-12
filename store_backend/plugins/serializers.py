@@ -10,7 +10,7 @@ from rest_framework import serializers
 
 from .models import Plugin, PluginParameter, TYPES
 from .models import DefaultFloatParameter, DefaultIntParameter, DefaultBoolParameter
-from .models import DefaultPathParameter, DefaultStrParameter
+from .models import DefaultStrParameter
 from .fields import CPUInt, MemoryInt
 
 
@@ -233,11 +233,16 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             param['type'] = param_type[0]
             default = param['default'] if 'default' in param else None
             optional = param['optional'] if 'optional' in param else None
-            if optional and (default is None):
-                raise serializers.ValidationError(
-                    {'descriptor_file': ["A default value is required for optional "
-                                         "parameters."]})
-            if not optional and ('ui_exposed' in param) and not param['ui_exposed']:
+            if optional:
+                if param['type'] in ('path', 'unextpath'):
+                    raise serializers.ValidationError(
+                        {'descriptor_file': ["Parameters of type 'path' or 'unextpath' "
+                                             "cannot be optional."]})
+                if default is None:
+                    raise serializers.ValidationError(
+                        {'descriptor_file': ["A default value is required for optional "
+                                             "parameters."]})
+            elif 'ui_exposed' in param and not param['ui_exposed']:
                 raise serializers.ValidationError(
                     {'descriptor_file': ["Any parameter that is not optional must be "
                                          "exposed to the UI."]})
@@ -409,23 +414,7 @@ class DefaultBoolParameterSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
 
 
-class DefaultPathParameterSerializer(serializers.HyperlinkedModelSerializer):
-    param_name = serializers.ReadOnlyField(source='plugin_param.name')
-    type = serializers.SerializerMethodField()
-    plugin_param = serializers.HyperlinkedRelatedField(view_name='pluginparameter-detail',
-                                                       read_only=True)
-
-    @staticmethod
-    def get_type(obj):
-        return obj.plugin_param.type
-
-    class Meta:
-        model = DefaultPathParameter
-        fields = ('url', 'id', 'param_name', 'value', 'type', 'plugin_param')
-
-
 DEFAULT_PARAMETER_SERIALIZERS = {'string': DefaultStrParameterSerializer,
                                  'integer': DefaultIntParameterSerializer,
                                  'float': DefaultFloatParameterSerializer,
-                                 'boolean': DefaultBoolParameterSerializer,
-                                 'path': DefaultPathParameterSerializer}
+                                 'boolean': DefaultBoolParameterSerializer}

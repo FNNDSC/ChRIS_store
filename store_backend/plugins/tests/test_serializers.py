@@ -18,7 +18,7 @@ class PluginSerializerTests(TestCase):
         self.email = 'dev@babymri.org'
         self.plugin_name = 'simplefsapp'
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
-                                   'optional': True, 'flag':'--dir', 'default': './',
+                                   'optional': True, 'flag': '--dir', 'default': '/',
                                    'help': 'test plugin', 'ui_exposed': True}]
         self.plg_repr = {}
         self.plg_repr['type'] = 'fs'
@@ -150,6 +150,21 @@ class PluginSerializerTests(TestCase):
         plg_serializer = PluginSerializer(plugin)
         parameter_list = self.plugin_parameters
         parameter_list[0]['default'] = None
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_app_parameters(parameter_list)
+
+    def test_validate_app_parameters_of_path_type_and_optional(self):
+        """
+        Test whether custom validate_app_parameters method raises a ValidationError when
+        a plugin parameter is optional anf of type 'path' or 'unextpath'.
+        """
+        plugin = Plugin.objects.get(name=self.plugin_name)
+        plg_serializer = PluginSerializer(plugin)
+        parameter_list = self.plugin_parameters
+        parameter_list[0]['type'] = 'path'
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_app_parameters(parameter_list)
+        parameter_list[0]['type'] = 'unextpath'
         with self.assertRaises(serializers.ValidationError):
             plg_serializer.validate_app_parameters(parameter_list)
 

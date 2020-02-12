@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from plugins.models import Plugin
-from plugins.models import PluginParameter, DefaultPathParameter, DefaultIntParameter
+from plugins.models import PluginParameter, DefaultIntParameter, DefaultStrParameter
 from pipelines.models import Pipeline
 from pipelines.serializers import PipelineSerializer
 
@@ -20,7 +20,7 @@ class SerializerTests(TestCase):
         logging.disable(logging.CRITICAL)
 
         self.plugin_fs_name = "simplefsapp"
-        self.plugin_fs_parameters = {'dir': {'type': 'path', 'optional': True,
+        self.plugin_fs_parameters = {'dir': {'type': 'string', 'optional': True,
                                              'default': "./"}}
         self.plugin_ds_name = "simpledsapp"
         self.plugin_ds_parameters = {'dummyInt': {'type': 'integer', 'optional': True,
@@ -40,11 +40,11 @@ class SerializerTests(TestCase):
             type=self.plugin_fs_parameters['dir']['type'],
             optional=self.plugin_fs_parameters['dir']['optional'])
         default = self.plugin_fs_parameters['dir']['default']
-        DefaultPathParameter.objects.get_or_create(plugin_param=plg_param_fs,
-                                                   value=default)  # set plugin parameter default
+        DefaultStrParameter.objects.get_or_create(plugin_param=plg_param_fs,
+                                                  value=default)  # set plugin parameter default
 
         # add a parameter with a default
-        (plg_param_ds, tf)= PluginParameter.objects.get_or_create(
+        (plg_param_ds, tf) = PluginParameter.objects.get_or_create(
             plugin=plugin_ds,
             name='dummyInt',
             type=self.plugin_ds_parameters['dummyInt']['type'],

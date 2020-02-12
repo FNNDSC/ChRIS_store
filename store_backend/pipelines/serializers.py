@@ -12,8 +12,7 @@ from plugins.serializers import DEFAULT_PARAMETER_SERIALIZERS
 
 from .models import Pipeline, PluginPiping
 from .models import DefaultPipingFloatParameter, DefaultPipingIntParameter
-from .models import DefaultPipingBoolParameter, DefaultPipingPathParameter
-from .models import DefaultPipingStrParameter
+from .models import DefaultPipingBoolParameter, DefaultPipingStrParameter
 
 
 class PipelineSerializer(serializers.HyperlinkedModelSerializer):
@@ -376,28 +375,6 @@ class DefaultPipingBoolParameterSerializer(serializers.HyperlinkedModelSerialize
                   'plugin_name', 'plugin_version', 'plugin_id', 'plugin_param')
 
 
-class DefaultPipingPathParameterSerializer(serializers.HyperlinkedModelSerializer):
-    previous_plugin_piping_id = serializers.ReadOnlyField(
-        source='plugin_piping.previous_id')
-    plugin_piping_id = serializers.ReadOnlyField(source='plugin_piping.id')
-    plugin_id = serializers.ReadOnlyField(source='plugin_piping.plugin_id')
-    plugin_name = serializers.ReadOnlyField(source='plugin_param.plugin.name')
-    plugin_version = serializers.ReadOnlyField(source='plugin_param.plugin.version')
-    param_id = serializers.ReadOnlyField(source='plugin_param.id')
-    param_name = serializers.ReadOnlyField(source='plugin_param.name')
-    type = serializers.ReadOnlyField(source='plugin_param.type')
-    plugin_piping = serializers.HyperlinkedRelatedField(view_name='pluginpiping-detail',
-                                                   read_only=True)
-    plugin_param = serializers.HyperlinkedRelatedField(view_name='pluginparameter-detail',
-                                                       read_only=True)
-
-    class Meta:
-        model = DefaultPipingPathParameter
-        fields = ('url', 'id', 'value', 'type', 'plugin_piping_id',
-                  'previous_plugin_piping_id', 'param_name', 'param_id', 'plugin_piping',
-                  'plugin_name', 'plugin_version', 'plugin_id', 'plugin_param')
-
-
 class GenericDefaultPipingParameterSerializer(serializers.HyperlinkedModelSerializer):
     previous_plugin_piping_id = serializers.ReadOnlyField(
         source='plugin_piping.previous_id')
@@ -442,5 +419,4 @@ class GenericDefaultPipingParameterSerializer(serializers.HyperlinkedModelSerial
 DEFAULT_PIPING_PARAMETER_SERIALIZERS = {'string': DefaultPipingStrParameterSerializer,
                                         'integer': DefaultPipingIntParameterSerializer,
                                         'float': DefaultPipingFloatParameterSerializer,
-                                        'boolean': DefaultPipingBoolParameterSerializer,
-                                        'path': DefaultPipingPathParameterSerializer}
+                                        'boolean': DefaultPipingBoolParameterSerializer}
