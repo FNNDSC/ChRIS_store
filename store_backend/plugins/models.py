@@ -177,7 +177,7 @@ class PluginParameter(models.Model):
 
 
 class DefaultStrParameter(models.Model):
-    value = models.CharField(max_length=200, blank=True)
+    value = models.CharField(max_length=600, blank=True)
     plugin_param = models.OneToOneField(PluginParameter, on_delete=models.CASCADE,
                                         related_name='string_default')
 
