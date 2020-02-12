@@ -1,6 +1,7 @@
 # ChRIS_store
 [![Build Status](https://travis-ci.org/FNNDSC/ChRIS_store.svg?branch=master)](https://travis-ci.org/FNNDSC/ChRIS_store)
-
+![License][license-badge]
+![Last Commit][last-commit-badge]
 
 Back end for ChRIS Store. This is a Django-MySQL project.
 
@@ -167,3 +168,7 @@ Build the html documentation
 cd docs/
 make html
 ```
+
+
+[license-badge]: https://img.shields.io/github/license/fnndsc/chris_store.svg
+[last-commit-badge]: https://img.shields.io/github/last-commit/fnndsc/chris_store.svg
