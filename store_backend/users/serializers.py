@@ -7,7 +7,7 @@ from rest_framework.validators import UniqueValidator
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     plugin = serializers.HyperlinkedRelatedField(many=True, view_name='plugin-detail',
                                                  read_only=True)
-    username = serializers.CharField(max_length=32,
+    username = serializers.CharField(min_length=4, max_length=32,
                                      validators=[UniqueValidator(
                                          queryset=User.objects.all())])
     email = serializers.EmailField(required=True,
