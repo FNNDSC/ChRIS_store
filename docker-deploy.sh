@@ -37,6 +37,7 @@ if [[ "$1" == 'up' ]]; then
     docker pull mysql:5
     docker pull fnndsc/docker-swift-onlyone
     docker pull fnndsc/chris_store
+    echo ""
     echo "docker-compose up -d"
     docker-compose up -d
     windowBottom

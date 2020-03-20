@@ -14,7 +14,7 @@ This page describes how to quickly get the set of services comprising the backen
 ### Preconditions
 
 #### Install latest Docker and Docker Compose. Currently tested platforms
-* ``Ubuntu (16.04+) and MAC OS X 10.11+``
+* ``Ubuntu 16.04+ and MAC OS X 10.11+``
 * ``Docker 17.04.0+``
 * ``Docker Compose 1.10.0+``
 

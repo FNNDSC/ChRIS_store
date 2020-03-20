@@ -87,6 +87,7 @@ if [[ "$1" == 'up' ]]; then
     declare -i i=1
     declare -i STEP=7
     for plugin in "${plugins[@]}"; do
+        echo ""
         echo "${STEP}.$i: Uploading $plugin representation to the ChRIS store..."
         PLUGIN_DOCK="fnndsc/pl-${plugin}"
         docker pull "$PLUGIN_DOCK"

@@ -24,8 +24,8 @@ class ViewTests(TestCase):
         self.content_type = 'application/vnd.collection+json'
 
         plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
-                                      'optional': True, 'flag':'--dir', 'default': './',
-                                      'help': 'test plugin'}]
+                              'optional': True, 'flag': '--dir', 'short_flag': '-d',
+                              'default': '/', 'help': 'test plugin', 'ui_exposed': True}]
         plg_repr = {}
         plg_repr['type'] = 'fs'
         plg_repr['icon'] = 'http://github.com/plugin'
@@ -241,8 +241,8 @@ class PluginParameterListViewTests(ViewTests):
     def setUp(self):
         super(PluginParameterListViewTests, self).setUp()
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
-                                      'optional': False, 'flag':'--dir', 'default': '',
-                                      'help': 'test plugin'}]
+                                   'optional': False, 'flag': '--dir', 'short_flag': '-d',
+                                   'default': '', 'help': 'test plugin'}]
         plugin = Plugin.objects.get(name=self.plugin_name)
         self.list_url = reverse("pluginparameter-list", kwargs={"pk": plugin.id})
 
@@ -253,7 +253,9 @@ class PluginParameterListViewTests(ViewTests):
             type=self.plugin_parameters[0]['type'],
             action=self.plugin_parameters[0]['action'],
             flag=self.plugin_parameters[0]['flag'],
-            optional=self.plugin_parameters[0]['optional'])
+            short_flag=self.plugin_parameters[0]['short_flag'],
+            optional=self.plugin_parameters[0]['optional']
+        )
 
     def test_plugin_parameter_list_success_authenticated(self):
         self.client.login(username=self.username, password=self.password)
@@ -273,8 +275,8 @@ class PluginParameterDetailViewTests(ViewTests):
     def setUp(self):
         super(PluginParameterDetailViewTests, self).setUp()
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
-                                      'optional': False, 'flag':'--dir', 'default': '',
-                                      'help': 'test plugin'}]
+                                   'optional': False, 'flag': '--dir', 'short_flag': '-d',
+                                   'default': '', 'help': 'test plugin'}]
         plugin = Plugin.objects.get(name=self.plugin_name)
         # create a plugin parameter
         (param, tf) = PluginParameter.objects.get_or_create(
@@ -283,7 +285,9 @@ class PluginParameterDetailViewTests(ViewTests):
             type=self.plugin_parameters[0]['type'],
             action=self.plugin_parameters[0]['action'],
             flag=self.plugin_parameters[0]['flag'],
-            optional=self.plugin_parameters[0]['optional'])
+            short_flag=self.plugin_parameters[0]['short_flag'],
+            optional=self.plugin_parameters[0]['optional']
+        )
 
         self.read_url = reverse("pluginparameter-detail", kwargs={"pk": param.id})
 

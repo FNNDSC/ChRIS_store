@@ -14,8 +14,8 @@ class ModelTests(TestCase):
         self.email = 'dev@babymri.org'
         self.plugin_name = "simplefsapp"
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
-                                      'optional': False, 'flag':'--dir', 'default': '',
-                                      'help': 'test plugin'}]
+                                   'optional': False, 'flag': '--dir', 'short_flag': '-d',
+                                   'default': '', 'help': 'test plugin'}]
         self.plg_repr = {}
         self.plg_repr['type'] = 'fs'
         self.plg_repr['icon'] = 'http://github.com/plugin'
@@ -53,7 +53,9 @@ class PluginModelTests(ModelTests):
             type=self.plugin_parameters[0]['type'],
             action=self.plugin_parameters[0]['action'],
             optional=self.plugin_parameters[0]['optional'],
-            flag=self.plugin_parameters[0]['flag'])
+            flag=self.plugin_parameters[0]['flag'],
+            short_flag=self.plugin_parameters[0]['short_flag'],
+        )
         param_names = plugin.get_plugin_parameter_names()
         self.assertEqual(param_names, [self.plugin_parameters[0]['name']])
 
