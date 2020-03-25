@@ -1,4 +1,4 @@
-# ChRIS_store
+# ![ChRIS logo](https://github.com/FNNDSC/ChRIS_store/blob/master/docs/assets/logo_chris.png) ChRIS_store
 [![Build Status](https://travis-ci.org/FNNDSC/ChRIS_store.svg?branch=master)](https://travis-ci.org/FNNDSC/ChRIS_store)
 ![License][license-badge]
 ![Last Commit][last-commit-badge]
