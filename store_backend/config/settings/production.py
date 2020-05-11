@@ -35,7 +35,7 @@ SECRET_KEY = get_secret('DJANGO_SECRET_KEY')
 # SITE CONFIGURATION
 # ------------------------------------------------------------------------------
 # Hosts/domain names that are valid for this site
-# See https://docs.djangoproject.com/en/1.6/ref/settings/#allowed-hosts
+# See https://docs.djangoproject.com/en/2.2/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = get_secret('DJANGO_ALLOWED_HOSTS', env.list)
 # END SITE CONFIGURATION
 
