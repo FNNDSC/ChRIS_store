@@ -18,7 +18,7 @@ This page describes how to quickly get the set of services comprising the backen
 * ``Docker 17.04.0+``
 * ``Docker Compose 1.10.0+``
 
-#### On a Linux machine make sure to add your computer user to the ``docker group`` 
+#### On a Linux machine make sure to add your computer user to the ``docker`` group 
 
 #### Install virtualenv
 ```bash
@@ -119,10 +119,11 @@ docker exec -it chris_store_chris_store_dev_run_1 coverage run --source=plugins,
 docker exec -it chris_store_chris_store_dev_run_1 coverage report
 ```
 
-### Using httpie to play with the REST API 
+### Using [HTTPie](https://httpie.org/) to play with the REST API 
+
 #### A simple GET request:
 ```bash
-http -a cubeadmin:cubeadmin1234 http://localhost:8010/api/v1/
+http http://localhost:8010/api/v1/
 ```
 
 #### A simple POST request to register a new plugin app in the store:
