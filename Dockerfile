@@ -23,7 +23,7 @@ MAINTAINER fnndsc "dev@babymri.org"
 
 # Pass a UID on build command line (see above) to set internal UID
 ARG UID=1001
-ENV UID=$UID  VERSION="0.1"
+ENV UID=$UID DEBIAN_FRONTEND=noninteractive VERSION="0.1"
 
 ENV APPROOT="/home/localuser/store_backend" REQPATH="/usr/src/requirements"
 COPY ["./requirements", "${REQPATH}"]
