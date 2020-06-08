@@ -5,7 +5,7 @@ from unittest import mock
 from django.contrib.auth.models import User
 from django.test import TestCase, tag
 
-from plugins.models import Plugin, PluginParameter, DefaultIntParameter
+from plugins.models import PluginMeta, Plugin, PluginParameter, DefaultIntParameter
 from pipelines.models import Pipeline, PluginPiping
 from pipelines.services import manager
 
@@ -24,8 +24,8 @@ class PipelineManagerTests(TestCase):
         self.password = 'foo-pass'
 
         # create plugin
-        (plugin_ds, tf) = Plugin.objects.get_or_create(name=self.plugin_ds_name, type='ds',
-                                                       version=self.plugin_ds_version)
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_ds_name, type='ds')
+        (plugin_ds, tf) = Plugin.objects.get_or_create(meta=meta, version=self.plugin_ds_version)
 
         # add a parameter with a default
         (plg_param_ds, tf)= PluginParameter.objects.get_or_create(

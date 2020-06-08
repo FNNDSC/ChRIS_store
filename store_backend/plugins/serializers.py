@@ -8,42 +8,154 @@ from django.utils import timezone
 
 from rest_framework import serializers
 
-from .models import Plugin, PluginParameter, TYPES
+from .models import PluginMeta, PluginMetaStar, Plugin, PluginParameter, TYPES
 from .models import DefaultFloatParameter, DefaultIntParameter, DefaultBoolParameter
 from .models import DefaultStrParameter
 from .fields import CPUInt, MemoryInt
 
 
-class PluginSerializer(serializers.HyperlinkedModelSerializer):
-    parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
+class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
+    stars = serializers.ReadOnlyField(source='fan.count')
     owner = serializers.HyperlinkedRelatedField(many=True, view_name='user-detail',
                                                 read_only=True)
+    new_owner = serializers.CharField(min_length=4, max_length=32, write_only=True,
+                                      required=False)
+    plugins = serializers.HyperlinkedIdentityField(view_name='pluginmeta-plugin-list')
+
+    class Meta:
+        model = PluginMeta
+        fields = ('url', 'id', 'creation_date', 'modification_date', 'name', 'stars',
+                  'public_repo', 'license', 'type', 'icon', 'category', 'authors',
+                  'plugins', 'owner', 'new_owner')
+
+    def validate_new_owner(self, new_owner):
+        """
+        Overriden to check whether a new plugin owner is a system-registered user.
+        """
+        try:
+            # check if new owner is a system-registered user
+            owner = User.objects.get(username=new_owner)
+        except ObjectDoesNotExist:
+            msg = "User %s is not a registered user." % new_owner
+            raise serializers.ValidationError(msg)
+        return owner
+
+    def update(self, instance, validated_data):
+        """
+        Overriden to add modification date.
+        """
+        instance.modification_date = timezone.now()
+        instance.save()
+        return super(PluginMetaSerializer, self).update(instance, validated_data)
+
+
+class PluginMetaStarSerializer(serializers.HyperlinkedModelSerializer):
+    plugin_name = serializers.CharField(max_length=100, source='meta.name')
+    meta_id = serializers.ReadOnlyField(source='meta.id')
+    user_id = serializers.ReadOnlyField(source='user.id')
+    username = serializers.ReadOnlyField(source='user.username')
+    meta = serializers.HyperlinkedRelatedField(view_name='pluginmeta-detail',
+                                               read_only=True)
+    user = serializers.HyperlinkedRelatedField(view_name='user-detail', read_only=True)
+
+    class Meta:
+        model = PluginMetaStar
+        fields = ('url', 'id', 'plugin_name', 'meta_id', 'user_id', 'username', 'meta',
+                  'user')
+
+    def create(self, validated_data):
+        """
+        Overriden to check if plugin meta and user are unique together before saving.
+        """
+        self.validate_meta_user(validated_data['user'], validated_data['meta'])
+        return super(PluginMetaStarSerializer, self).create(validated_data)
+
+    def validate_plugin_name(self, plugin_name):
+        """
+        Overriden to check whether a plugin with the provided name exists in the DB.
+        """
+        try:
+            # check whether plugin_name is a system-registered plugin
+            pl_meta = PluginMeta.objects.get(name=plugin_name)
+        except ObjectDoesNotExist:
+            msg = "Could not find a plugin with name %s." % plugin_name
+            raise serializers.ValidationError(msg)
+        return pl_meta
+
+    @staticmethod
+    def validate_meta_user(user, meta):
+        """
+        Custom method to check if plugin meta and user are unique together.
+        """
+        try:
+            PluginMetaStar.objects.get(meta=meta, user=user)
+        except ObjectDoesNotExist:
+            pass
+        else:
+            msg = "Plugin named %s is already a favorite of user %s." % (meta.name, user)
+            raise serializers.ValidationError({'non_field_errors': [msg]})
+
+
+class PluginSerializer(serializers.HyperlinkedModelSerializer):
+    name = serializers.CharField(max_length=100, source='meta.name')
+    public_repo = serializers.URLField(max_length=300, source='meta.public_repo')
+    license = serializers.ReadOnlyField(source='meta.license')
+    type = serializers.ReadOnlyField(source='meta.type')
+    icon = serializers.ReadOnlyField(source='meta.icon')
+    category = serializers.ReadOnlyField(source='meta.category')
+    authors = serializers.ReadOnlyField(source='meta.authors')
+    stars = serializers.ReadOnlyField(source='meta.fan.count')
+    parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
+    meta = serializers.HyperlinkedRelatedField(view_name='pluginmeta-detail',
+                                               read_only=True)
     descriptor_file = serializers.FileField(write_only=True)
-    
+
     class Meta:
         model = Plugin
-        fields = ('url', 'id', 'name', 'creation_date', 'modification_date', 'dock_image',
-                  'public_repo', 'icon', 'type', 'authors', 'title', 'category',
-                  'description', 'documentation', 'license', 'version', 'parameters',
-                  'owner', 'descriptor_file', 'execshell', 'selfpath', 'selfexec',
-                  'min_number_of_workers', 'max_number_of_workers','min_cpu_limit',
-                  'max_cpu_limit', 'min_memory_limit','max_memory_limit', 'min_gpu_limit',
-                  'max_gpu_limit')
+        fields = ('url', 'id', 'creation_date', 'name', 'version', 'dock_image',
+                  'public_repo', 'icon', 'type', 'stars', 'authors', 'title', 'category',
+                  'description', 'documentation', 'license', 'execshell', 'selfpath',
+                  'selfexec', 'min_number_of_workers', 'max_number_of_workers',
+                  'min_cpu_limit', 'max_cpu_limit', 'min_memory_limit',
+                  'max_memory_limit', 'min_gpu_limit', 'max_gpu_limit', 'parameters',
+                  'meta', 'descriptor_file')
 
     def create(self, validated_data):
         """
         Overriden to validate and save all the plugin descriptors and parameters
         associated with the plugin when creating it.
         """
-        # assign the full list of owners for the plugin name or raise error
-        owner = validated_data['owner'][0]
-        validated_data['owner'] = self.validate_name_owner(owner, validated_data['name'])
+        # gather the data that belongs to the plugin meta
+        meta_dict = validated_data.pop('meta')
+        meta_data = {'name': meta_dict['name'],
+                     'public_repo': meta_dict['public_repo'],
+                     'license': validated_data.pop('license', ''),
+                     'type': validated_data.pop('type', ''),
+                     'icon': validated_data.pop('icon', ''),
+                     'category': validated_data.pop('category', ''),
+                     'authors': validated_data.pop('authors', '')}
+
+        # check whether plugin_name does not exist and validate the plugin meta data
+        try:
+            meta = PluginMeta.objects.get(name=meta_data['name'])
+            meta_serializer = PluginMetaSerializer(meta, data=meta_data)
+        except ObjectDoesNotExist:
+            meta_serializer = PluginMetaSerializer(data=meta_data)
+        meta_serializer.is_valid(raise_exception=True)
+
+        #  create the full list of owners for the plugin name or raise error
+        owner = validated_data.pop('owner')
+        owner = self.validate_name_owner(owner[0], meta_data['name'])
+        #  validate name,version are unique
+        self.validate_name_version(validated_data['version'], meta_data['name'])
 
         # run all default validators for the full set of plugin fields
         request_parameters = validated_data['parameters']
         del validated_data['parameters']
+        validated_data['public_repo'] = meta_dict['public_repo']
+        validated_data['name'] = meta_dict['name']
         new_plg_serializer = PluginSerializer(data=validated_data)
-        new_plg_serializer.validate = lambda x: x  # no need to rerun custom validators
+        new_plg_serializer.validate = lambda x: x  # no need to rerun custom validaton
         new_plg_serializer.is_valid(raise_exception=True)
 
         # validate all the plugin parameters and their default values
@@ -62,10 +174,13 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                 serializer_dict['default_serializer'] = default_param_serializer
             parameters_serializers.append(serializer_dict)
 
-        # if no validation errors at this point then save to the DB
+        # if no validation errors at this point then save everything to the DB!
 
-        # this is necessary because the descriptor_file's FileField needs an instance of
-        # a plugin before saving to the the DB since its "uploaded_file_path" function
+        pl_meta = meta_serializer.save(owner=owner)
+        validated_data = new_plg_serializer.validated_data
+        validated_data['meta'] = pl_meta
+        # the next is necessary because the descriptor_file's FileField needs an instance
+        # of a plugin before saving to the the DB since its "uploaded_file_path" function
         # needs to access instance.owner (now an m2m relationship)
         descriptor_file = validated_data.pop('descriptor_file')
         plugin = super(PluginSerializer, self).create(validated_data)
@@ -77,13 +192,6 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                 param_serializer_dict['default_serializer'].save(plugin_param=param)
 
         return plugin
-
-    def update(self, instance, validated_data):
-        """
-        Overriden to add modification date.
-        """
-        validated_data.update({'modification_date': timezone.now()})
-        return super(PluginSerializer, self).update(instance, validated_data)
 
     def validate(self, data):
         """
@@ -189,32 +297,37 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         return version
 
     @staticmethod
+    def validate_name_version(version, name):
+        """
+        Custom method to check if plugin name and version are unique together.
+        """
+        try:
+            Plugin.objects.get(meta__name=name, version=version)
+        except ObjectDoesNotExist:
+            pass
+        else:
+            msg = "Plugin with name '%s and version %s already exists." % (name, version)
+            raise serializers.ValidationError({'non_field_errors': [msg]})
+
+    @staticmethod
     def validate_name_owner(owner, name):
         """
         Custom method to check if plugin name already exists and this user is not an
-        owner.
+        owner. A user that is not an owner of a plugin is not allowed to post new
+        versions of it.
         """
-        plg = Plugin.objects.filter(name=name).first()
         owners = [owner]
-        if plg:
-            owners = list(plg.owner.all())
+        try:
+            # check whether plugin_name is a system-registered plugin name
+            pl_meta = PluginMeta.objects.get(name=name)
+        except ObjectDoesNotExist:
+            pl_meta = None
+        if pl_meta is not None:
+            owners = list(pl_meta.owner.all())
             if owner not in owners:
                 raise serializers.ValidationError(
                     {'name': ["Plugin name %s is already owned by another user." % name]})
         return owners
-
-    @staticmethod
-    def validate_new_owner(username):
-        """
-        Custom method to check whether a new plugin owner is a system-registered user.
-        """
-        try:
-            # check if user is a system-registered user
-            new_owner = User.objects.get(username=username)
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError(
-                {'owner': ["User %s is not a registered user." % username]})
-        return new_owner
 
     @staticmethod
     def validate_app_parameters(parameter_list):

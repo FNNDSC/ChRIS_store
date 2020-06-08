@@ -7,6 +7,8 @@ from django.urls import reverse
 
 from rest_framework import status
 
+from plugins.models import PluginMeta, PluginMetaStar
+
 
 class UserViewTests(TestCase):
     """
@@ -102,3 +104,64 @@ class UserDetailViewTests(UserViewTests):
         response = self.client.put(self.read_update_url, data=self.put,
                                    content_type=self.content_type)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class UserOwnedPluginMetaListViewTests(UserViewTests):
+    """
+    Test the user-ownedpluginmeta-list view.
+    """
+
+    def setUp(self):
+        super(UserOwnedPluginMetaListViewTests, self).setUp()
+
+        user = User.objects.create_user(username=self.username, email=self.email,
+                                        password=self.password)
+        self.list_url = reverse("user-ownedpluginmeta-list", kwargs={"pk": user.id})
+
+        # create a plugin meta
+        self.plugin_name = 'simplefsapp'
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
+                                                      type='fs',
+                                                      public_repo='http://gitgub.com')
+        meta.owner.set([user])
+
+    def test_plugin_parameter_list_success_authenticated(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.list_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_parameter_list_failure_unauthenticated(self):
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class UserFavoritePluginMetaListViewTests(UserViewTests):
+    """
+    Test the user-favoritepluginmeta-list view.
+    """
+
+    def setUp(self):
+        super(UserFavoritePluginMetaListViewTests, self).setUp()
+
+        user = User.objects.create_user(username=self.username, email=self.email,
+                                        password=self.password)
+        self.list_url = reverse("user-favoritepluginmeta-list", kwargs={"pk": user.id})
+
+        # create a plugin meta
+        self.plugin_name = 'simplefsapp'
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
+                                                      type='fs',
+                                                      public_repo='http://gitgub.com')
+        meta.owner.set([user])
+
+    def test_plugin_parameter_list_success_authenticated(self):
+        user = User.objects.get(username=self.username)
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        PluginMetaStar.objects.get_or_create(user=user, meta=meta)
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.list_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_parameter_list_failure_unauthenticated(self):
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

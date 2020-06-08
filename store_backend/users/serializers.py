@@ -5,8 +5,6 @@ from rest_framework.validators import UniqueValidator
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
-    plugin = serializers.HyperlinkedRelatedField(many=True, view_name='plugin-detail',
-                                                 read_only=True)
     username = serializers.CharField(min_length=4, max_length=32,
                                      validators=[UniqueValidator(
                                          queryset=User.objects.all())])
@@ -14,6 +12,10 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
                                    validators=[UniqueValidator(
                                        queryset=User.objects.all())])
     password = serializers.CharField(min_length=8, max_length=100, write_only=True)
+    favorite_plugin_metas = serializers.HyperlinkedIdentityField(
+        view_name='user-favoritepluginmeta-list')
+    owned_plugin_metas = serializers.HyperlinkedIdentityField(
+        view_name='user-ownedpluginmeta-list')
 
     def create(self, validated_data):
         """
@@ -26,4 +28,5 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = User
-        fields = ('url', 'id', 'username', 'email', 'password', 'plugin')
+        fields = ('url', 'id', 'username', 'email', 'password', 'favorite_plugin_metas',
+                  'owned_plugin_metas')

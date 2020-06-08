@@ -4,7 +4,7 @@ import logging
 from django.test import TestCase
 from django.contrib.auth.models import User
 
-from plugins.models import Plugin
+from plugins.models import PluginMeta, Plugin
 from plugins.models import PluginParameter, DefaultIntParameter
 from pipelines.models import Pipeline
 from pipelines.models import PluginPiping
@@ -23,8 +23,9 @@ class ModelTests(TestCase):
         self.password = 'foo-pass'
 
         # create plugin
-        (plugin_ds, tf) = Plugin.objects.get_or_create(name=self.plugin_ds_name,
-                                                       type='ds')
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_ds_name, type='ds')
+        (plugin_ds, tf) = Plugin.objects.get_or_create(meta=meta)
+
         # add plugin's parameters
         (plg_param_ds, tf)= PluginParameter.objects.get_or_create(
             plugin=plugin_ds,
@@ -71,7 +72,7 @@ class PipelineModelTests(ModelTests):
         doesn't have a default value.
         """
         pipeline = Pipeline.objects.get(name=self.pipeline_name)
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        plugin_ds = Plugin.objects.get(meta__name=self.plugin_ds_name)
         # add a new plugin piping to pipeline but do not set a default value for
         # the plugin parameter
         PluginPiping.objects.get_or_create(plugin=plugin_ds, pipeline=pipeline,
@@ -101,7 +102,7 @@ class PluginPipingModelTests(ModelTests):
         Test whether overriden save method saves the default plugin parameters' values
         associated with this piping.
         """
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        plugin_ds = Plugin.objects.get(meta__name=self.plugin_ds_name)
         # add a parameter with a default
         (plg_param_ds, tf)= PluginParameter.objects.get_or_create(
             plugin=plugin_ds,
@@ -128,7 +129,7 @@ class PluginPipingModelTests(ModelTests):
         any of the plugin parameters associated to the piping doesn't have a default value.
         """
         pipeline = Pipeline.objects.get(name=self.pipeline_name)
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        plugin_ds = Plugin.objects.get(meta__name=self.plugin_ds_name)
         # add a new plugin piping to pipeline but do not set a default value for
         # the plugin parameter
         (pip, tf) = PluginPiping.objects.get_or_create(plugin=plugin_ds, pipeline=pipeline,

@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 
 from rest_framework import status
 
-from plugins.models import Plugin
+from plugins.models import PluginMeta, Plugin
 from plugins.models import PluginParameter
 from plugins.models import DefaultStrParameter, DefaultBoolParameter
 from plugins.models import DefaultFloatParameter, DefaultIntParameter
@@ -30,8 +30,8 @@ class ViewTests(TestCase):
         self.password = 'foo-pass'
 
         # create plugin
-        (plugin_ds, tf) = Plugin.objects.get_or_create(name=self.plugin_ds_name,
-                                                       type='ds')
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_ds_name, type='ds')
+        (plugin_ds, tf) = Plugin.objects.get_or_create(meta=meta)
         # add a parameter with a default
         (plg_param_ds, tf)= PluginParameter.objects.get_or_create(
             plugin=plugin_ds,
@@ -90,8 +90,10 @@ class PipelineListViewTests(PipelineViewTests):
         self.create_read_url = reverse("pipeline-list")
 
     def test_pipeline_create_success(self):
-        (plugin_ds1, tf) = Plugin.objects.get_or_create(name="mri_convert", type="ds")
-        (plugin_ds2, tf) = Plugin.objects.get_or_create(name="mri_analyze", type="ds")
+        (meta, tf) = PluginMeta.objects.get_or_create(name='mri_convert', type='ds')
+        (plugin_ds1, tf) = Plugin.objects.get_or_create(meta=meta)
+        (meta, tf) = PluginMeta.objects.get_or_create(name='mri_analyze', type='ds')
+        (plugin_ds2, tf) = Plugin.objects.get_or_create(meta=meta)
 
         plugin_tree = '[{"plugin_id": ' + str(plugin_ds1.id) + \
                          ', "previous_index": null}, {"plugin_id": ' + \
@@ -202,8 +204,10 @@ class PipelinePluginListViewTests(PipelineViewTests):
 
     def test_pipeline_plugin_list_success(self):
         # create plugins
-        (plugin_ds1, tf) = Plugin.objects.get_or_create(name="mri_convert", type="ds")
-        Plugin.objects.get_or_create(name="mri_analyze", type="ds")
+        (meta, tf) = PluginMeta.objects.get_or_create(name='mri_convert', type='ds')
+        (plugin_ds1, tf) = Plugin.objects.get_or_create(meta=meta)
+        (meta, tf) = PluginMeta.objects.get_or_create(name='mri_analyze', type='ds')
+        Plugin.objects.get_or_create(meta=meta)
         # pipe one plugin into pipeline
         PluginPiping.objects.get_or_create(pipeline=self.pipeline, plugin=plugin_ds1,
                                            previous=None)
@@ -230,7 +234,8 @@ class PipelinePluginPipingListViewTests(PipelineViewTests):
 
     def test_pipeline_plugin_piping_list_success(self):
         # create plugins
-        (plugin_ds, tf) = Plugin.objects.get_or_create(name="mri_convert", type="ds")
+        (meta, tf) = PluginMeta.objects.get_or_create(name='mri_convert', type='ds')
+        (plugin_ds, tf) = Plugin.objects.get_or_create(meta=meta)
         # pipe one plugin into pipeline
         PluginPiping.objects.get_or_create(pipeline=self.pipeline, plugin=plugin_ds,
                                            previous=None)
@@ -255,14 +260,14 @@ class PipelineDefaultParameterListViewTests(PipelineViewTests):
                                 kwargs={"pk": self.pipeline.id})
 
     def test_pipeline_default_parameter_list_success(self):
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        plugin_ds = Plugin.objects.get(meta__name=self.plugin_ds_name)
         param = plugin_ds.parameters.get(name='dummyInt')
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.list_url)
         self.assertContains(response, self.pips[0].id)
         self.assertContains(response, self.pips[1].id)
         self.assertContains(response, param.name)
-        self.assertContains(response, plugin_ds.name)
+        self.assertContains(response, plugin_ds.meta.name)
         self.assertContains(response, 111111)
 
     def test_pipeline_default_parameter_list_failure_unauthenticated(self):
@@ -299,7 +304,7 @@ class DefaultPipingStrParameterDetailViewTests(ViewTests):
     def setUp(self):
         super(DefaultPipingStrParameterDetailViewTests, self).setUp()
 
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        plugin_ds = Plugin.objects.get(meta__name=self.plugin_ds_name)
         # add a parameter with a default
         (plg_param_ds, tf)= PluginParameter.objects.get_or_create(
             plugin=plugin_ds,
@@ -366,7 +371,7 @@ class DefaultPipingIntParameterDetailViewTests(ViewTests):
     def setUp(self):
         super(DefaultPipingIntParameterDetailViewTests, self).setUp()
 
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        plugin_ds = Plugin.objects.get(meta__name=self.plugin_ds_name)
         pipeline = Pipeline.objects.get(name="Pipeline1")
         (pip, tf) = PluginPiping.objects.get_or_create(plugin=plugin_ds,
                                                        pipeline=pipeline, previous=self.pips[1])
@@ -423,7 +428,7 @@ class DefaultPipingFloatParameterDetailViewTests(ViewTests):
     def setUp(self):
         super(DefaultPipingFloatParameterDetailViewTests, self).setUp()
 
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        plugin_ds = Plugin.objects.get(meta__name=self.plugin_ds_name)
         # add a parameter with a default
         (plg_param_ds, tf)= PluginParameter.objects.get_or_create(
             plugin=plugin_ds,
@@ -489,7 +494,7 @@ class DefaultPipingBoolParameterDetailViewTests(ViewTests):
     def setUp(self):
         super(DefaultPipingBoolParameterDetailViewTests, self).setUp()
 
-        plugin_ds = Plugin.objects.get(name=self.plugin_ds_name)
+        plugin_ds = Plugin.objects.get(meta__name=self.plugin_ds_name)
         # add a parameter with a default
         (plg_param_ds, tf)= PluginParameter.objects.get_or_create(
             plugin=plugin_ds,

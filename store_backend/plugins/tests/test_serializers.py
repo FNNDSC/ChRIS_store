@@ -4,11 +4,74 @@ import json
 
 from django.test import TestCase, tag
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
 
 from rest_framework import serializers
 
-from plugins.models import Plugin, PluginParameter
-from plugins.serializers import PluginSerializer, PluginParameterSerializer
+from plugins.models import PluginMeta, PluginMetaStar, Plugin, PluginParameter
+from plugins.serializers import (PluginMetaSerializer, PluginMetaStarSerializer,
+                                 PluginSerializer, PluginParameterSerializer)
+
+
+class PluginMetaSerializerTests(TestCase):
+
+    def setUp(self):
+        self.plugin_name = 'simplefsapp'
+        user = User.objects.create_user(username='foo', email='dev@babymri.org',
+                                 password='foopassword')
+        # create a plugin meta
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
+        meta.owner.set([user])
+
+    def test_validate_new_owner(self):
+        """
+        Test whether overriden validate_new_owner method checks whether a new plugin
+        owner is a system-registered user.
+        """
+        another_user = User.objects.create_user(username='another',
+                                                email='anotherdev@babymri.org',
+                                                password='anotherpassword')
+        plg_meta_serializer = PluginMetaSerializer()
+        with self.assertRaises(serializers.ValidationError):
+            plg_meta_serializer.validate_new_owner("unknown")
+        new_owner = plg_meta_serializer.validate_new_owner("another")
+        self.assertEqual(new_owner, another_user)
+
+    def test_update(self):
+        """
+        Test whether overriden update method changes modification date.
+        """
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        initial_mod_date = meta.modification_date
+        data = {'name': self.plugin_name, 'public_repo': 'http://github.com/plugin'}
+        plg_meta_serializer = PluginMetaSerializer(meta, data)
+        plg_meta_serializer.is_valid(raise_exception=True)
+        meta = plg_meta_serializer.update(meta, plg_meta_serializer.validated_data)
+        self.assertGreater(meta.modification_date, initial_mod_date)
+
+
+class PluginMetaStarSerializerTests(TestCase):
+
+    def setUp(self):
+        self.plugin_name = 'simplefsapp'
+        user = User.objects.create_user(username='foo', email='dev@babymri.org',
+                                 password='foopassword')
+        # create a plugin meta
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
+        meta.owner.set([user])
+
+    def test_validate_plugin_name(self):
+        """
+        Test whether overriden validate_plugin_name method raises ValidationError
+        if provided plugin name does not exist in the DB.
+        """
+        plg_meta = PluginMeta.objects.get(name=self.plugin_name)
+        plg_meta_star_serializer = PluginMetaStarSerializer()
+        with self.assertRaises(serializers.ValidationError):
+            plg_meta_star_serializer.validate_plugin_name("unknown")
+        meta = plg_meta_star_serializer.validate_plugin_name(self.plugin_name)
+        self.assertEqual(meta, plg_meta)
+
 
 class PluginSerializerTests(TestCase):
     
@@ -21,25 +84,31 @@ class PluginSerializerTests(TestCase):
                                    'optional': True, 'flag': '--dir', 'short_flag': '-d',
                                    'default': '/', 'help': 'test plugin',
                                    'ui_exposed': True}]
-        self.plg_repr = {}
-        self.plg_repr['type'] = 'fs'
-        self.plg_repr['icon'] = 'http://github.com/plugin'
-        self.plg_repr['authors'] = 'DEV FNNDSC'
-        self.plg_repr['title'] = 'Dir plugin'
-        self.plg_repr['description'] = 'Dir test plugin'
-        self.plg_repr['license'] = 'MIT'
-        self.plg_repr['version'] = '0.1'
-        self.plg_repr['execshell'] = 'python3'
-        self.plg_repr['selfpath'] = '/usr/src/simplefsapp'
-        self.plg_repr['selfexec'] = 'simplefsapp.py'
+
+        self.plg_data = {'title': 'Dir plugin',
+                         'description': 'Dir test plugin',
+                         'version': '0.1',
+                         'execshell': 'python3',
+                         'selfpath': '/usr/src/simplefsapp',
+                         'selfexec': 'simplefsapp.py'}
+
+        self.plg_meta_data = {'license': 'MIT',
+                              'type': 'fs',
+                              'icon': 'http://github.com/plugin',
+                              'category': 'Dir',
+                              'authors': 'DEV FNNDSC'}
+
+        self.plg_repr = self.plg_data.copy()
+        self.plg_repr.update(self.plg_meta_data)
         self.plg_repr['parameters'] = self.plugin_parameters
 
         user = User.objects.create_user(username=self.username, email=self.email,
                                  password=self.password)
 
         # create a plugin
-        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name)
-        plugin.owner.set([user])
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
+        meta.owner.set([user])
+        (plugin, tf) = Plugin.objects.get_or_create(meta=meta, version=self.plg_repr['version'])
 
         # add plugin's parameters
         PluginParameter.objects.get_or_create(
@@ -53,6 +122,73 @@ class PluginSerializerTests(TestCase):
         )
         param_names = plugin.get_plugin_parameter_names()
         self.assertEqual(param_names, [self.plugin_parameters[0]['name']])
+
+    def test_validate_name_version(self):
+        """
+        Test whether custom validate_name_version method raises a ValidationError when
+        plugin name and version are not unique together.
+        """
+
+    def test_create_also_creates_meta_first_time_plugin_name_is_used(self):
+        """
+        Test whether overriden create also creates a new plugin meta when creating a
+        plugin with a new name that doesn't already exist in the system.
+        """
+        user = User.objects.get(username=self.username)
+        validated_data = self.plg_repr.copy()
+        validated_data['parameters'][0]['type'] = 'string'
+        validated_data['meta'] = {'name': 'testapp',
+                                  'public_repo': 'https://github.com/FNNDSC'}
+        validated_data['dock_image'] = 'fnndsc/pl-testapp'
+        f = ContentFile(json.dumps(self.plg_repr).encode())
+        f.name = 'testapp.json'
+        validated_data['descriptor_file'] = f
+        validated_data['owner'] = [user]
+        plg_serializer = PluginSerializer()
+        with self.assertRaises(PluginMeta.DoesNotExist):
+            PluginMeta.objects.get(name='testapp')
+        plg_serializer.create(validated_data)
+        self.assertEqual(PluginMeta.objects.get(name='testapp').name, 'testapp')
+
+    def test_create_does_not_create_meta_after_first_time_plugin_name_is_used(self):
+        """
+        Test whether overriden create does not create a new plugin meta when creating a
+        plugin version with a name that already exists in the system.
+        """
+        user = User.objects.get(username=self.username)
+        validated_data = self.plg_repr.copy()
+        validated_data['parameters'][0]['type'] = 'string'
+        validated_data['version'] = '0.2.2'
+        validated_data['meta'] = {'name': self.plugin_name,
+                                  'public_repo': 'https://github.com/FNNDSC'}
+        validated_data['dock_image'] = 'fnndsc/pl-testapp'
+        f = ContentFile(json.dumps(self.plg_repr).encode())
+        f.name = 'testapp.json'
+        validated_data['descriptor_file'] = f
+        validated_data['owner'] = [user]
+        plg_serializer = PluginSerializer()
+        n_plg_meta = PluginMeta.objects.count()
+        plg_meta = PluginMeta.objects.get(name=self.plugin_name)
+        plugin = plg_serializer.create(validated_data)
+        self.assertEqual(n_plg_meta, PluginMeta.objects.count())
+        self.assertEqual(plugin.meta, plg_meta)
+
+    def test_validate_name_owner(self):
+        """
+        Test whether custom validate_name_owner method raises a ValidationError when
+        plugin name already exists and the user is not an owner.
+        """
+        user = User.objects.get(username=self.username)
+        another_user = User.objects.create_user(username='another',
+                                                email='anotherdev@babymri.org',
+                                                password='anotherpassword')
+        plg_serializer = PluginSerializer()
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_name_owner(another_user, self.plugin_name)
+        owners = plg_serializer.validate_name_owner(another_user, 'new_name')
+        self.assertIn(another_user, owners)
+        owners = plg_serializer.validate_name_owner(user, self.plugin_name)
+        self.assertIn(user, owners)
 
     def test_read_app_representation(self):
         """
@@ -137,7 +273,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate_app_parameters method raises a ValidationError when
         a plugin parameter has an unsupported type.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         parameter_list = self.plugin_parameters
         parameter_list[0]['type'] = 'booleano'
@@ -149,7 +285,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate_app_parameters method raises a ValidationError when
         an optional plugin parameter doesn't have a default value specified.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         parameter_list = self.plugin_parameters
         parameter_list[0]['default'] = None
@@ -161,7 +297,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate_app_parameters method raises a ValidationError when
         a plugin parameter is optional anf of type 'path' or 'unextpath'.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         parameter_list = self.plugin_parameters
         parameter_list[0]['type'] = 'path'
@@ -176,7 +312,7 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate_app_parameters method raises a ValidationError when
         a plugin parameter that is not optional is not exposed to the ui.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         parameter_list = self.plugin_parameters
         parameter_list[0]['optional'] = False
@@ -237,7 +373,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method removes 'min_number_of_workers'
         descriptor from the validated data when it is the empty string.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         self.plg_repr['min_number_of_workers'] = ''
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -249,7 +385,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method removes 'max_number_of_workers'
         descriptor from the validated data when it is the empty string.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         self.plg_repr['max_number_of_workers'] = ''
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -261,7 +397,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method removes 'min_gpu_limit' descriptor from
         the validated data when it is the empty string.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         self.plg_repr['min_gpu_limit'] = ''
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -273,7 +409,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method removes 'max_gpu_limit' descriptor from
         the validated data when it is the empty string.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         self.plg_repr['max_gpu_limit'] = ''
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -285,7 +421,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method removes 'min_cpu_limit' descriptor from
         the validated data when it is the empty string.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         self.plg_repr['min_cpu_limit'] = ''
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -297,7 +433,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method removes 'max_cpu_limit' descriptor from
         the validated data when it is the empty string.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         self.plg_repr['max_cpu_limit'] = ''
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -309,7 +445,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method removes 'min_memory_limit'
         descriptor from the validated data when it is the empty string.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         self.plg_repr['min_memory_limit'] = ''
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:
@@ -321,7 +457,7 @@ class PluginSerializerTests(TestCase):
         Test whether the custom validate method removes 'max_memory_limit'
         descriptor from the validated data when it is the empty string.
         """
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         plg_serializer = PluginSerializer(plugin)
         self.plg_repr['max_memory_limit'] = ''
         with io.BytesIO(json.dumps(self.plg_repr).encode()) as f:

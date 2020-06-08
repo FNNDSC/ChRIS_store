@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 
 from rest_framework import status
 
-from plugins.models import Plugin, PluginParameter
+from plugins.models import PluginMeta, PluginMetaStar, Plugin, PluginParameter
 
 
 class ViewTests(TestCase):
@@ -26,19 +26,23 @@ class ViewTests(TestCase):
         plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                               'optional': True, 'flag': '--dir', 'short_flag': '-d',
                               'default': '/', 'help': 'test plugin', 'ui_exposed': True}]
-        plg_repr = {}
-        plg_repr['type'] = 'fs'
-        plg_repr['icon'] = 'http://github.com/plugin'
-        plg_repr['authors'] = 'DEV FNNDSC'
-        plg_repr['title'] = 'Dir plugin'
-        plg_repr['description'] = 'Dir test plugin'
-        plg_repr['license'] = 'MIT'
-        plg_repr['version'] = '0.2'
-        plg_repr['execshell'] = 'python3'
-        plg_repr['selfpath'] = '/usr/src/simplefsapp'
-        plg_repr['selfexec'] = 'simplefsapp.py'
-        plg_repr['parameters'] = plugin_parameters
-        self.plg_repr = plg_repr
+
+        self.plg_data = {'title': 'Dir plugin',
+                         'description': 'Dir test plugin',
+                         'version': '0.1',
+                         'execshell': 'python3',
+                         'selfpath': '/usr/src/simplefsapp',
+                         'selfexec': 'simplefsapp.py'}
+
+        self.plg_meta_data = {'license': 'MIT',
+                              'type': 'fs',
+                              'icon': 'http://github.com/plugin',
+                              'category': 'Dir',
+                              'authors': 'DEV FNNDSC'}
+
+        self.plg_repr = self.plg_data.copy()
+        self.plg_repr.update(self.plg_meta_data)
+        self.plg_repr['parameters'] = plugin_parameters
 
         # create basic models
 
@@ -46,13 +50,157 @@ class ViewTests(TestCase):
         user = User.objects.create_user(username=self.username, email=self.email,
                                  password=self.password)
         # create a plugin
-        (plugin, tf) = Plugin.objects.get_or_create(name=self.plugin_name, version=self.plugin_version,
-                                                    title='chris app', type='fs')
-        plugin.public_repo = 'http://gitgub.com'
-        plugin.dock_image = 'fnndsc/pl-testapp'
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
+                                                      type='fs',
+                                                      public_repo='http://gitgub.com')
+        meta.owner.set([user])
+        (plugin, tf) = Plugin.objects.get_or_create(meta=meta,
+                                                    version=self.plugin_version,
+                                                    dock_image='fnndsc/pl-testapp',
+                                                    title='chris app')
         plugin.descriptor_file.name = self.plugin_name + '.json'
         plugin.save()
-        plugin.owner.set([user])
+
+
+class PluginMetaListViewTests(ViewTests):
+    """
+    Test the pluginmeta-list view.
+    """
+
+    def setUp(self):
+        super(PluginMetaListViewTests, self).setUp()
+        self.read_url = reverse("pluginmeta-list")
+
+    def test_plugin_meta_list_success_authenticated(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.read_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_meta_list_success_unauthenticated(self):
+        response = self.client.get(self.read_url)
+        self.assertContains(response, self.plugin_name)
+
+
+class PluginMetaDetailViewTests(ViewTests):
+    """
+    Test the pluginmeta-detail view.
+    """
+
+    def setUp(self):
+        super(PluginMetaDetailViewTests, self).setUp()
+
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        self.read_update_delete_url = reverse("pluginmeta-detail", kwargs={"pk": meta.id})
+
+        # create another chris store user
+        User.objects.create_user(username='another', email='another@babymri.org',
+                                 password='another-pass')
+
+    def test_plugin_meta_detail_success_authenticated(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.read_update_delete_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_meta_detail_success_unauthenticated(self):
+        response = self.client.get(self.read_update_delete_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_meta_update_success(self):
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
+        (plugin_v2, tf) = Plugin.objects.get_or_create(meta=meta, version='0.2')
+        user1 = User.objects.get(username=self.username)
+        plugin_v2.meta.owner.set([user1])
+        f = ContentFile(json.dumps(self.plg_repr).encode())
+        f.name = self.plugin_name + '.json'
+        plugin.descriptor_file = f
+        plugin.save()
+        put = json.dumps({
+            "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
+                                  {"name": "new_owner", "value": "another"}]}})
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.put(self.read_update_delete_url, data=put,
+                                   content_type=self.content_type)
+        self.assertContains(response, "http://localhost11")
+        self.assertEqual(len(plugin.meta.owner.all()), 2)
+        self.assertEqual(len(plugin_v2.meta.owner.all()), 2)
+
+    def test_plugin_meta_update_failure_unregistered_new_owner(self):
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
+        f = ContentFile(json.dumps(self.plg_repr).encode())
+        f.name = self.plugin_name + '.json'
+        plugin.descriptor_file = f
+        plugin.save()
+        put = json.dumps({
+            "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
+                                  {"name": "new_owner", "value": "unregistered"}]}})
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.put(self.read_update_delete_url, data=put,
+                                   content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_plugin_meta_update_failure_unauthenticated(self):
+        response = self.client.put(self.read_update_delete_url, data={},
+                                   content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_update_failure_access_denied(self):
+        self.client.login(username='another', password='another-pass')
+        response = self.client.put(self.read_update_delete_url, data={},
+                                   content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_plugin_meta_delete_success(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Plugin.objects.count(), 0)
+
+    def test_plugin_meta_delete_failure_unauthenticated(self):
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_delete_failure_access_denied(self):
+        self.client.login(username='another', password='another-pass')
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class PluginMetaStarListViewTests(ViewTests):
+    """
+    Test the pluginmetastar-list view.
+    """
+
+    def setUp(self):
+        super(PluginMetaStarListViewTests, self).setUp()
+        self.create_read_url = reverse("pluginmetastar-list")
+        self.post = json.dumps({"template": {"data": [{"name": "plugin_name",
+                                                       "value": self.plugin_name}]}})
+
+    def test_plugin_meta_star_create_success(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(self.create_read_url, data=self.post,
+                                    content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_plugin_meta_star_create_failure_unauthenticated(self):
+        response = self.client.post(self.create_read_url, data={})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_star_list_success_authenticated(self):
+        user = User.objects.get(username=self.username)
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        PluginMetaStar.objects.get_or_create(user=user, meta=meta)
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.create_read_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_meta_star_list_success_unauthenticated(self):
+        user = User.objects.get(username=self.username)
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        PluginMetaStar.objects.get_or_create(user=user, meta=meta)
+        response = self.client.get(self.create_read_url)
+        self.assertContains(response, self.plugin_name)
 
 
 class PluginListViewTests(ViewTests):
@@ -69,10 +217,12 @@ class PluginListViewTests(ViewTests):
     @tag('integration')
     def test_integration_plugin_create_success(self):
         with io.StringIO(json.dumps(self.plg_repr)) as f:
-            self.post["descriptor_file"] = f
+            post = self.post.copy()
+            post['name'] = 'testplugin'
+            post["descriptor_file"] = f
             self.client.login(username=self.username, password=self.password)
             #  multipart request
-            response = self.client.post(self.create_read_url, data=self.post)
+            response = self.client.post(self.create_read_url, data=post)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_plugin_create_failure_name_version_combination_already_exists(self):
@@ -131,7 +281,7 @@ class PluginDetailViewTests(ViewTests):
     def setUp(self):
         super(PluginDetailViewTests, self).setUp()
 
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         self.read_update_delete_url = reverse("plugin-detail", kwargs={"pk": plugin.id})
 
         # create another chris store user
@@ -146,51 +296,6 @@ class PluginDetailViewTests(ViewTests):
     def test_plugin_detail_success_unauthenticated(self):
         response = self.client.get(self.read_update_delete_url)
         self.assertContains(response, self.plugin_name)
-
-    def test_plugin_update_success(self):
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        (plugin_v2, tf) = Plugin.objects.get_or_create(name=self.plugin_name,
-                                                       version='0.2')
-        user1 = User.objects.get(username=self.username)
-        plugin_v2.owner.set([user1])
-        f = ContentFile(json.dumps(self.plg_repr).encode())
-        f.name = self.plugin_name + '.json'
-        plugin.descriptor_file = f
-        plugin.save()
-        put = json.dumps({
-            "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
-                                  {"name": "owner", "value": "another"}]}})
-        self.client.login(username=self.username, password=self.password)
-        response = self.client.put(self.read_update_delete_url, data=put,
-                                   content_type=self.content_type)
-        self.assertContains(response, "http://localhost11")
-        self.assertEqual(len(plugin.owner.all()), 2)
-        self.assertEqual(len(plugin_v2.owner.all()), 2)
-
-    def test_plugin_update_failure_unregistered_new_owner(self):
-        plugin = Plugin.objects.get(name=self.plugin_name)
-        f = ContentFile(json.dumps(self.plg_repr).encode())
-        f.name = self.plugin_name + '.json'
-        plugin.descriptor_file = f
-        plugin.save()
-        put = json.dumps({
-            "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
-                                  {"name": "owner", "value": "unregistered"}]}})
-        self.client.login(username=self.username, password=self.password)
-        response = self.client.put(self.read_update_delete_url, data=put,
-                                   content_type=self.content_type)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_plugin_update_failure_unauthenticated(self):
-        response = self.client.put(self.read_update_delete_url, data={},
-                                   content_type=self.content_type)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_plugin_update_failure_access_denied(self):
-        self.client.login(username='another', password='another-pass')
-        response = self.client.put(self.read_update_delete_url, data={},
-                                   content_type=self.content_type)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_plugin_delete_success(self):
         self.client.login(username=self.username, password=self.password)
@@ -243,7 +348,7 @@ class PluginParameterListViewTests(ViewTests):
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                                    'optional': False, 'flag': '--dir', 'short_flag': '-d',
                                    'default': '', 'help': 'test plugin'}]
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         self.list_url = reverse("pluginparameter-list", kwargs={"pk": plugin.id})
 
         # add plugin's parameters
@@ -277,7 +382,7 @@ class PluginParameterDetailViewTests(ViewTests):
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                                    'optional': False, 'flag': '--dir', 'short_flag': '-d',
                                    'default': '', 'help': 'test plugin'}]
-        plugin = Plugin.objects.get(name=self.plugin_name)
+        plugin = Plugin.objects.get(meta__name=self.plugin_name)
         # create a plugin parameter
         (param, tf) = PluginParameter.objects.get_or_create(
             plugin=plugin,

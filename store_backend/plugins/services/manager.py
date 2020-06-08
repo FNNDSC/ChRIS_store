@@ -17,8 +17,8 @@ if __name__ == '__main__':
 
 from django.core.files.base import ContentFile
 from django.contrib.auth.models import User
-from plugins.models import Plugin
-from plugins.serializers import PluginSerializer
+from plugins.models import PluginMeta, Plugin
+from plugins.serializers import PluginMetaSerializer, PluginSerializer
 
 
 class PluginManager(object):
@@ -43,7 +43,7 @@ class PluginManager(object):
 
         # create the parser for the "modify" command
         parser_modify = subparsers.add_parser('modify', help='Modify existing plugin')
-        parser_modify.add_argument('id', type=int, help="Plugin's id")
+        parser_modify.add_argument('name', help="Plugin's name")
         parser_modify.add_argument('publicrepo', help="Plugin's new public repo url")
         parser_modify.add_argument('--newowner', help="Plugin's new owner username")
 
@@ -69,23 +69,31 @@ class PluginManager(object):
         """
         Modify an existing/registered plugin.
         """
-        plugin = self.get_plugin(args.id)
-        data = {'public_repo': args.publicrepo, 'dock_image': plugin.dock_image,
-                'name': plugin.name, 'descriptor_file': plugin.descriptor_file,
-                'version': plugin.version}
-        plg_serializer = PluginSerializer(plugin, data=data)
-        plg_serializer.is_valid(raise_exception=True)
+        try:
+            plugin_meta = PluginMeta.objects.get(name=args.name)
+        except PluginMeta.DoesNotExist:
+            raise NameError("Couldn't find plugin '%s' in the system" % args.name)
         if args.newowner:
-            new_owner = plg_serializer.validate_new_owner(args.newowner)
-            plugin.add_owner(new_owner)
-        plg_serializer.save()
+            data = {'name': plugin_meta.name, 'public_repo': args.publicrepo,
+                    'new_owner': args.newowner}
+        else:
+            data = {'name': plugin_meta.name, 'public_repo': args.publicrepo}
+        plugin_meta_serializer = PluginMetaSerializer(plugin_meta, data=data)
+        plugin_meta_serializer.is_valid(raise_exception=True)
+        newowner = plugin_meta_serializer.validated_data.get('new_owner')
+        if newowner:
+            plugin_meta.add_owner(newowner)
+        plugin_meta_serializer.save()
 
     def remove_plugin(self, args):
         """
         Remove an existing/registered plugin from the system.
         """
         plugin = self.get_plugin(args.id)
-        plugin.delete()
+        if plugin.meta.plugins.count() == 1:
+            plugin.meta.delete()  # the cascade deletes the plugin too
+        else:
+            plugin.delete()
 
     def run(self, args=None):
         """

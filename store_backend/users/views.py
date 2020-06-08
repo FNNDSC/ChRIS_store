@@ -3,9 +3,11 @@ from django.contrib.auth.models import User
 
 from rest_framework import generics, permissions
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from collectionjson import services
 
+from plugins.serializers import PluginMetaSerializer
 from .serializers import UserSerializer
 from .permissions import IsUserOrChrisOrReadOnly
 
@@ -56,3 +58,56 @@ class UserDetail(generics.RetrieveUpdateAPIView):
         user.set_password(password)
         user.save()
 
+
+class UserOwnedPluginMetaList(generics.ListAPIView):
+    """
+    A view for the collection of user-specific plugin metas owned by the user.
+    """
+    queryset = User.objects.all()
+    serializer_class = PluginMetaSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def list(self, request, *args, **kwargs):
+        """
+        Overriden to return the list of owned plugin metas for the queried user.
+        """
+        queryset = self.get_plugin_metas_queryset()
+        response = services.get_list_response(self, queryset)
+        user = self.get_object()
+        links = {'user': reverse('user-detail', request=request,
+                                 kwargs={"pk": user.id})}
+        return services.append_collection_links(response, links)
+
+    def get_plugin_metas_queryset(self):
+        """
+        Custom method to get the actual user-owned plugin metas queryset.
+        """
+        user = self.get_object()
+        return self.filter_queryset(user.owned_plugin_metas.all())
+
+
+class UserFavoritePluginMetaList(generics.ListAPIView):
+    """
+    A view for the collection of user-specific plugin metas favored by the user.
+    """
+    queryset = User.objects.all()
+    serializer_class = PluginMetaSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def list(self, request, *args, **kwargs):
+        """
+        Overriden to return the list of favorite plugin metas for the queried user.
+        """
+        queryset = self.get_plugin_metas_queryset()
+        response = services.get_list_response(self, queryset)
+        user = self.get_object()
+        links = {'user': reverse('user-detail', request=request,
+                                 kwargs={"pk": user.id})}
+        return services.append_collection_links(response, links)
+
+    def get_plugin_metas_queryset(self):
+        """
+        Custom method to get the actual user-favorite plugin metas queryset.
+        """
+        user = self.get_object()
+        return self.filter_queryset(user.favorite_plugin_metas.all())

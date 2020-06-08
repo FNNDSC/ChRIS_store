@@ -4,9 +4,178 @@ from rest_framework.reverse import reverse
 
 from collectionjson import services
 
-from .models import Plugin, PluginFilter, PluginParameter
-from .serializers import PluginSerializer,  PluginParameterSerializer
-from .permissions import IsOwnerOrChrisOrReadOnly
+from .models import (PluginMeta, PluginMetaFilter, PluginMetaStar, PluginMetaStarFilter,
+                     Plugin, PluginFilter, PluginParameter)
+from .serializers import (PluginMetaSerializer, PluginMetaStarSerializer,
+                          PluginSerializer, PluginParameterSerializer)
+from .permissions import (IsOwnerOrChrisOrReadOnly, IsMetaOwnerOrChrisOrReadOnly,
+                          IsStarOwnerOrChrisOrReadOnly)
+
+
+class PluginMetaList(generics.ListAPIView):
+    """
+    A view for the collection of plugin metas.
+    """
+    queryset = PluginMeta.objects.all()
+    serializer_class = PluginMetaSerializer
+
+    def list(self, request, *args, **kwargs):
+        """
+        Overriden to append document-level link relations and a query list to the
+        response.
+        """
+        response = super(PluginMetaList, self).list(request, *args, **kwargs)
+        # append document-level link relations
+        links = {'plugin_stars': reverse('pluginmetastar-list', request=request),
+                 'plugins': reverse('plugin-list', request=request),
+                 'pipelines': reverse('pipeline-list', request=request)}
+        user = self.request.user
+        if user.is_authenticated:
+            links.update({
+                'user': reverse('user-detail', request=request, kwargs={"pk": user.id}),
+                'favorite_plugin_metas': reverse('user-favoritepluginmeta-list',
+                                                 request=request, kwargs={"pk": user.id}),
+                'owned_plugin_metas': reverse('user-ownedpluginmeta-list',
+                                              request=request, kwargs={"pk": user.id})
+            })
+        response = services.append_collection_links(response, links)
+        # append query list
+        query_list = [reverse('pluginmeta-list-query-search', request=request)]
+        return services.append_collection_querylist(response, query_list)
+
+
+class PluginMetaListQuerySearch(generics.ListAPIView):
+    """
+    A view for the collection of plugin metas resulting from a query search.
+    """
+    serializer_class = PluginMetaSerializer
+    queryset = PluginMeta.objects.all()
+    filterset_class = PluginMetaFilter
+
+
+class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    A plugin meta view.
+    """
+    serializer_class = PluginMetaSerializer
+    queryset = PluginMeta.objects.all()
+    permission_classes = (IsOwnerOrChrisOrReadOnly,)
+
+    def perform_update(self, serializer):
+        """
+        Overriden to update plugin's owners if requested by a PUT request.
+        """
+        meta = self.get_object()
+        new_owner = serializer.validated_data.get('new_owner')
+        if new_owner is not None:
+            meta.add_owner(new_owner)
+        super(PluginMetaDetail, self).perform_update(serializer)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Overriden to remove descriptors that are not allowed to be updated before
+        the serializer performs validation.
+        """
+        plugin_meta = self.get_object()
+        request.data['name'] = plugin_meta.name  # name is required
+        # these are part of the plugin repr. and are not allowed to be changed with PUT
+        request.data.pop('license', None)
+        request.data.pop('type', None)
+        request.data.pop('icon', None)
+        request.data.pop('category', None)
+        request.data.pop('authors', None)
+        return super(PluginMetaDetail, self).update(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Overriden to append a collection+json template.
+        """
+        response = super(PluginMetaDetail, self).retrieve(request, *args,
+                                                                     **kwargs)
+        template_data = {'public_repo': '', 'new_owner': ''}
+        return services.append_collection_template(response, template_data)
+
+
+class PluginMetaPluginList(generics.ListAPIView):
+    """
+    A view for the collection of meta-specific plugins.
+    """
+    queryset = PluginMeta.objects.all()
+    serializer_class = PluginSerializer
+
+    def list(self, request, *args, **kwargs):
+        """
+        Overriden to return a list of the plugins for the queried  meta.
+        """
+        queryset = self.get_plugins_queryset()
+        response = services.get_list_response(self, queryset)
+        meta = self.get_object()
+        links = {'meta': reverse('pluginmeta-detail', request=request,
+                                 kwargs={"pk": meta.id})}
+        return services.append_collection_links(response, links)
+
+    def get_plugins_queryset(self):
+        """
+        Custom method to get the actual plugins queryset.
+        """
+        meta = self.get_object()
+        return self.filter_queryset(meta.plugins.all())
+
+
+class PluginMetaStarList(generics.ListCreateAPIView):
+    """
+    A view for the collection of plugins' stars.
+    """
+    serializer_class = PluginMetaStarSerializer
+    queryset = PluginMetaStar.objects.all()
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def perform_create(self, serializer):
+        """
+        Overriden to associate a plugin and authenticated user with the plugin star.
+        """
+        user = self.request.user
+        plugin_meta = serializer.validated_data.get('meta').get('name')
+        serializer.save(meta=plugin_meta, user=user)
+
+    def list(self, request, *args, **kwargs):
+        """
+        Overriden to append document-level link relations, query list and a
+        collection+json template to the response.
+        """
+        response = super(PluginMetaStarList, self).list(request, *args, **kwargs)
+        # append document-level link relations
+        links = {'plugins': reverse('plugin-list', request=request)}
+        user = self.request.user
+        if user.is_authenticated:
+            links['user'] = reverse('user-detail', request=request,
+                                    kwargs={"pk": user.id})
+        response = services.append_collection_links(response, links)
+        # append query list
+        query_list = [reverse('pluginmetastar-list-query-search', request=request)]
+        response = services.append_collection_querylist(response, query_list)
+        # append write template
+        template_data = {'plugin_name': ''}
+        return services.append_collection_template(response, template_data)
+
+
+class PluginMetaStarListQuerySearch(generics.ListAPIView):
+    """
+    A view for the collection of plugin stars resulting from a query search.
+    """
+    serializer_class = PluginMetaStarSerializer
+    queryset = PluginMetaStar.objects.all()
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    filterset_class = PluginMetaStarFilter
+
+
+class PluginMetaStarDetail(generics.RetrieveDestroyAPIView):
+    """
+    A plugin star view.
+    """
+    queryset = PluginMetaStar.objects.all()
+    serializer_class = PluginMetaStarSerializer
+    permission_classes = (IsStarOwnerOrChrisOrReadOnly,)
 
 
 class PluginList(generics.ListCreateAPIView):
@@ -28,9 +197,10 @@ class PluginList(generics.ListCreateAPIView):
         Overriden to include required version descriptor in the request dict before
         serializer validation.
         """
-        # we can assign any string here, this is required because of the
-        # name,version unique together constraint in the model
-        request.data['version'] = 'nullnull'
+        # we can use any random version string that is not likely to be already in the DB
+        # for this plugin's name, this is required because of the name,version unique
+        # together constraint in the model
+        request.data['version'] = 'random_str'
         return super(PluginList, self).create(request, *args, **kwargs)
 
     def list(self, request, *args, **kwargs):
@@ -40,7 +210,8 @@ class PluginList(generics.ListCreateAPIView):
         """
         response = super(PluginList, self).list(request, *args, **kwargs)
         # append document-level link relations
-        links = {'pipelines': reverse('pipeline-list', request=request)}
+        links = {'plugin_stars': reverse('pluginmetastar-list', request=request),
+                 'pipelines': reverse('pipeline-list', request=request)}
         user = self.request.user
         if user.is_authenticated:
             links['user'] = reverse('user-detail', request=request,
@@ -62,46 +233,24 @@ class PluginListQuerySearch(generics.ListAPIView):
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
     filterset_class = PluginFilter
-        
 
-class PluginDetail(generics.RetrieveUpdateDestroyAPIView):
+
+class PluginDetail(generics.RetrieveDestroyAPIView):
     """
     A plugin view.
     """
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
-    permission_classes = (IsOwnerOrChrisOrReadOnly,)
+    permission_classes = (IsMetaOwnerOrChrisOrReadOnly,)
 
-    def perform_update(self, serializer):
+    def perform_destroy(self, instance):
         """
-        Overriden to update plugin's owners if requested by a PUT request.
+        Overriden to delete the associated plugin meta if this is the last plugin.
         """
-        if 'owner' in self.request.data:
-            new_owner_username = self.request.data.pop('owner')
-            new_owner = serializer.validate_new_owner(new_owner_username)
-            plugin = self.get_object()
-            plugin.add_owner(new_owner)
-        super(PluginDetail, self).perform_update(serializer)
-
-    def update(self, request, *args, **kwargs):
-        """
-        Overriden to override descriptors that are not allowed to be updated before
-        serializer validation.
-        """
-        plugin = self.get_object()
-        request.data['name'] = plugin.name
-        request.data['dock_image'] = plugin.dock_image
-        request.data['descriptor_file'] = plugin.descriptor_file
-        request.data['version'] = plugin.version
-        return super(PluginDetail, self).update(request, *args, **kwargs)
-
-    def retrieve(self, request, *args, **kwargs):
-        """
-        Overriden to append a collection+json template.
-        """
-        response = super(PluginDetail, self).retrieve(request, *args, **kwargs)
-        template_data = {'public_repo': '', 'owner': ''}
-        return services.append_collection_template(response, template_data)
+        if instance.meta.plugins.count() == 1:
+            instance.meta.delete()  # the cascade deletes the plugin too
+        else:
+            instance.delete()
 
 
 class PluginParameterList(generics.ListAPIView):
@@ -125,7 +274,7 @@ class PluginParameterList(generics.ListAPIView):
         plugin = self.get_object()
         return self.filter_queryset(plugin.parameters.all())
 
-    
+
 class PluginParameterDetail(generics.RetrieveAPIView):
     """
     A plugin parameter view.
