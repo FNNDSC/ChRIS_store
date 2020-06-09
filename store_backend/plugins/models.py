@@ -82,7 +82,8 @@ class PluginMetaFilter(FilterSet):
     class Meta:
         model = PluginMeta
         fields = ['id', 'name', 'name_exact', 'type', 'category', 'authors',
-                  'min_creation_date', 'max_creation_date', 'name_author_category']
+                  'owner_username', 'min_creation_date', 'max_creation_date',
+                  'name_author_category']
 
 
 class PluginMetaStar(models.Model):
