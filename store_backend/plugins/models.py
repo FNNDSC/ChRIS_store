@@ -66,16 +66,16 @@ class PluginMetaFilter(FilterSet):
     category = django_filters.CharFilter(field_name='category', lookup_expr='icontains')
     type = django_filters.CharFilter(field_name='type', lookup_expr='exact')
     authors = django_filters.CharFilter(field_name='authors', lookup_expr='icontains')
-    name_author_category = django_filters.CharFilter(method='search_name_author_category')
+    name_authors_category = django_filters.CharFilter(method='search_name_authors_category')
 
-    def search_name_author_category(self, queryset, name, value):
+    def search_name_authors_category(self, queryset, name, value):
         """
         Custom method to get a filtered queryset with all plugins for which name or author
         or category matches the search value.
         """
         # construct the full lookup expression.
         lookup = models.Q(meta__name__icontains=value)
-        lookup = lookup | models.Q(author__icontains=value)
+        lookup = lookup | models.Q(authors__icontains=value)
         lookup = lookup | models.Q(meta__category__icontains=value)
         return queryset.filter(lookup)
 
@@ -83,7 +83,7 @@ class PluginMetaFilter(FilterSet):
         model = PluginMeta
         fields = ['id', 'name', 'name_exact', 'type', 'category', 'authors',
                   'owner_username', 'min_creation_date', 'max_creation_date',
-                  'name_author_category']
+                  'name_authors_category']
 
 
 class PluginMetaStar(models.Model):
