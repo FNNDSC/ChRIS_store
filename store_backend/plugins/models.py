@@ -74,9 +74,9 @@ class PluginMetaFilter(FilterSet):
         or category matches the search value.
         """
         # construct the full lookup expression.
-        lookup = models.Q(meta__name__icontains=value)
+        lookup = models.Q(name__icontains=value)
         lookup = lookup | models.Q(authors__icontains=value)
-        lookup = lookup | models.Q(meta__category__icontains=value)
+        lookup = lookup | models.Q(category__icontains=value)
         return queryset.filter(lookup)
 
     class Meta:
