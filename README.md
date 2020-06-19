@@ -133,7 +133,7 @@ docker run --rm -v /tmp/json:/json fnndsc/pl-simplefsapp simplefsapp.py --savejs
 ```
 Then upload the plugin representation json file to the ChRIS Store as part of the `POST` request:
 ```bash
-http -a cubeadmin:cubeadmin1234 -f POST http://localhost:8010/api/v1/ dock_image=fnndsc/pl-simplefsapp descriptor_file@/tmp/json/SimpleFSApp.json public_repo=https://github.com/FNNDSC/pl-simplefsapp name=simplefsapp
+http -a cubeadmin:cubeadmin1234 -f POST http://localhost:8010/api/v1/plugins/ dock_image=fnndsc/pl-simplefsapp descriptor_file@/tmp/json/SimpleFSApp.json public_repo=https://github.com/FNNDSC/pl-simplefsapp name=simplefsapp
 ```
 
 #### An unauthenticated POST request to create a new ChRIS store user account:
