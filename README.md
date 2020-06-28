@@ -81,7 +81,7 @@ pip freeze --local
 Start ChRIS Store services by running the make bash script from the repository source directory
 
 ```bash
-./docker-make.sh up
+./make.sh up
 ```
 All the steps performed by the above script are properly documented in the script itself. 
 
@@ -133,7 +133,7 @@ docker run --rm -v /tmp/json:/json fnndsc/pl-simplefsapp simplefsapp.py --savejs
 ```
 Then upload the plugin representation json file to the ChRIS Store as part of the `POST` request:
 ```bash
-http -a cubeadmin:cubeadmin1234 -f POST http://localhost:8010/api/v1/plugins/ dock_image=fnndsc/pl-simplefsapp descriptor_file@/tmp/json/SimpleFSApp.json public_repo=https://github.com/FNNDSC/pl-simplefsapp name=simplefsapp
+http -a cubeadmin:cubeadmin1234 -f POST http://localhost:8010/api/v1/plugins/ dock_image=fnndsc/pl-simplefsapp descriptor_file@/tmp/json/SimpleFSApp.json public_repo=https://github.com/FNNDSC/pl-simplefsapp name=pl-simplefsapp
 ```
 
 #### An unauthenticated POST request to create a new ChRIS store user account:
@@ -151,7 +151,7 @@ swift -A http://127.0.0.1:8080/auth/v1.0 -U chris:chris1234 -K testing list stor
 Stop and remove ChRIS Store services by running the make bash script from the repository source directory
 
 ```bash
-./docker-make.sh down
+./make.sh down
 ```
 
 ### REST API Documentation

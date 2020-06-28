@@ -41,6 +41,7 @@ if [[ "$1" == 'up' ]]; then
     docker pull mysql:5
     docker pull fnndsc/docker-swift-onlyone
     docker pull fnndsc/chris_store:dev
+    echo ""
     echo "docker-compose -f docker-compose_dev.yml up -d"
     docker-compose -f docker-compose_dev.yml up -d
     windowBottom
@@ -76,23 +77,24 @@ if [[ "$1" == 'up' ]]; then
     title -d 1 "Automatically uploading some plugins to the ChRIS STORE..."
     # Declare an array variable for the list of plugin names to be automatically registered
     # Add a new plugin name to the list if you want it to be automatically registered
-    declare -a plugins=( "simplefsapp"
-                         "simpledsapp"
-                         "pacsquery"
-                         "pacsretrieve"
-                         "s3retrieve"
-                         "s3push"
-                         "dircopy"
+    declare -a plugins=( "pl-simplefsapp"
+                         "pl-simpledsapp"
+                         "pl-pacsquery"
+                         "pl-pacsretrieve"
+                         "pl-s3retrieve"
+                         "pl-s3push"
+                         "pl-dircopy"
     )
     declare -i i=1
     declare -i STEP=7
     for plugin in "${plugins[@]}"; do
         echo ""
         echo "${STEP}.$i: Uploading $plugin representation to the ChRIS store..."
-        PLUGIN_DOCK="fnndsc/pl-${plugin}"
+        PLUGIN_DOCK="fnndsc/${plugin}"
+        PLUGIN_MODULE="${plugin:3}"
         docker pull "$PLUGIN_DOCK"
-        PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${plugin}.py" --json 2> /dev/null;)
-        docker-compose -f docker-compose_dev.yml exec chris_store_dev python plugins/services/manager.py add "${plugin}" cubeadmin https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP"
+        PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${PLUGIN_MODULE}.py" --json 2> /dev/null;)
+        docker-compose -f docker-compose_dev.yml exec chris_store_dev python plugins/services/manager.py add "${plugin}" cubeadmin https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP" >/dev/null
         ((i++))
     done
     windowBottom
@@ -103,9 +105,9 @@ if [[ "$1" == 'up' ]]; then
     PIPELINE_NAME="s3retrieve_v${S3_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
     echo "Creating pipeline named '$PIPELINE_NAME'"
 
-    STR1='[{"plugin_name": "s3retrieve", "plugin_version": "'
+    STR1='[{"plugin_name": "pl-s3retrieve", "plugin_version": "'
     STR2='", "plugin_parameter_defaults": [{"name": "awssecretkey", "default": "somekey"},{"name": "awskeyid", "default": "somekeyid"}], "previous_index": null},
-    {"plugin_name": "simpledsapp", "plugin_version": "'
+    {"plugin_name": "pl-simpledsapp", "plugin_version": "'
     STR3='", "previous_index": 0}]'
     PLUGIN_TREE=${STR1}${S3_PLUGIN_VER}${STR2}${SIMPLEDS_PLUGIN_VER}${STR3}
 
@@ -116,9 +118,9 @@ if [[ "$1" == 'up' ]]; then
     PIPELINE_NAME="simpledsapp_v${SIMPLEDS_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
     echo "Creating pipeline named '$PIPELINE_NAME'"
 
-    STR4='[{"plugin_name": "simpledsapp", "plugin_version": "'
-    STR5='", "previous_index": null},{"plugin_name": "simpledsapp", "plugin_version": "'
-    STR6='", "previous_index": 0},{"plugin_name": "simpledsapp", "plugin_version": "'
+    STR4='[{"plugin_name": "pl-simpledsapp", "plugin_version": "'
+    STR5='", "previous_index": null},{"plugin_name": "pl-simpledsapp", "plugin_version": "'
+    STR6='", "previous_index": 0},{"plugin_name": "pl-simpledsapp", "plugin_version": "'
     STR7='", "previous_index": 0}]'
     PLUGIN_TREE=${STR4}${SIMPLEDS_PLUGIN_VER}${STR5}${SIMPLEDS_PLUGIN_VER}${STR6}${SIMPLEDS_PLUGIN_VER}${STR7}
 

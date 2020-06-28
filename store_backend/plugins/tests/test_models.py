@@ -1,4 +1,6 @@
 
+import logging
+
 from django.test import TestCase
 from django.contrib.auth.models import User
 
@@ -9,6 +11,9 @@ from plugins.models import PluginMeta, Plugin, PluginFilter, PluginParameter
 class ModelTests(TestCase):
 
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.WARNING)
+
         self.username = 'foo'
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
@@ -43,6 +48,10 @@ class ModelTests(TestCase):
         (plugin, tf) = Plugin.objects.get_or_create(meta=meta, version='0.1' )
         plugin.descriptor_file.name = self.plugin_name + '.json'
         plugin.save()
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.NOTSET)
 
 
 class PluginMetaModelTests(ModelTests):

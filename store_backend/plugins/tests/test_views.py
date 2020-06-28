@@ -1,4 +1,5 @@
 
+import logging
 import json
 import io
 from unittest import mock
@@ -16,6 +17,9 @@ from plugins.models import PluginMeta, PluginMetaStar, Plugin, PluginParameter
 class ViewTests(TestCase):
     
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.WARNING)
+
         self.username = 'foo'
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
@@ -60,6 +64,10 @@ class ViewTests(TestCase):
                                                     title='chris app')
         plugin.descriptor_file.name = self.plugin_name + '.json'
         plugin.save()
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.NOTSET)
 
 
 class PluginMetaListViewTests(ViewTests):

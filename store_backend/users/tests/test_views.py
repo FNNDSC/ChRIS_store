@@ -1,4 +1,5 @@
 
+import logging
 import json
 
 from django.test import TestCase
@@ -16,10 +17,17 @@ class UserViewTests(TestCase):
     """
 
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.WARNING)
+
         self.content_type = 'application/vnd.collection+json'
         self.username = 'cube'
         self.password = 'cubepass'
         self.email = 'dev@babymri.org'
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.NOTSET)
 
 
 class UserCreateViewTests(UserViewTests):

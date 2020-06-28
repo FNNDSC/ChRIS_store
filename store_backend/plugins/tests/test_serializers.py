@@ -1,4 +1,5 @@
 
+import logging
 import io
 import json
 
@@ -16,12 +17,19 @@ from plugins.serializers import (PluginMetaSerializer, PluginMetaStarSerializer,
 class PluginMetaSerializerTests(TestCase):
 
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.WARNING)
+
         self.plugin_name = 'simplefsapp'
         user = User.objects.create_user(username='foo', email='dev@babymri.org',
                                  password='foopassword')
         # create a plugin meta
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         meta.owner.set([user])
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.NOTSET)
 
     def test_validate_new_owner(self):
         """
@@ -53,12 +61,19 @@ class PluginMetaSerializerTests(TestCase):
 class PluginMetaStarSerializerTests(TestCase):
 
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.WARNING)
+
         self.plugin_name = 'simplefsapp'
         user = User.objects.create_user(username='foo', email='dev@babymri.org',
                                  password='foopassword')
         # create a plugin meta
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         meta.owner.set([user])
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.NOTSET)
 
     def test_validate_plugin_name(self):
         """
@@ -76,6 +91,9 @@ class PluginMetaStarSerializerTests(TestCase):
 class PluginSerializerTests(TestCase):
     
     def setUp(self):
+        # avoid cluttered console output (for instance logging all the http requests)
+        logging.disable(logging.WARNING)
+
         self.username = 'foo'
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
@@ -122,6 +140,10 @@ class PluginSerializerTests(TestCase):
         )
         param_names = plugin.get_plugin_parameter_names()
         self.assertEqual(param_names, [self.plugin_parameters[0]['name']])
+
+    def tearDown(self):
+        # re-enable logging
+        logging.disable(logging.NOTSET)
 
     def test_validate_name_version(self):
         """

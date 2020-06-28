@@ -15,7 +15,7 @@ class PluginManagerTests(TestCase):
 
     def setUp(self):
         # avoid cluttered console output (for instance logging all the http requests)
-        logging.disable(logging.CRITICAL)
+        logging.disable(logging.WARNING)
 
         self.username = 'foo'
         self.password = 'foopassword'
@@ -73,7 +73,7 @@ class PluginManagerTests(TestCase):
 
     def tearDown(self):
         # re-enable logging
-        logging.disable(logging.DEBUG)
+        logging.disable(logging.NOTSET)
 
     def test_mananger_can_add_plugin(self):
         """

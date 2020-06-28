@@ -17,7 +17,7 @@ class SerializerTests(TestCase):
 
     def setUp(self):
         # avoid cluttered console output (for instance logging all the http requests)
-        logging.disable(logging.CRITICAL)
+        logging.disable(logging.WARNING)
 
         self.plugin_fs_name = "simplefsapp"
         self.plugin_fs_parameters = {'dir': {'type': 'string', 'optional': True,
@@ -64,7 +64,7 @@ class SerializerTests(TestCase):
 
     def tearDown(self):
         # re-enable logging
-        logging.disable(logging.DEBUG)
+        logging.disable(logging.NOTSET)
 
 
 class PipelineSerializerTests(SerializerTests):
