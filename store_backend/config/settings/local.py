@@ -30,28 +30,39 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'console': {
-            'format': '[%(asctime)s] [%(levelname)s][%(name)s][%(filename)s:%(lineno)d %(funcName)s] %(message)s'
+        'verbose': {
+            'format': '[%(asctime)s] [%(levelname)s]'
+                      '[%(name)s][%(filename)s:%(lineno)d %(funcName)s] %(message)s'
+        },
+        'simple': {
+            'format': '[%(asctime)s] [%(levelname)s]'
+                      '[%(module)s %(process)d %(thread)d] %(message)s'
         },
     },
     'handlers': {
-        'console': {
+        'console_verbose': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'console',
+            'formatter': 'verbose',
         },
+        'console_simple': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        }
     },
     'loggers': {
         '': {  # root logger
             'level': 'INFO',
-            'handlers': ['console'],
-        }
+            'handlers': ['console_simple'],
+        },
     }
 }
+
 for app in ['collectionjson', 'plugins', 'pipelines', 'users']:
     LOGGING['loggers'][app] = {
             'level': 'DEBUG',
-            'handlers': ['console'],
+            'handlers': ['console_verbose'],
             'propagate': False  # required to avoid double logging with root logger
         }
 

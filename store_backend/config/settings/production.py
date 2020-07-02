@@ -69,7 +69,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'console': {
-            'format': '[%(levelname)s][%(name)s][%(filename)s:%(lineno)d %(funcName)s] %(message)s'
+            'format': '[%(levelname)s][%(module)s %(process)d %(thread)d] %(message)s'
         },
     },
     'handlers': {
@@ -87,8 +87,6 @@ LOGGING = {
     }
 }
 
-
-# Your production stuff: Below this line define 3rd party library settings
 
 # CORSHEADERS
 # ------------------------------------------------------------------------------
