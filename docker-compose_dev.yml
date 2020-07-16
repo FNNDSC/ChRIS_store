@@ -8,7 +8,7 @@
 # specify them again in docker-compose.yml.
 #
 
-version: '3'
+version: '3.7'
 
 services:
   chris_store_dev:
@@ -39,6 +39,7 @@ services:
 
   swift_service_dev:
     image: fnndsc/docker-swift-onlyone
+    init: true
     volumes:
       - swift_storage_dev:/srv
     ports:
