@@ -79,11 +79,13 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
         plugin_meta = self.get_object()
         request.data['name'] = plugin_meta.name  # name is required
         # these are part of the plugin repr. and are not allowed to be changed with PUT
+        request.data.pop('title', None)
         request.data.pop('license', None)
         request.data.pop('type', None)
         request.data.pop('icon', None)
         request.data.pop('category', None)
         request.data.pop('authors', None)
+        request.data.pop('documentation', None)
         return super(PluginMetaDetail, self).update(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):

@@ -22,14 +22,14 @@ class ModelTests(TestCase):
                                    'optional': False, 'flag': '--dir', 'short_flag': '-d',
                                    'default': '', 'help': 'test plugin'}]
 
-        self.plg_data = {'title': 'Dir plugin',
-                         'description': 'Dir test plugin',
+        self.plg_data = {'description': 'Dir test plugin',
                          'version': '0.1',
                          'execshell': 'python3',
                          'selfpath': '/usr/src/simplefsapp',
                          'selfexec': 'simplefsapp.py'}
 
-        self.plg_meta_data = {'license': 'MIT',
+        self.plg_meta_data = {'title': 'Dir plugin',
+                              'license': 'MIT',
                               'type': 'fs',
                               'icon': 'http://github.com/plugin',
                               'category': 'Dir',
@@ -111,15 +111,13 @@ class PluginFilterTests(ModelTests):
         with all plugins for which name or title or category matches the search value.
         """
         pl1 = Plugin.objects.get(meta__name=self.plugin_name)
+        pl1.meta.title = self.plg_repr['title']
         pl1.meta.category = self.plg_repr['category']
         pl1.meta.save()
-        pl1.title = self.plg_repr['title']
-        pl1.save()
         pl2 = Plugin.objects.get(meta__name=self.other_plugin_name)
+        pl2.meta.title = self.other_plg_repr['title']
         pl2.meta.category = self.other_plg_repr['category']
         pl2.meta.save()
-        pl2.title = self.other_plg_repr['title']
-        pl2.save()
         pl_filter = PluginFilter()
         queryset = Plugin.objects.all()
         qs = pl_filter.search_name_title_category(queryset, 'name_title_category', 'Dir')

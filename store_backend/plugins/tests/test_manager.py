@@ -26,14 +26,14 @@ class PluginManagerTests(TestCase):
              'optional': True, 'flag': '--dir', 'default': './',
              'help': 'test plugin'}]
 
-        self.plg_data = {'title': 'Dir plugin',
-                         'description': 'Dir test plugin',
+        self.plg_data = {'description': 'Dir test plugin',
                          'version': '0.1',
                          'execshell': 'python3',
                          'selfpath': '/usr/src/simplefsapp',
                          'selfexec': 'simplefsapp.py'}
 
-        self.plg_meta_data = {'license': 'MIT',
+        self.plg_meta_data = {'title': 'Dir plugin',
+                              'license': 'MIT',
                               'type': 'fs',
                               'icon': 'http://github.com/plugin',
                               'category': 'Dir',

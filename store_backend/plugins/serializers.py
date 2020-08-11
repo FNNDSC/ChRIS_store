@@ -24,9 +24,9 @@ class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = PluginMeta
-        fields = ('url', 'id', 'creation_date', 'modification_date', 'name', 'stars',
-                  'public_repo', 'license', 'type', 'icon', 'category', 'authors',
-                  'plugins', 'owner', 'new_owner')
+        fields = ('url', 'id', 'creation_date', 'modification_date', 'name', 'title',
+                  'stars', 'public_repo', 'license', 'type', 'icon', 'category',
+                  'authors', 'documentation', 'plugins', 'owner', 'new_owner')
 
     def validate_new_owner(self, new_owner):
         """
@@ -98,12 +98,14 @@ class PluginMetaStarSerializer(serializers.HyperlinkedModelSerializer):
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
     name = serializers.CharField(max_length=100, source='meta.name')
+    title = serializers.ReadOnlyField(source='meta.title')
     public_repo = serializers.URLField(max_length=300, source='meta.public_repo')
     license = serializers.ReadOnlyField(source='meta.license')
     type = serializers.ReadOnlyField(source='meta.type')
     icon = serializers.ReadOnlyField(source='meta.icon')
     category = serializers.ReadOnlyField(source='meta.category')
     authors = serializers.ReadOnlyField(source='meta.authors')
+    documentation = serializers.ReadOnlyField(source='meta.documentation')
     stars = serializers.ReadOnlyField(source='meta.fan.count')
     parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
     meta = serializers.HyperlinkedRelatedField(view_name='pluginmeta-detail',
@@ -129,11 +131,13 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         meta_dict = validated_data.pop('meta')
         meta_data = {'name': meta_dict['name'],
                      'public_repo': meta_dict['public_repo'],
+                     'title': validated_data.pop('title', ''),
                      'license': validated_data.pop('license', ''),
                      'type': validated_data.pop('type', ''),
                      'icon': validated_data.pop('icon', ''),
                      'category': validated_data.pop('category', ''),
-                     'authors': validated_data.pop('authors', '')}
+                     'authors': validated_data.pop('authors', ''),
+                     'documentation': validated_data.pop('documentation', '')}
 
         # check whether plugin_name does not exist and validate the plugin meta data
         try:

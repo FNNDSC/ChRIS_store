@@ -31,14 +31,14 @@ class ViewTests(TestCase):
                               'optional': True, 'flag': '--dir', 'short_flag': '-d',
                               'default': '/', 'help': 'test plugin', 'ui_exposed': True}]
 
-        self.plg_data = {'title': 'Dir plugin',
-                         'description': 'Dir test plugin',
+        self.plg_data = {'description': 'Dir test plugin',
                          'version': '0.1',
                          'execshell': 'python3',
                          'selfpath': '/usr/src/simplefsapp',
                          'selfexec': 'simplefsapp.py'}
 
-        self.plg_meta_data = {'license': 'MIT',
+        self.plg_meta_data = {'title': 'Dir plugin',
+                              'license': 'MIT',
                               'type': 'fs',
                               'icon': 'http://github.com/plugin',
                               'category': 'Dir',
@@ -56,12 +56,12 @@ class ViewTests(TestCase):
         # create a plugin
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
                                                       type='fs',
+                                                      title='chris app',
                                                       public_repo='http://gitgub.com')
         meta.owner.set([user])
         (plugin, tf) = Plugin.objects.get_or_create(meta=meta,
                                                     version=self.plugin_version,
-                                                    dock_image='fnndsc/pl-testapp',
-                                                    title='chris app')
+                                                    dock_image='fnndsc/pl-testapp')
         plugin.descriptor_file.name = self.plugin_name + '.json'
         plugin.save()
 
@@ -173,6 +173,30 @@ class PluginMetaDetailViewTests(ViewTests):
         response = self.client.delete(self.read_update_delete_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+
+class PluginMetaListQuerySearchViewTests(ViewTests):
+    """
+    Test the plugin-list-query-search view.
+    """
+
+    def setUp(self):
+        super(PluginMetaListQuerySearchViewTests, self).setUp()
+        self.list_url = reverse("pluginmeta-list-query-search") + '?name=' + self.plugin_name
+
+    def test_plugin_meta_list_query_search_success_authenticated(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.list_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_meta_list_query_search_success_unauthenticated(self):
+        response = self.client.get(self.list_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_meta_list_query_search_across_name_title_category_success(self):
+        search_params = '?name_title_category=chris'
+        list_url = reverse("plugin-list-query-search") + search_params
+        response = self.client.get(list_url)
+        self.assertContains(response, 'chris app')
 
 class PluginMetaStarListViewTests(ViewTests):
     """
