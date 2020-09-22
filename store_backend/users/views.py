@@ -9,7 +9,7 @@ from collectionjson import services
 
 from plugins.serializers import PluginMetaSerializer
 from .serializers import UserSerializer
-from .permissions import IsUserOrChrisOrReadOnly
+from .permissions import IsUserOrChris
 
 
 class UserCreate(generics.ListCreateAPIView):
@@ -28,7 +28,7 @@ class UserCreate(generics.ListCreateAPIView):
 class UserDetail(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (permissions.IsAuthenticated, IsUserOrChrisOrReadOnly)
+    permission_classes = (permissions.IsAuthenticated, IsUserOrChris)
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -65,7 +65,7 @@ class UserOwnedPluginMetaList(generics.ListAPIView):
     """
     queryset = User.objects.all()
     serializer_class = PluginMetaSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsUserOrChris)
 
     def list(self, request, *args, **kwargs):
         """
@@ -92,7 +92,7 @@ class UserFavoritePluginMetaList(generics.ListAPIView):
     """
     queryset = User.objects.all()
     serializer_class = PluginMetaSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsUserOrChris)
 
     def list(self, request, *args, **kwargs):
         """

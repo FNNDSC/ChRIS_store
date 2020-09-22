@@ -17,3 +17,14 @@ class IsUserOrChrisOrReadOnly(permissions.BasePermission):
         # Write permissions are only allowed to the authenticated user and
         # superuser 'chris'.
         return (obj == request.user) or (request.user.username == 'chris')
+
+
+class IsUserOrChris(permissions.BasePermission):
+    """
+    Custom permission to only allow access to the user that owns the object or
+    superuser 'chris'.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Access is only allowed to the owner and superuser 'chris'.
+        return (request.user == obj) or (request.user.username == 'chris')
