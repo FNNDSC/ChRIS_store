@@ -18,19 +18,14 @@ class IsOwnerOrChrisOrReadOnly(permissions.BasePermission):
         return (request.user in obj.owner.all()) or (request.user.username == 'chris')
 
 
-class IsStarOwnerOrChrisOrReadOnly(permissions.BasePermission):
+class IsStarOwnerOrChris(permissions.BasePermission):
     """
-    Custom permission to only allow owners of plugin stars or superuser
-    'chris' to modify/edit it. Read only is allowed to other users.
+    Custom permission to only allow access to owners of plugin stars or superuser
+    'chris'.
     """
 
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request,
-        # so we'll always allow GET, HEAD or OPTIONS requests.
-        if request.method in permissions.SAFE_METHODS:
-            return True
-
-        # Write permissions are only allowed to the owner and superuser 'chris'.
+        # Access is only allowed to the owner and superuser 'chris'.
         return (request.user == obj.user) or (request.user.username == 'chris')
 
 

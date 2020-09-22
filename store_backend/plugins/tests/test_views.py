@@ -198,6 +198,7 @@ class PluginMetaListQuerySearchViewTests(ViewTests):
         response = self.client.get(list_url)
         self.assertContains(response, 'chris app')
 
+
 class PluginMetaStarListViewTests(ViewTests):
     """
     Test the pluginmetastar-list view.
@@ -220,19 +221,25 @@ class PluginMetaStarListViewTests(ViewTests):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_plugin_meta_star_list_success_authenticated(self):
-        user = User.objects.get(username=self.username)
-        meta = PluginMeta.objects.get(name=self.plugin_name)
+        user = User.objects.create_user(username='bob', email='bob@test.com',
+                                        password='bobpassword')
+        # create a plugin meta
+        (meta, tf) = PluginMeta.objects.get_or_create(name='testplugin')
+        meta.owner.set([user])
         PluginMetaStar.objects.get_or_create(user=user, meta=meta)
+
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        user = User.objects.get(username=self.username)
+        PluginMetaStar.objects.get_or_create(user=user, meta=meta)
+
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.create_read_url)
         self.assertContains(response, self.plugin_name)
+        self.assertNotContains(response, 'testplugin')
 
-    def test_plugin_meta_star_list_success_unauthenticated(self):
-        user = User.objects.get(username=self.username)
-        meta = PluginMeta.objects.get(name=self.plugin_name)
-        PluginMetaStar.objects.get_or_create(user=user, meta=meta)
+    def test_plugin_meta_star_list_failure_unauthenticated(self):
         response = self.client.get(self.create_read_url)
-        self.assertContains(response, self.plugin_name)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class PluginListViewTests(ViewTests):

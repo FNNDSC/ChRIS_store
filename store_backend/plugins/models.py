@@ -118,11 +118,10 @@ class PluginMetaStar(models.Model):
 
 class PluginMetaStarFilter(FilterSet):
     plugin_name = django_filters.CharFilter(field_name='meta__name', lookup_expr='exact')
-    username = django_filters.CharFilter(field_name='user__username', lookup_expr='exact')
 
     class Meta:
         model = PluginMetaStar
-        fields = ['id', 'plugin_name', 'username']
+        fields = ['id', 'plugin_name']
 
 
 def uploaded_file_path(instance, filename):
