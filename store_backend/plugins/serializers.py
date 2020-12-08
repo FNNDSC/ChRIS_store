@@ -294,8 +294,12 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
     @staticmethod
     def validate_app_version(version):
         """
-        Custom method to check that a proper version number format has been submitted.
+        Custom method to check that a proper version type and format has been submitted.
         """
+        if not isinstance(version, str):
+            raise serializers.ValidationError(
+                {'descriptor_file':
+                     ["Invalid type for plugin app version field. Must be a string."]})
         if not re.match(r"^[0-9.]+$", version):
             raise serializers.ValidationError(
                 {'descriptor_file':

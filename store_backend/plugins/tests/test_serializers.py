@@ -148,6 +148,17 @@ class PluginSerializerTests(TestCase):
         # re-enable logging
         logging.disable(logging.NOTSET)
 
+    def test_validate_app_version(self):
+        """
+        Test whether custom validate_app_version method raises a ValidationError when
+        wrong version type or format has been submitted.
+        """
+        plg_serializer = PluginSerializer()
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_app_version(1.2)
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_app_version('v1.2')
+
     def test_validate_name_version(self):
         """
         Test whether custom validate_name_version method raises a ValidationError when
