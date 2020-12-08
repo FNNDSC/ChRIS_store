@@ -167,7 +167,8 @@ class Plugin(models.Model):
     meta = models.ForeignKey(PluginMeta, on_delete=models.CASCADE, related_name='plugins')
 
     class Meta:
-        unique_together = ('meta', 'version',)
+        # same plugin name with different version can not have same docker image
+        unique_together = [['meta', 'version'], ['meta', 'dock_image']]
         ordering = ('meta', '-creation_date',)
 
     def __str__(self):

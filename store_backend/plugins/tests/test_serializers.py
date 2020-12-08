@@ -98,6 +98,7 @@ class PluginSerializerTests(TestCase):
         self.password = 'foopassword'
         self.email = 'dev@babymri.org'
         self.plugin_name = 'simplefsapp'
+        self.plugin_dock_image = 'fnndsc/pl-simplefsapp'
         self.plugin_parameters = [{'name': 'dir', 'type': str.__name__, 'action': 'store',
                                    'optional': True, 'flag': '--dir', 'short_flag': '-d',
                                    'default': '/', 'help': 'test plugin',
@@ -126,7 +127,9 @@ class PluginSerializerTests(TestCase):
         # create a plugin
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         meta.owner.set([user])
-        (plugin, tf) = Plugin.objects.get_or_create(meta=meta, version=self.plg_repr['version'])
+        (plugin, tf) = Plugin.objects.get_or_create(meta=meta,
+                                                    version=self.plg_repr['version'],
+                                                    dock_image=self.plugin_dock_image)
 
         # add plugin's parameters
         PluginParameter.objects.get_or_create(
@@ -150,6 +153,18 @@ class PluginSerializerTests(TestCase):
         Test whether custom validate_name_version method raises a ValidationError when
         plugin name and version are not unique together.
         """
+        plg_serializer = PluginSerializer()
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_name_version(self.plg_repr['version'], self.plugin_name)
+
+    def test_validate_name_image(self):
+        """
+        Test whether custom validate_name_image method raises a ValidationError when
+        plugin name and docker image are not unique together.
+        """
+        plg_serializer = PluginSerializer()
+        with self.assertRaises(serializers.ValidationError):
+            plg_serializer.validate_name_image(self.plugin_dock_image, self.plugin_name)
 
     def test_create_also_creates_meta_first_time_plugin_name_is_used(self):
         """

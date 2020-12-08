@@ -150,8 +150,10 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         #  create the full list of owners for the plugin name or raise error
         owner = validated_data.pop('owner')
         owner = self.validate_name_owner(owner[0], meta_data['name'])
-        #  validate name,version are unique
+        #  validate name, version are unique
         self.validate_name_version(validated_data['version'], meta_data['name'])
+        #  validate name, docker image are unique
+        self.validate_name_image(validated_data['dock_image'], meta_data['name'])
 
         # run all default validators for the full set of plugin fields
         request_parameters = validated_data['parameters']
@@ -310,7 +312,21 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         except ObjectDoesNotExist:
             pass
         else:
-            msg = "Plugin with name '%s and version %s already exists." % (name, version)
+            msg = "Plugin with name %s and version %s already exists." % (name, version)
+            raise serializers.ValidationError({'non_field_errors': [msg]})
+
+    @staticmethod
+    def validate_name_image(dock_image, name):
+        """
+        Custom method to check if plugin name and docker image are unique together.
+        """
+        try:
+            Plugin.objects.get(meta__name=name, dock_image=dock_image)
+        except ObjectDoesNotExist:
+            pass
+        else:
+            msg = "Docker image %s already used in a previous version of plugin with " \
+                  "name %s. Please properly version the new image." % (dock_image, name)
             raise serializers.ValidationError({'non_field_errors': [msg]})
 
     @staticmethod
