@@ -16,7 +16,8 @@ TYPE_CHOICES = [("string", "String values"), ("float", "Float values"),
 TYPES = {'string': 'str', 'integer': 'int', 'float': 'float', 'boolean': 'bool',
          'path': 'path', 'unextpath': 'unextpath'}
 
-PLUGIN_TYPE_CHOICES = [("ds", "Data plugin"), ("fs", "Filesystem plugin")]
+PLUGIN_TYPE_CHOICES = [("ds", "Data plugin"), ("fs", "Filesystem plugin"),
+                       ("ts", "Topology plugin")]
 
 
 class PluginMeta(models.Model):
