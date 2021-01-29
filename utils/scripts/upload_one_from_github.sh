@@ -19,28 +19,42 @@ dock_image=${ghrepo,,}
 # FNNDSC/pl-simpledsapp -> pl-simpledsapp
 plname=$(echo $ghrepo | sed 's/^.*\///')
 
+dockerhub=$(curl -s "https://hub.docker.com/v2/repositories/$dock_image/tags/?ordering=last_updated")
 recent_tag=$(
-  curl -s "https://hub.docker.com/v2/repositories/$dock_image/tags/?ordering=last_updated" \
+  echo "$dockerhub" \
     | jq -r '.results | map(select(.name != "latest" and .tag_status != "stale")) | first(.[]) | .name'
 )
 
+function quit_if_already_there () {
+  existing_images=$(
+    curl -s "${CHRIS_STORE_URL}plugins/search/?dock_image=$tagged_dock_image" \
+      -H "accept:application/json"
+  )
+
+  if [ "$(echo "$existing_images" | jq -r '.count')" -gt "0" ]; then
+    existing_url="$(echo "$existing_images" | jq -r '.results[0].url')"
+    printf "$(tput setaf 4)%-60s %s$(tput sgr0)\n" "$tagged_dock_image" "$existing_url"
+    exit 0
+  fi
+}
+
 if [ -z "$recent_tag" ]; then
-  printf "$(tput setaf 1)%-60s %s$(tput sgr0)\n" "$dock_image" "no Dockerhub tags"
+  stale_tag=$(
+    echo "$dockerhub" \
+      | jq -r '.results | map(select(.name != "latest")) | first(.[]) | .name'
+  )
+  if [ -n "$stale_tag" ]; then
+    tagged_dock_image=$dock_image:$stale_tag
+    quit_if_already_there
+    printf "$(tput setaf 1)%-60s %s$(tput sgr0)\n" "$tagged_dock_image"  "stale"
+  else
+    printf "$(tput setaf 1)%-60s %s$(tput sgr0)\n" "$dock_image"  "no Dockerhub tags"
+  fi
   exit 1
 fi
 
 tagged_dock_image=$dock_image:$recent_tag
-
-existing_images=$(
-  curl -s "${CHRIS_STORE_URL}plugins/search/?dock_image=$tagged_dock_image" \
-    -H "accept:application/json"
-)
-
-if [ "$(echo "$existing_images" | jq -r '.count')" -gt "0" ]; then
-  existing_url="$(echo "$existing_images" | jq -r '.results[0].url')"
-  printf "$(tput setaf 4)%-60s %s$(tput sgr0)\n" "$tagged_dock_image" "$existing_url"
-  exit 0
-fi
+quit_if_already_there
 
 descriptor_file=$(mktemp --suffix .json)
 docker pull -q $tagged_dock_image > /dev/null
