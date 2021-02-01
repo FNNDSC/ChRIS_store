@@ -1,9 +1,9 @@
 # Daily cron to upload plugins from the FNNDSC Github to chrisstore.co
-name: Sync github.com/FNNDSC with chrisstore.co
+name: Daily Sync github.com/FNNDSC with chrisstore.co
 
 on:
   schedule:
-    - cron: '@daily'
+    - cron: '00 00 * * *'
 
 jobs:
   sync:
