@@ -10,6 +10,21 @@
 CHRIS_STORE_URL="${CHRIS_STORE_URL:-https://chrisstore.co/api/v1/}"
 CHRIS_STORE_USER="${CHRIS_STORE_USER:-chris:chris1234}"
 
+http_code=$(
+  curl -so /dev/null --head -w '%{http_code}' \
+    -u "$CHRIS_STORE_USER" "$CHRIS_STORE_URL"
+)
+
+if [ "$http_code" != "200" ] ; then
+  http_code=$(curl -so /dev/null --head -w '%{http_code}' $CHRIS_STORE_URL)
+  if [ "$http_code" = "200" ]; then
+    echo "CHRIS_STORE_USER is incorrect"
+  else
+    echo "cannot connect to $CHRIS_STORE_URL"
+  fi
+  exit 1
+fi
+
 # e.g. FNNDSC/pl-simpledsapp
 ghrepo=$1
 ghurl="https://github.com/$ghrepo"
@@ -31,7 +46,7 @@ function quit_if_already_there () {
       -H "accept:application/json"
   )
 
-  if [ "$(echo "$existing_images" | jq -r '.count')" -gt "0" ]; then
+  if [ "$(jq -r '.count' <<< $existing_images)" -gt "0" ]; then
     existing_url="$(echo "$existing_images" | jq -r '.results[0].url')"
     printf "$(tput setaf 4)%-60s %s$(tput sgr0)\n" "$tagged_dock_image" "$existing_url"
     exit 0
