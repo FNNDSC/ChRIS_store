@@ -1,0 +1,17 @@
+# Daily cron to upload plugins from the FNNDSC Github to chrisstore.co
+name: Sync github.com/FNNDSC with chrisstore.co
+
+on:
+  schedule:
+    - cron: '@daily'
+
+jobs:
+  sync:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync chrisstore.co
+        env:
+          CHRIS_STORE_URL: https://chrisstore.co/api/v1/
+          CHRIS_STORE_USER: ${{ secrets.CHRIS_STORE_USER }}
+        run: utils/scripts/upload_all_from_github.sh
