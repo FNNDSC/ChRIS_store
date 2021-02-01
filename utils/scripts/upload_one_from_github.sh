@@ -10,6 +10,27 @@
 CHRIS_STORE_URL="${CHRIS_STORE_URL:-https://chrisstore.co/api/v1/}"
 CHRIS_STORE_USER="${CHRIS_STORE_USER:-chris:chris1234}"
 
+http_code=$(
+  curl -so /dev/null --head -w '%{http_code}' \
+    -u "$CHRIS_STORE_USER" "$CHRIS_STORE_URL"
+)
+
+if [ "$http_code" != "200" ] ; then
+  http_code=$(curl -so /dev/null --head -w '%{http_code}' $CHRIS_STORE_URL)
+  if [ "$http_code" = "200" ]; then
+    echo "CHRIS_STORE_USER is incorrect"
+  else
+    echo "cannot connect to $CHRIS_STORE_URL"
+  fi
+  exit 1
+fi
+
+# silence stderr for compatibility in Github Actions
+color_red="$(tput setaf 1 2> /dev/null)"
+color_blue="$(tput setaf 4 2> /dev/null)"
+color_green="$(tput setaf 2 2> /dev/null)"
+color_reset="$(tput sgr0 2> /dev/null)"
+
 # e.g. FNNDSC/pl-simpledsapp
 ghrepo=$1
 ghurl="https://github.com/$ghrepo"
@@ -31,9 +52,9 @@ function quit_if_already_there () {
       -H "accept:application/json"
   )
 
-  if [ "$(echo "$existing_images" | jq -r '.count')" -gt "0" ]; then
+  if [ "$(jq -r '.count' <<< $existing_images)" -gt "0" ]; then
     existing_url="$(echo "$existing_images" | jq -r '.results[0].url')"
-    printf "$(tput setaf 4)%-60s %s$(tput sgr0)\n" "$tagged_dock_image" "$existing_url"
+    printf "$color_blue%-60s %s$color_reset\n" "$tagged_dock_image" "$existing_url"
     exit 0
   fi
 }
@@ -46,11 +67,11 @@ if [ -z "$recent_tag" ]; then
   if [ -n "$stale_tag" ]; then
     tagged_dock_image=$dock_image:$stale_tag
     quit_if_already_there
-    printf "$(tput setaf 1)%-60s %s$(tput sgr0)\n" "$tagged_dock_image"  "stale"
+    printf "$color_red%-60s %s$color_reset\n" "$tagged_dock_image"  "stale"
   else
-    printf "$(tput setaf 1)%-60s %s$(tput sgr0)\n" "$dock_image"  "no Dockerhub tags"
+    printf "$color_red%-60s %s$color_reset\n" "$dock_image"  "no Dockerhub tags"
   fi
-  exit 1
+  exit 0
 fi
 
 tagged_dock_image=$dock_image:$recent_tag
@@ -74,9 +95,9 @@ rm $descriptor_file
 
 if [ "$result" = "0" ]; then
   uploaded_url=$(echo $res | jq -r '.collection.items[0].href')
-  printf "$(tput setaf 2)%-60s %s$(tput sgr0)\n" "$tagged_dock_image" "$uploaded_url"
+  printf "$color_green%-60s %s$color_reset\n" "$tagged_dock_image" "$uploaded_url"
 else
-  printf "$(tput setaf 1)%-60s %s$(tput sgr0)\n" "$tagged_dock_image" "$res"
+  printf "$color_red%-60s %s$color_reset\n" "$tagged_dock_image" "$res"
 fi
 
 wait
