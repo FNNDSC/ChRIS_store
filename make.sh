@@ -79,11 +79,9 @@ if [[ "$1" == 'up' ]]; then
     # Add a new plugin name to the list if you want it to be automatically registered
     declare -a plugins=( "pl-simplefsapp"
                          "pl-simpledsapp"
-                         "pl-pacsquery"
-                         "pl-pacsretrieve"
                          "pl-s3retrieve"
-                         "pl-s3push"
                          "pl-dircopy"
+                         "pl-topologicalcopy"
     )
     declare -i i=1
     declare -i STEP=7
@@ -93,15 +91,15 @@ if [[ "$1" == 'up' ]]; then
         PLUGIN_DOCK="fnndsc/${plugin}"
         PLUGIN_MODULE="${plugin:3}"
         docker pull "$PLUGIN_DOCK"
-        PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${PLUGIN_MODULE}.py" --json 2> /dev/null;)
+        PLUGIN_REP=$(docker run --rm "$PLUGIN_DOCK" "${PLUGIN_MODULE}" --json 2> /dev/null;)
         docker-compose -f docker-compose_dev.yml exec chris_store_dev python plugins/services/manager.py add "${plugin}" cubeadmin https://github.com/FNNDSC "$PLUGIN_DOCK" --descriptorstring "$PLUGIN_REP" >/dev/null
         ((i++))
     done
     windowBottom
 
     title -d 1 "Automatically creating a locked pipeline in the ChRIS STORE" "(mutable by the owner and not available to other users)"
-    S3_PLUGIN_VER=$(docker run --rm fnndsc/pl-s3retrieve s3retrieve.py --version)
-    SIMPLEDS_PLUGIN_VER=$(docker run --rm fnndsc/pl-simpledsapp simpledsapp.py --version)
+    S3_PLUGIN_VER=$(docker run --rm fnndsc/pl-s3retrieve s3retrieve --version)
+    SIMPLEDS_PLUGIN_VER=$(docker run --rm fnndsc/pl-simpledsapp simpledsapp --version)
     PIPELINE_NAME="s3retrieve_v${S3_PLUGIN_VER}-simpledsapp_v${SIMPLEDS_PLUGIN_VER}"
     echo "Creating pipeline named '$PIPELINE_NAME'"
 
