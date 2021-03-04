@@ -15,6 +15,9 @@ services:
     image: ${CREPO}/chris_store:dev
     volumes:
       - ./store_backend:/home/localuser/store_backend
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.local
+      - DJANGO_DB_MIGRATE=on
     ports:
       - "8010:8010"
     depends_on:

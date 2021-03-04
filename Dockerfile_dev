@@ -18,7 +18,7 @@
 #   docker run -ti --entrypoint /bin/bash local/chris_store:dev
 #
 
-FROM fnndsc/ubuntu-python3:latest
+FROM fnndsc/ubuntu-python3:ubuntu20.04-python3.8.5
 MAINTAINER fnndsc "dev@babymri.org"
 
 # Pass a UID on build command line (see above) to set internal UID
@@ -27,7 +27,7 @@ ENV UID=$UID DEBIAN_FRONTEND=noninteractive VERSION="0.1"
 
 ENV APPROOT="/home/localuser/store_backend" REQPATH="/usr/src/requirements"
 COPY ["./requirements", "${REQPATH}"]
-COPY ["./docker-entrypoint_dev.sh", "/usr/src"]
+COPY ["./docker-entrypoint.sh", "/usr/src"]
 
 RUN apt-get update                                               \
   && apt-get install -y locales                                  \
@@ -36,16 +36,19 @@ RUN apt-get update                                               \
   && export LC_ALL=en_US.UTF-8                                   \
   && locale-gen en_US.UTF-8                                      \
   && dpkg-reconfigure locales                                    \
+  && apt-get install sudo                                         \
   && apt-get install -y libssl-dev libmysqlclient-dev             \
-  && apt-get install -y apache2 apache2-dev                       \
+  && apt-get install -y apache2 apache2-dev                      \
+  && pip install --upgrade pip                                    \
   && pip install -r ${REQPATH}/local.txt                          \
-  && useradd -u $UID -ms /bin/bash localuser
+  && useradd -l -u $UID -ms /bin/bash localuser                      \
+  && echo "localuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Start as user localuser
 USER localuser
 
 WORKDIR $APPROOT
-ENTRYPOINT ["/usr/src/docker-entrypoint_dev.sh"]
+ENTRYPOINT ["/usr/src/docker-entrypoint.sh"]
 EXPOSE 8010
 
 # Start ChRIS store development server

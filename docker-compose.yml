@@ -13,6 +13,8 @@ version: '3.7'
 services:
   chris_store:
     image: ${CREPO}/chris_store
+    environment:
+      - DJANGO_DB_MIGRATE=on
     env_file:
       - ./secrets/.chris_store.env
       - ./secrets/.chris_store_db.env

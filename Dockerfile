@@ -18,7 +18,7 @@
 #   docker run -ti --entrypoint /bin/bash local/chris_store
 #
 
-FROM fnndsc/ubuntu-python3:latest
+FROM fnndsc/ubuntu-python3:ubuntu20.04-python3.8.5
 MAINTAINER fnndsc "dev@babymri.org"
 
 # Pass a UID on build command line (see above) to set internal UID
@@ -38,8 +38,9 @@ RUN apt-get update                                               \
   && dpkg-reconfigure locales                                    \
   && apt-get install -y libssl-dev libmysqlclient-dev            \
   && apt-get install -y apache2 apache2-dev                      \
+  && pip install --upgrade pip                                    \
   && pip install -r ${REQPATH}/production.txt                    \
-  && useradd -u $UID -ms /bin/bash localuser
+  && useradd -l -u $UID -ms /bin/bash localuser
 
 # Start as user localuser
 USER localuser
