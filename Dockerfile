@@ -52,7 +52,7 @@ ENTRYPOINT ["/usr/src/docker-entrypoint.sh"]
 EXPOSE 8010
 
 # Start ChRIS store production server
-CMD ["mod_wsgi-express", "start-server", "config/wsgi.py", "--host", "0.0.0.0", "--port", "8010", "--processes", "4", "--server-root", "/home/localuser/mod_wsgi-0.0.0.0:8010"]
+CMD ["mod_wsgi-express", "start-server", "config/wsgi.py", "--host", "0.0.0.0", "--port", "8010", "--processes", "2", "--server-root", "/home/localuser/mod_wsgi-0.0.0.0:8010"]
 #python manage.py runmodwsgi --working-directory $(pwd) --host 0.0.0.0 --port 8010 --server-name localhost --server-root ~/mod_wsgi-0.0.0.0:8010 --reload-on-changes
 #mod_wsgi-express setup-server config/wsgi.py --host 0.0.0.0 --port 8010 --processes 4 --server-name localhost --server-root /home/localuser/mod_wsgi-0.0.0.0:8010
 #to start daemon:
