@@ -20,6 +20,7 @@ jobs:
       - run: docker-compose up -d
       - name: Wait for MySQL
         run: |
+          set +e
           for i in {0..60}; do
             docker-compose exec chris_store_dev_db mysqladmin -uroot -prootp status 2> /dev/null
             if [ "$?" = "0" ]; then
