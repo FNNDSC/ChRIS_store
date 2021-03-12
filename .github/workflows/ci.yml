@@ -28,6 +28,7 @@ jobs:
               break
             fi
             printf .
+            sleep 2
           done
           if [ "$dbup" != "y" ]; then
             echo
