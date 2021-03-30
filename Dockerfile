@@ -1,21 +1,33 @@
 #
-# Docker file for ChRIS store production server
+# Docker file for ChRIS store image
 #
-# Build with
+# Build production image:
 #
 #   docker build -t <name> .
 #
-# For example if building a local version, you could do:
+# For example if building a local production image:
 #
 #   docker build -t local/chris_store .
 #
-# In the case of a proxy (located at proxy.tch.harvard.edu:3128), do:
+# Build development image:
 #
-#    docker build --build-arg http_proxy=http://proxy.tch.harvard.edu:3128 --build-arg UID=$UID -t local/chris_store .
+#   docker build --build-arg ENVIRONMENT=local -t <name>:<tag> .
 #
-# To run an interactive shell inside this container, do:
+# For example if building a local development image:
 #
-#   docker run -ti --entrypoint /bin/bash local/chris_store
+#   docker build --build-arg ENVIRONMENT=local -t local/chris_store:dev .
+#
+# In the case of a proxy (located at say proxy.tch.harvard.edu:3128), do:
+#
+#    export PROXY="http://proxy.tch.harvard.edu:3128"
+#
+# then add to any of the previous build commands:
+#
+#    --build-arg http_proxy=${PROXY}
+#
+# For example if building a local development image:
+#
+# docker build --build-arg http_proxy=${PROXY} --build-arg ENVIRONMENT=local -t local/chris_store:dev .
 #
 
 FROM fnndsc/ubuntu-python3:ubuntu20.04-python3.8.5
@@ -23,6 +35,7 @@ MAINTAINER fnndsc "dev@babymri.org"
 
 # Pass a UID on build command line (see above) to set internal UID
 ARG UID=1001
+ARG ENVIRONMENT=production
 ENV UID=$UID DEBIAN_FRONTEND=noninteractive VERSION="0.1"
 
 ENV APPROOT="/home/localuser/store_backend" REQPATH="/usr/src/requirements"
@@ -39,7 +52,7 @@ RUN apt-get update                                               \
   && apt-get install -y libssl-dev libmysqlclient-dev            \
   && apt-get install -y apache2 apache2-dev                      \
   && pip install --upgrade pip                                    \
-  && pip install -r ${REQPATH}/production.txt                    \
+  && pip install -r ${REQPATH}/${ENVIRONMENT}.txt                    \
   && useradd -l -u $UID -ms /bin/bash localuser
 
 # Start as user localuser

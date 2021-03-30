@@ -7,18 +7,63 @@ Back end for ChRIS Store. This is a Django-MySQL project that houses description
 
 ## ChRIS Store development and testing
 
+### TL;DR
+
+If you read nothing else on this page, and just want to get an instance of the ChRIS store backend services up and 
+running with no mess, no fuss:
+
+```bash
+git clone https://github.com/FNNDSC/ChRIS_store
+cd ChRIS_store
+./make.sh down ; ./make.sh up
+```
+
+The resulting instance uses the default Django development server and therefore is not suitable for production.
+
 ### Abstract
 
-This page describes how to quickly get the set of services comprising the backend up and running for development and how to run the automated tests.
+This page describes how to quickly get the set of services comprising the backend up and running for development and how to run the automated tests. A production deployment of the ChRIS store backend services is also explained.
 
 ### Preconditions
 
 #### Install latest Docker and Docker Compose. Currently tested platforms
-* ``Ubuntu 16.04+ and MAC OS X 10.11+ and Fedora 31+`` ([Additional instructions for Fedora](https://github.com/mairin/ChRIS_store/wiki/Getting-the-ChRIS-Store-to-work-on-Fedora))
+* ``Ubuntu 18.04+ and MAC OS X 10.14+ and Fedora 31+`` ([Additional instructions for Fedora](https://github.com/mairin/ChRIS_store/wiki/Getting-the-ChRIS-Store-to-work-on-Fedora))
 * ``Docker 18.06.0+``
-* ``Docker Compose 1.22.0+``
+* ``Docker Compose 1.27.0+``
 
 #### On a Linux machine make sure to add your computer user to the ``docker`` group 
+
+Consult this page https://docs.docker.com/engine/install/linux-postinstall/
+
+
+### Production deployment
+
+#### To get the production system up:
+
+```bash
+git clone https://github.com/FNNDSC/ChRIS_store
+cd ChRIS_store
+mkdir secrets
+```
+Now copy all the required secret configuration files into the secrets directory, please take a look at 
+[this](https://github.com/FNNDSC/ChRIS_store/wiki/ChRIS-store-backend-production-services-secret-configuration-files) 
+wiki page to learn more about these files 
+
+```bash
+./docker-deploy.sh up
+```
+
+#### To tear down:
+
+```bash
+cd ChRIS_store
+./docker-deploy.sh down
+```
+
+
+### Development
+
+#### Optionally setup a virtual environment
 
 #### Install virtualenv
 ```bash
@@ -53,11 +98,6 @@ To deactivate chris_store_env:
 deactivate
 ```
 
-#### Checkout the Github repo
-```bash
-git clone https://github.com/FNNDSC/ChRIS_store.git
-```
-
 #### Install useful python tools in your virtual environment
 ```bash
 cd ChRIS_store
@@ -81,42 +121,45 @@ pip freeze --local
 Start ChRIS Store services by running the make bash script from the repository source directory
 
 ```bash
+git clone https://github.com/FNNDSC/ChRIS_store.git
 ./make.sh up
 ```
 All the steps performed by the above script are properly documented in the script itself. 
 
 After running this script all the automated tests should have successfully run and a Django development server should be running in interactive mode in this terminal.
 
-### Rerun automated tests after modifying source code
+#### Rerun automated tests after modifying source code
 
-Open another terminal and run 
+Open another terminal and find out the id of the container running the Django server in interactive mode:
 ```bash
-docker ps
+chris_store=$(docker ps -f ancestor=fnndsc/chris_store:dev -f name=chris_store_dev -q)
 ```
-Find out from the previous output the name of the container running the Django server in interactive mode (usually *chris_store_chris_store_dev_run_1*) and run the Unit tests and Integration tests within that container. For instance to run only the Unit tests:
+and run the Unit and Integration tests within that container. 
+
+To run only the Unit tests:
 
 ```bash
-docker exec -it chris_store_chris_store_dev_run_1 python manage.py test --exclude-tag integration
+docker exec -it $chris_store python manage.py test --exclude-tag integration
 ```
 
 To run only the Integration tests:
 
 ```bash
-docker exec -it chris_store_chris_store_dev_run_1 python manage.py test --tag integration
+docker exec -it $chris_store python manage.py test --tag integration
 ```
 
 To run all the tests:
 
 ```bash
-docker exec -it chris_store_chris_store_dev_run_1 python manage.py test
+docker exec -it $chris_store python manage.py test 
 ```
 
-### Check code coverage of the automated tests
-Make sure the **store_backend/** dir is world writable. Then type:
+#### Check code coverage of the automated tests
+Make sure the ``store_backend/`` dir is world writable. Then type:
 
 ```bash
-docker exec -it chris_store_chris_store_dev_run_1 coverage run --source=plugins,users manage.py test
-docker exec -it chris_store_chris_store_dev_run_1 coverage report
+docker exec -it $chris_store coverage run --source=plugins,users manage.py test
+docker exec -it $chris_store coverage report
 ```
 
 ### Using [HTTPie](https://httpie.org/) to play with the REST API 
@@ -129,7 +172,7 @@ http http://localhost:8010/api/v1/
 #### A simple POST request to register a new plugin app in the store:
 First save the plugin representation json file by running the plugin with the `--savejson` flag:
 ```bash
-docker run --rm -v /tmp/json:/json fnndsc/pl-simplefsapp simplefsapp.py --savejson /json
+docker run --rm -v /tmp/json:/json fnndsc/pl-simplefsapp simplefsapp --savejson /json
 ```
 Then upload the plugin representation json file to the ChRIS Store as part of the `POST` request:
 ```bash

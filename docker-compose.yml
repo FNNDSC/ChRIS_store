@@ -12,7 +12,7 @@ version: '3.7'
 
 services:
   chris_store:
-    image: ${CREPO}/chris_store
+    image: fnndsc/chris_store
     environment:
       - DJANGO_DB_MIGRATE=on
     env_file:
@@ -24,6 +24,9 @@ services:
     depends_on:
       - chris_store_db
       - swift_service
+    deploy:
+      restart_policy:
+        condition: on-failure
     labels:
       name: "ChRIS_store"
       role: "Production server using Apache's mod_wsgi"
@@ -34,6 +37,9 @@ services:
       - chris_store_db_data:/var/lib/mysql
     env_file:
       - ./secrets/.chris_store_db.env
+    deploy:
+      restart_policy:
+        condition: on-failure
     labels:
       name: "ChRIS_store MySQL Database"
       role: "Production MySQL database"
@@ -47,6 +53,9 @@ services:
       - ./secrets/.swift_service.env
     ports:
       - "8080:8080"
+    deploy:
+      restart_policy:
+        condition: on-failure
     labels:
       name: "swift"
       role: "Swift object storage service"

@@ -15,8 +15,6 @@ jobs:
       COMPOSE_FILE: docker-compose_dev.yml
     steps:
       - uses: actions/checkout@v2
-      - name: Build Dockerfile_dev
-        run: docker build -f Dockerfile_dev -t fnndsc/chris_store:dev .
       - run: docker-compose up -d
       - name: Wait for MySQL
         run: |
