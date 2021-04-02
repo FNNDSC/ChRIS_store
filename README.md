@@ -216,3 +216,7 @@ make html
 
 [license-badge]: https://img.shields.io/github/license/fnndsc/chris_store.svg
 [last-commit-badge]: https://img.shields.io/github/last-commit/fnndsc/chris_store.svg
+
+### Learn More
+
+If you are interested in contributing or joining us, Check [here](http://chrisproject.org/join-us).
