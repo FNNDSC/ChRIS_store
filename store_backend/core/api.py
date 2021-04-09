@@ -46,6 +46,18 @@ urlpatterns = format_suffix_patterns([
          plugin_views.PluginMetaPluginList.as_view(),
          name='pluginmeta-plugin-list'),
 
+    path('v1/<int:pk>/collaborators/',
+         plugin_views.PluginMetaCollaboratorList.as_view(),
+         name='pluginmetacollaborator-list'),
+
+    path('v1/<int:pk>/collaborators/search/',
+         plugin_views.PluginMetaCollaboratorListQuerySearch.as_view(),
+         name='pluginmetacollaborator-list-query-search'),
+
+    path('v1/collaborators/<int:pk>/',
+         plugin_views.PluginMetaCollaboratorDetail.as_view(),
+         name='pluginmetacollaborator-detail'),
+
 
     path('v1/pluginstars/',
          plugin_views.PluginMetaStarList.as_view(), name='pluginmetastar-list'),

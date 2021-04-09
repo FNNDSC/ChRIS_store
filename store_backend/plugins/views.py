@@ -5,8 +5,10 @@ from rest_framework.reverse import reverse
 from collectionjson import services
 
 from .models import (PluginMeta, PluginMetaFilter, PluginMetaStar, PluginMetaStarFilter,
-                     Plugin, PluginFilter, PluginParameter)
+                     Plugin, PluginFilter, PluginParameter, PluginMetaCollaborator,
+                     PluginMetaCollaboratorFilter)
 from .serializers import (PluginMetaSerializer, PluginMetaStarSerializer,
+                          PluginMetaCollaboratorSerializer,
                           PluginSerializer, PluginParameterSerializer)
 from .permissions import (IsOwnerOrChrisOrReadOnly, IsMetaOwnerOrChrisOrReadOnly,
                           IsStarOwnerOrChris)
@@ -124,6 +126,74 @@ class PluginMetaPluginList(generics.ListAPIView):
         return self.filter_queryset(meta.plugins.all())
 
 
+class PluginMetaCollaboratorList(generics.ListCreateAPIView):
+    """
+    A view for the collection of meta-specific collaborator list.
+    """
+    queryset = PluginMeta.objects.all()
+    serializer_class = PluginMetaCollaboratorSerializer
+
+    def get_plugin_meta_collaborators_queryset(self):
+        """
+        Custom method to get the actual plugin meta's collaborators queryset.
+        """
+        plg_meta = self.get_object()
+        return PluginMetaCollaborator.objects.filter(meta=plg_meta)
+
+    def perform_create(self, serializer):
+        """
+        Overriden to associate a plugin meta with the plugin meta collaborator.
+        """
+        plg_meta = self.get_object()
+        serializer.save(meta=plg_meta)
+
+    def list(self, request, *args, **kwargs):
+        """
+        Overriden to append document-level link relations, query list and a
+        collection+json template to the response.
+        """
+        queryset = self.get_plugin_meta_collaborators_queryset()
+        response = services.get_list_response(self, queryset)
+        plg_meta = self.get_object()
+        # append document-level link relations
+        links = {'meta': reverse('pluginmeta-detail', request=request,
+                                kwargs={"pk": plg_meta.id})}
+        response = services.append_collection_links(response, links)
+        # append query list
+        query_list = [reverse('pluginmetacollaborator-list-query-search',
+                              request=request, kwargs={"pk": plg_meta.id})]
+        response = services.append_collection_querylist(response, query_list)
+        # append write template
+        template_data = {'username': ''}
+        return services.append_collection_template(response, template_data)
+
+
+class PluginMetaCollaboratorListQuerySearch(generics.ListAPIView):
+    """
+    A view for the collection of plugin collaborators resulting from a query search.
+    """
+    serializer_class = PluginMetaCollaboratorSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filterset_class = PluginMetaCollaboratorFilter
+
+    def get_queryset(self):
+        """
+        Overriden to return a custom queryset that is only comprised by the plugin
+        meta collaborators associated to the plugin meta.
+        """
+        plg_meta = self.get_object()
+        return PluginMetaCollaborator.objects.filter(meta=plg_meta)
+
+
+class PluginMetaCollaboratorDetail(generics.RetrieveDestroyAPIView):
+    """
+    A plugin star view.
+    """
+    queryset = PluginMetaCollaborator.objects.all()
+    serializer_class = PluginMetaCollaboratorSerializer
+    permission_classes = (IsStarOwnerOrChris,)
+
+
 class PluginMetaStarList(generics.ListCreateAPIView):
     """
     A view for the collection of plugins' stars.
@@ -212,7 +282,7 @@ class PluginList(generics.ListCreateAPIView):
         """
         Overriden to associate an owner with the plugin.
         """
-        serializer.save(owner=[self.request.user])
+        serializer.save(collaborator=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """

@@ -19,12 +19,14 @@ TYPES = {'string': 'str', 'integer': 'int', 'float': 'float', 'boolean': 'bool',
 PLUGIN_TYPE_CHOICES = [("ds", "Data plugin"), ("fs", "Filesystem plugin"),
                        ("ts", "Topology plugin")]
 
+COLLABORATOR_ROLE_CHOICES = [("O", "Owner"), ("M", "Maintainer")]
+
 
 class PluginMeta(models.Model):
     """
     Model class that defines the meta info for a plugin that is the same across
-    plugin's versions. If a user owns and/or is a fan of a plugin's meta then he/she
-    owns and/or is a fan of all the plugin's versions.
+    plugin's versions. If a user collaborates and/or is a fan of a plugin's meta then
+    he/she collaborates and/or is a fan of all the plugin's versions.
     """
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now_add=True)
@@ -37,9 +39,12 @@ class PluginMeta(models.Model):
     category = models.CharField(max_length=100, blank=True)
     authors = models.CharField(max_length=200, blank=True)
     documentation = models.CharField(max_length=800, blank=True)
-    fan = models.ManyToManyField('auth.User', related_name='favorite_plugin_metas',
-                                 through='PluginMetaStar')
-    owner = models.ManyToManyField('auth.User', related_name='owned_plugin_metas')
+    fans = models.ManyToManyField('auth.User',
+                                  related_name='favorite_plugin_metas',
+                                  through='PluginMetaStar')
+    collaborators = models.ManyToManyField('auth.User',
+                                           related_name='collab_plugin_metas',
+                                           through='PluginMetaCollaborator')
 
     class Meta:
         ordering = ('type', '-creation_date',)
@@ -62,8 +67,9 @@ class PluginMetaFilter(FilterSet):
                                                          lookup_expr='gte')
     max_creation_date = django_filters.IsoDateTimeFilter(field_name='creation_date',
                                                          lookup_expr='lte')
-    owner_username = django_filters.CharFilter(field_name='owner__username',
-                                               lookup_expr='exact')
+    collaborator_username = django_filters.CharFilter(
+        field_name='collaborators__username', lookup_expr='exact'
+    )
     name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
     name_exact = django_filters.CharFilter(field_name='name', lookup_expr='exact')
     title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
@@ -98,7 +104,7 @@ class PluginMetaFilter(FilterSet):
     class Meta:
         model = PluginMeta
         fields = ['id', 'name', 'name_exact', 'title', 'type', 'category', 'authors',
-                  'owner_username', 'min_creation_date', 'max_creation_date',
+                  'collaborator_username', 'min_creation_date', 'max_creation_date',
                   'name_title_category', 'name_authors_category']
 
 
@@ -123,6 +129,31 @@ class PluginMetaStarFilter(FilterSet):
     class Meta:
         model = PluginMetaStar
         fields = ['id', 'plugin_name']
+
+
+class PluginMetaCollaborator(models.Model):
+    """
+    Model class that defines a plugin's collaborator.
+    """
+    meta = models.ForeignKey(PluginMeta, on_delete=models.CASCADE)
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    role = models.CharField(choices=COLLABORATOR_ROLE_CHOICES, default='O',
+                            max_length=1)
+
+    class Meta:
+        unique_together = ('meta', 'user',)
+
+    def __str__(self):
+        return str(self.id)
+
+
+class PluginMetaCollaboratorFilter(FilterSet):
+    username = django_filters.CharFilter(field_name='user__username', lookup_expr='exact')
+    role = django_filters.CharFilter(field_name='role', lookup_expr='exact')
+
+    class Meta:
+        model = PluginMetaStar
+        fields = ['id', 'username', 'role']
 
 
 def uploaded_file_path(instance, filename):
@@ -191,8 +222,8 @@ class PluginFilter(FilterSet):
                                                          lookup_expr='gte')
     max_creation_date = django_filters.IsoDateTimeFilter(field_name='creation_date',
                                                          lookup_expr='lte')
-    owner_username = django_filters.CharFilter(
-        field_name='meta__owner__username', lookup_expr='exact')
+    collaborator_username = django_filters.CharFilter(
+        field_name='meta__collaborators__username', lookup_expr='exact')
     name = django_filters.CharFilter(field_name='meta__name', lookup_expr='icontains')
     name_exact = django_filters.CharFilter(field_name='meta__name', lookup_expr='exact')
     title = django_filters.CharFilter(field_name='meta__title', lookup_expr='icontains')
@@ -239,9 +270,9 @@ class PluginFilter(FilterSet):
     class Meta:
         model = Plugin
         fields = ['id', 'name', 'name_latest', 'name_exact', 'name_exact_latest',
-                  'dock_image', 'type', 'category', 'owner_username', 'min_creation_date',
-                  'max_creation_date', 'title', 'version', 'description',
-                  'name_title_category']
+                  'dock_image', 'type', 'category', 'collaborator_username',
+                  'min_creation_date', 'max_creation_date', 'title', 'version',
+                  'description', 'name_title_category']
 
 
 class PluginParameter(models.Model):
