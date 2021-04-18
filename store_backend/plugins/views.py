@@ -71,7 +71,7 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
             meta.add_owner(new_owner)
         super(PluginMetaDetail, self).perform_update(serializer)
 
-    def update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs):
         """
         Overriden to remove descriptors that are not allowed to be updated before
         the serializer performs validation.
@@ -86,7 +86,7 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
         request.data.pop('category', None)
         request.data.pop('authors', None)
         request.data.pop('documentation', None)
-        return super(PluginMetaDetail, self).update(request, *args, **kwargs)
+        return super(PluginMetaDetail, self).partial_update(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         """
