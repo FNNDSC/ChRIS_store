@@ -127,9 +127,9 @@ class PluginMetaDetailViewTests(ViewTests):
             "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
                                   {"name": "new_owner", "value": "another"}]}})
         self.client.login(username=self.username, password=self.password)
-        response = self.client.put(self.read_update_delete_url, data=put,
+        response = self.client.patch(self.read_update_delete_url, data=put,
                                    content_type=self.content_type)
-        self.assertContains(response, "http://localhost11")
+        self.assertContains(response, "http://localhost11.com")
         self.assertEqual(len(plugin.meta.owner.all()), 2)
         self.assertEqual(len(plugin_v2.meta.owner.all()), 2)
 
