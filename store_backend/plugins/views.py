@@ -66,27 +66,21 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
         Overriden to update plugin's owners if requested by a PUT request.
         """
         meta = self.get_object()
-        new_owner = serializer.validated_data.get('new_owner')
-        if new_owner is not None:
-            meta.add_owner(new_owner)
+        
         super(PluginMetaDetail, self).perform_update(serializer)
 
-    def patch(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         """
         Overriden to remove descriptors that are not allowed to be updated before
         the serializer performs validation.
         """
         plugin_meta = self.get_object()
-        request.data['name'] = plugin_meta.name  # name is required
-        # these are part of the plugin repr. and are not allowed to be changed with PUT
-        request.data.pop('title', None)
-        request.data.pop('license', None)
-        request.data.pop('type', None)
-        request.data.pop('icon', None)
-        request.data.pop('category', None)
-        request.data.pop('authors', None)
-        request.data.pop('documentation', None)
-        return super(PluginMetaDetail, self).partial_update(request, *args, **kwargs)
+         # name is required
+        # these are part o
+       
+        
+               
+        return super(PluginMetaDetail, self).update(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
         """

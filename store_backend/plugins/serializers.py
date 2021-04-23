@@ -44,6 +44,17 @@ class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
         """
         Overriden to add modification date.
         """
+        validated_data['name']=instance.name
+        validated_data['title']=instance.title
+        validated_data['license']=instance.license
+        validated_data['icon']=instance.icon
+        validated_data['category']=instance.category
+        validated_data['authors']=instance.authors
+        validated_data['documentation']=instance.documentation
+        validated_data['type']=instance.type
+        new_owner = validated_data.get('new_owner')
+        if new_owner is not None:
+            instance.add_owner(new_owner)
         instance.modification_date = timezone.now()
         instance.save()
         return super(PluginMetaSerializer, self).update(instance, validated_data)
@@ -97,7 +108,7 @@ class PluginMetaStarSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
-    name = serializers.CharField(max_length=100, source='meta.name')
+    name = serializers.CharField(max_length=100, source='meta.name',read_only=True)
     title = serializers.ReadOnlyField(source='meta.title')
     public_repo = serializers.URLField(max_length=300, source='meta.public_repo')
     license = serializers.ReadOnlyField(source='meta.license')
@@ -110,8 +121,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
     parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
     meta = serializers.HyperlinkedRelatedField(view_name='pluginmeta-detail',
                                                read_only=True)
-    descriptor_file = serializers.FileField(write_only=True)
-
+    
     class Meta:
         model = Plugin
         fields = ('url', 'id', 'creation_date', 'name', 'version', 'dock_image',
@@ -120,7 +130,8 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                   'selfexec', 'min_number_of_workers', 'max_number_of_workers',
                   'min_cpu_limit', 'max_cpu_limit', 'min_memory_limit',
                   'max_memory_limit', 'min_gpu_limit', 'max_gpu_limit', 'parameters',
-                  'meta', 'descriptor_file')
+                  'meta')
+    
 
     def create(self, validated_data):
         """
