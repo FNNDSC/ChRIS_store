@@ -52,7 +52,7 @@ class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
         validated_data['authors']=instance.authors
         validated_data['documentation']=instance.documentation
         validated_data['type']=instance.type
-        new_owner = validated_data.get('new_owner')
+        new_owner = validated_data.get('new_owner',None)
         if new_owner is not None:
             instance.add_owner(new_owner)
         instance.modification_date = timezone.now()
@@ -108,7 +108,7 @@ class PluginMetaStarSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class PluginSerializer(serializers.HyperlinkedModelSerializer):
-    name = serializers.CharField(max_length=100, source='meta.name',read_only=True)
+    name = serializers.CharField(max_length=100, source='meta.name')
     title = serializers.ReadOnlyField(source='meta.title')
     public_repo = serializers.URLField(max_length=300, source='meta.public_repo')
     license = serializers.ReadOnlyField(source='meta.license')
@@ -121,7 +121,8 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
     parameters = serializers.HyperlinkedIdentityField(view_name='pluginparameter-list')
     meta = serializers.HyperlinkedRelatedField(view_name='pluginmeta-detail',
                                                read_only=True)
-    
+    descriptor_file = serializers.FileField(write_only=True)
+
     class Meta:
         model = Plugin
         fields = ('url', 'id', 'creation_date', 'name', 'version', 'dock_image',
@@ -130,8 +131,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                   'selfexec', 'min_number_of_workers', 'max_number_of_workers',
                   'min_cpu_limit', 'max_cpu_limit', 'min_memory_limit',
                   'max_memory_limit', 'min_gpu_limit', 'max_gpu_limit', 'parameters',
-                  'meta')
-    
+                  'meta', 'descriptor_file')
 
     def create(self, validated_data):
         """
