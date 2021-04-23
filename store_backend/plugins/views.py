@@ -74,9 +74,11 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
         Overriden to remove descriptors that are not allowed to be updated before
         the serializer performs validation.
         """
+        
+        
         plugin_meta = self.get_object()
-         # name is required
-        # these are part o
+        request.data['name']=plugin_meta.name # name is required
+         
        
         
                

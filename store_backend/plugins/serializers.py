@@ -42,9 +42,8 @@ class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Overriden to add modification date.
+        Overriden to add modification date and readonly fields
         """
-        validated_data['name']=instance.name
         validated_data['title']=instance.title
         validated_data['license']=instance.license
         validated_data['icon']=instance.icon
