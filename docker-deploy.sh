@@ -34,22 +34,28 @@ declare -i STEP=0
 
 if [[ "$1" == 'up' ]]; then
 
-    title -d 1 "Stopping and restarting docker swarm cluster... "
-    docker swarm leave --force
-    docker swarm init --advertise-addr 127.0.0.1
-    windowBottom
-
-    title -d 1 "Starting containerized production environment using " " ./docker-compose.yml"
-    docker pull mysql:5
-    docker pull fnndsc/docker-swift-onlyone
-    docker pull fnndsc/chris_store
+    title -d 1 "Starting containerized production environment on using " " ./docker-compose.yml"
     echo ""
     echo "docker stack deploy -c docker-compose.yml chris_store_stack"
     docker stack deploy -c docker-compose.yml chris_store_stack
     windowBottom
 
+    title -d 1 "Waiting until chris store stack containers are running on swarm"
+    for i in {1..30}; do
+        sleep 5
+            chris_store=$(docker ps -f name=chris_store.1. -q)
+        if [ -n "$chris_store" ]; then
+          echo "Success: chris store container is up"
+          break
+        fi
+    done
+    if [ -z "$chris_store" ]; then
+        echo "Error: couldn't start chris store container"
+        exit 1
+    fi
+    windowBottom
+
     title -d 1 "Waiting until ChRIS store is ready to accept connections..."
-    chris_store=$(docker ps -f ancestor=fnndsc/chris_store -f name=chris_store.1. -q)
     docker exec $chris_store sh -c 'while ! curl -sSf http://localhost:8010/api/v1/users/ 2> /dev/null; do sleep 5; done;'
     windowBottom
 
@@ -70,13 +76,14 @@ if [[ "$1" == 'down' ]]; then
     title -d 1 "Destroying containerized production environment" "from ./docker-compose.yml"
     echo
     docker stack rm chris_store_stack
-    docker swarm leave --force
+    sleep 10
     echo
     printf "Do you want to also remove persistent volumes?"
     read -p  " [y/n] " -n 1 -r
     echo
     echo
     if [[ $REPLY =~ ^[Yy]$ ]] ; then
+        sleep 10
         docker volume rm chris_store_stack_chris_store_db_data
         docker volume rm chris_store_stack_swift_storage
     fi

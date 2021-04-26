@@ -4,11 +4,11 @@ G_SYNOPSIS="
 
  NAME
 
-	docker-make.sh
+	make.sh
 
  SYNOPSIS
 
-	docker-make.sh [up|down]
+	make.sh [up|down]
 
  ARGS
 
@@ -17,7 +17,7 @@ G_SYNOPSIS="
 
  DESCRIPTION
 
-	docker-make.sh script will depending on the argument fire up or tear down the
+	make.sh script will depending on the argument fire up or tear down the
 	Chris store development environment.
 
 "
@@ -125,10 +125,10 @@ if [[ "$1" == 'up' ]]; then
     docker-compose -f docker-compose_dev.yml exec chris_store_dev python pipelines/services/manager.py add "${PIPELINE_NAME}" cubeadmin "${PLUGIN_TREE}" --unlock
     windowBottom
 
-    title -d 1 "Restarting ChRIS store's Django development server" "in interactive mode..."
-    docker-compose -f docker-compose_dev.yml stop chris_store_dev
-    docker-compose -f docker-compose_dev.yml rm -f chris_store_dev
-    docker-compose -f docker-compose_dev.yml run --service-ports chris_store_dev
+    title -d 1 "Restarting ChRIS store's Django development server..."
+    docker-compose -f docker-compose_dev.yml restart chris_store_dev
+    chris_store_dev=$(docker ps -f name=chris_store_dev_1 -q)
+    docker attach --detach-keys ctrl-c $chris_store_dev
     echo ""
     windowBottom
 fi
