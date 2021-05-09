@@ -3,22 +3,9 @@
 ![License][license-badge]
 ![Last Commit][last-commit-badge]
 
-Back end for ChRIS Store. This is a Django-MySQL project that houses descriptions of ChRIS plugin-apps and workflows for registering to a ChRIS CUBE instance.
+Back end for the ChRIS store. This is a Django-MySQL project that houses descriptions of ChRIS plugin-apps and workflows for registering to a ChRIS CUBE instance.
 
-## ChRIS Store development and testing
-
-### TL;DR
-
-If you read nothing else on this page, and just want to get an instance of the ChRIS store backend services up and 
-running with no mess, no fuss:
-
-```bash
-git clone https://github.com/FNNDSC/ChRIS_store
-cd ChRIS_store
-./make.sh down ; ./make.sh up
-```
-
-The resulting instance uses the default Django development server and therefore is not suitable for production.
+## ChRIS store development, testing and deployment
 
 ### Abstract
 
@@ -35,19 +22,42 @@ This page describes how to quickly get the set of services comprising the backen
 
 Consult this page https://docs.docker.com/engine/install/linux-postinstall/
 
+### TL;DR
+
+If you read nothing else on this page, and just want to get an instance of the ChRIS store backend services up and 
+running with no mess, no fuss:
+
+```bash
+git clone https://github.com/FNNDSC/ChRIS_store
+cd ChRIS_store
+./make.sh down ; ./make.sh up
+```
+
+The resulting instance uses the default Django development server and therefore is not suitable for production.
 
 ### Production deployment
 
 #### To get the production system up:
+
+Start a local Docker Swarm cluster if not already started:
+
+```bash
+docker swarm init --advertise-addr 127.0.0.1
+```
+
+Fetch source code:
 
 ```bash
 git clone https://github.com/FNNDSC/ChRIS_store
 cd ChRIS_store
 mkdir secrets
 ```
+
 Now copy all the required secret configuration files into the secrets directory, please take a look at 
 [this](https://github.com/FNNDSC/ChRIS_store/wiki/ChRIS-store-backend-production-services-secret-configuration-files) 
 wiki page to learn more about these files 
+
+Deploy ChRIS store backend containers:
 
 ```bash
 ./docker-deploy.sh up
@@ -55,9 +65,17 @@ wiki page to learn more about these files
 
 #### To tear down:
 
+Remove ChRIS store backend containers:
+
 ```bash
 cd ChRIS_store
 ./docker-deploy.sh down
+```
+
+Remove the local Docker Swarm cluster if desired:
+
+```bash
+docker swarm leave --force
 ```
 
 

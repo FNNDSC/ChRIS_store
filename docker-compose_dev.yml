@@ -17,6 +17,8 @@ services:
       context: .
       args:
         ENVIRONMENT: local
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
     command: python manage.py runserver 0.0.0.0:8010
     volumes:
       - ./store_backend:/home/localuser/store_backend:z
