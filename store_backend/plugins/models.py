@@ -196,6 +196,7 @@ class PluginFilter(FilterSet):
     name = django_filters.CharFilter(field_name='meta__name', lookup_expr='icontains')
     name_exact = django_filters.CharFilter(field_name='meta__name', lookup_expr='exact')
     title = django_filters.CharFilter(field_name='meta__title', lookup_expr='icontains')
+    authors = django_filters.CharFilter(field_name='meta__authors', lookup_expr='icontains')
     category = django_filters.CharFilter(field_name='meta__category',
                                          lookup_expr='icontains')
     type = django_filters.CharFilter(field_name='meta__type', lookup_expr='exact')
@@ -240,7 +241,7 @@ class PluginFilter(FilterSet):
         model = Plugin
         fields = ['id', 'name', 'name_latest', 'name_exact', 'name_exact_latest',
                   'dock_image', 'type', 'category', 'owner_username', 'min_creation_date',
-                  'max_creation_date', 'title', 'version', 'description',
+                  'max_creation_date', 'title','authors', 'version', 'description',
                   'name_title_category']
 
 
