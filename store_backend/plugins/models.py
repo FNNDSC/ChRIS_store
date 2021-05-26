@@ -127,12 +127,12 @@ class PluginMetaStarFilter(FilterSet):
 
 def uploaded_file_path(instance, filename):
     # file will be stored to Swift at:
-    # SWIFT_CONTAINER_NAME/<original_owner_username>/uploads/<today_path>/<filename>
-    owner = instance.meta.owner.all()[0]
-    username = owner.username
+    # SWIFT_CONTAINER_NAME/plugins/<plugin_name>/<plugin_id>/<today_path>/<filename>
+    plg_name = instance.meta.name
+    plg_id = instance.id
     today = timezone.now()
     today_path = today.strftime("%Y/%m/%d/%H/%M")
-    return '{0}/{1}/{2}/{3}'.format(username, 'uploads', today_path, filename)
+    return '{0}/{1}/{2}/{3}/{4}'.format('plugins', plg_name, plg_id, today_path, filename)
 
 
 class Plugin(models.Model):

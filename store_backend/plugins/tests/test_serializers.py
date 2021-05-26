@@ -159,23 +159,25 @@ class PluginSerializerTests(TestCase):
         with self.assertRaises(serializers.ValidationError):
             plg_serializer.validate_app_version('v1.2')
 
-    def test_validate_name_version(self):
+    def test_validate_meta_version(self):
         """
-        Test whether custom validate_name_version method raises a ValidationError when
-        plugin name and version are not unique together.
+        Test whether custom validate_meta_version method raises a ValidationError when
+        plugin meta and version are not unique together.
         """
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         plg_serializer = PluginSerializer()
         with self.assertRaises(serializers.ValidationError):
-            plg_serializer.validate_name_version(self.plg_repr['version'], self.plugin_name)
+            plg_serializer.validate_meta_version(meta, self.plg_repr['version'])
 
-    def test_validate_name_image(self):
+    def test_validate_meta_image(self):
         """
-        Test whether custom validate_name_image method raises a ValidationError when
-        plugin name and docker image are not unique together.
+        Test whether custom validate_meta_image method raises a ValidationError when
+        plugin meta and docker image are not unique together.
         """
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         plg_serializer = PluginSerializer()
         with self.assertRaises(serializers.ValidationError):
-            plg_serializer.validate_name_image(self.plugin_dock_image, self.plugin_name)
+            plg_serializer.validate_meta_image(meta, self.plugin_dock_image)
 
     def test_create_also_creates_meta_first_time_plugin_name_is_used(self):
         """
@@ -221,22 +223,18 @@ class PluginSerializerTests(TestCase):
         self.assertEqual(n_plg_meta, PluginMeta.objects.count())
         self.assertEqual(plugin.meta, plg_meta)
 
-    def test_validate_name_owner(self):
+    def test_validate_meta_owner(self):
         """
-        Test whether custom validate_name_owner method raises a ValidationError when
-        plugin name already exists and the user is not an owner.
+        Test whether custom validate_meta_owner method raises a ValidationError when
+        the user is not an owner of the already existing plugin meta.
         """
-        user = User.objects.get(username=self.username)
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         another_user = User.objects.create_user(username='another',
                                                 email='anotherdev@babymri.org',
                                                 password='anotherpassword')
         plg_serializer = PluginSerializer()
         with self.assertRaises(serializers.ValidationError):
-            plg_serializer.validate_name_owner(another_user, self.plugin_name)
-        owners = plg_serializer.validate_name_owner(another_user, 'new_name')
-        self.assertIn(another_user, owners)
-        owners = plg_serializer.validate_name_owner(user, self.plugin_name)
-        self.assertIn(user, owners)
+            plg_serializer.validate_meta_owner(meta, another_user)
 
     def test_read_app_representation(self):
         """

@@ -78,14 +78,6 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
         """
         plugin_meta = self.get_object()
         request.data['name'] = plugin_meta.name  # name is required
-        # these are part of the plugin repr. and are not allowed to be changed with PUT
-        request.data.pop('title', None)
-        request.data.pop('license', None)
-        request.data.pop('type', None)
-        request.data.pop('icon', None)
-        request.data.pop('category', None)
-        request.data.pop('authors', None)
-        request.data.pop('documentation', None)
         return super(PluginMetaDetail, self).update(request, *args, **kwargs)
 
     def retrieve(self, request, *args, **kwargs):
@@ -107,7 +99,7 @@ class PluginMetaPluginList(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         """
-        Overriden to return a list of the plugins for the queried  meta.
+        Overriden to return a list of the plugins for the queried meta.
         """
         queryset = self.get_plugins_queryset()
         response = services.get_list_response(self, queryset)

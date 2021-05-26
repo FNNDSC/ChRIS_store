@@ -1,7 +1,7 @@
 
 from django.contrib.auth.models import User
 
-from rest_framework import generics, permissions
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
@@ -28,7 +28,7 @@ class UserCreate(generics.ListCreateAPIView):
 class UserDetail(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (permissions.IsAuthenticated, IsUserOrChris)
+    permission_classes = (IsUserOrChris,)
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -65,7 +65,7 @@ class UserOwnedPluginMetaList(generics.ListAPIView):
     """
     queryset = User.objects.all()
     serializer_class = PluginMetaSerializer
-    permission_classes = (permissions.IsAuthenticated, IsUserOrChris)
+    permission_classes = (IsUserOrChris,)
 
     def list(self, request, *args, **kwargs):
         """
@@ -92,7 +92,7 @@ class UserFavoritePluginMetaList(generics.ListAPIView):
     """
     queryset = User.objects.all()
     serializer_class = PluginMetaSerializer
-    permission_classes = (permissions.IsAuthenticated, IsUserOrChris)
+    permission_classes = (IsUserOrChris,)
 
     def list(self, request, *args, **kwargs):
         """

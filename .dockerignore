@@ -10,3 +10,6 @@ README.md
 utils
 docs
 htmlcov
+swarm/prod_deployments/secrets
+kubernetes/prod_deployments/secrets
+dc.out

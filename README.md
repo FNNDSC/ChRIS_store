@@ -20,7 +20,7 @@ This page describes how to quickly get the set of services comprising the backen
 
 #### On a Linux machine make sure to add your computer user to the ``docker`` group 
 
-Consult this page https://docs.docker.com/engine/install/linux-postinstall/
+Consult this page: https://docs.docker.com/engine/install/linux-postinstall/
 
 ### TL;DR
 
@@ -50,17 +50,22 @@ Fetch source code:
 ```bash
 git clone https://github.com/FNNDSC/ChRIS_store
 cd ChRIS_store
-mkdir secrets
 ```
 
-Now copy all the required secret configuration files into the secrets directory, please take a look at 
+Create ``secrets`` directory:
+
+```bash
+mkdir swarm/prod_deployments/secrets
+```
+
+Now copy all the required secret configuration files into the ``secrets`` directory, please take a look at 
 [this](https://github.com/FNNDSC/ChRIS_store/wiki/ChRIS-store-backend-production-services-secret-configuration-files) 
 wiki page to learn more about these files 
 
 Deploy ChRIS store backend containers:
 
 ```bash
-./docker-deploy.sh up
+./deploy.sh up
 ```
 
 #### To tear down:
@@ -69,7 +74,7 @@ Remove ChRIS store backend containers:
 
 ```bash
 cd ChRIS_store
-./docker-deploy.sh down
+./deploy.sh down
 ```
 
 Remove the local Docker Swarm cluster if desired:

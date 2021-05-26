@@ -14,7 +14,9 @@ services:
   chris_store:
     image: fnndsc/chris_store
     environment:
-      - DJANGO_DB_MIGRATE=on
+      - DATABASE_HOST=chris_store_db
+      - DATABASE_PORT=3306
+      - SWIFT_AUTH_URL=http://swift_service:8080/auth/v1.0
     env_file:
       - ./secrets/.chris_store.env
       - ./secrets/.chris_store_db.env
