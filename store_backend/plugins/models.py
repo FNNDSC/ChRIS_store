@@ -132,7 +132,7 @@ def uploaded_file_path(instance, filename):
     plg_id = instance.id
     today = timezone.now()
     today_path = today.strftime("%Y/%m/%d/%H/%M")
-    return '{0}/{1}/{2}/{3}/{4}'.format('plugins', plg_name, plg_id, today_path, filename)
+    return f'plugins/{plg_name}/{plg_id}/{today_path}/{filename}'
 
 
 class Plugin(models.Model):

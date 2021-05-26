@@ -58,7 +58,7 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
         if not self.instance:  # this validation only happens on create and not on update
             if 'plugin_tree' not in data:
                 raise serializers.ValidationError(
-                    {'plugin_tree': ["This field is required."]})
+                    {'plugin_tree': ['This field is required.']})
             if 'locked' in data and not data['locked']:
                 # if user wants to unlock pipeline right away at creation time then check
                 # that defaults for all plugin parameters can be defined
@@ -74,10 +74,10 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
                             param_default = [d for d in plg_param_defaults if
                                                   d['name'] == parameter.name]
                             if not param_default:  # no default provided by the user
-                                error_msg = 'Pipeline can not be unlocked until all ' \
-                                            'plugin parameters have default values.'
                                 raise serializers.ValidationError(
-                                    {'non_field_errors': [error_msg]})
+                                    {'non_field_errors': ['Pipeline can not be unlocked '
+                                                          'until all plugin parameters '
+                                                          'have default values.']})
         return data
 
     def validate_plugin_tree(self, plugin_tree):
@@ -90,14 +90,11 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
             plugin_list = list(json.loads(plugin_tree))
         except json.decoder.JSONDecodeError:
             # overriden validation methods automatically add the field name to the msg
-            msg = ["Invalid JSON string %s." % plugin_tree]
-            raise serializers.ValidationError(msg)
+            raise serializers.ValidationError([f'Invalid JSON string {plugin_tree}.'])
         except Exception:
-            msg = ["Invalid tree list in %s" % plugin_tree]
-            raise serializers.ValidationError(msg)
+            raise serializers.ValidationError([f'Invalid tree list in {plugin_tree}'])
         if len(plugin_list) == 0:
-            msg = ["Invalid empty list in %s" % plugin_tree]
-            raise serializers.ValidationError(msg)
+            raise serializers.ValidationError([f'Invalid empty list in {plugin_tree}'])
 
         for d in plugin_list:
             try:
@@ -112,19 +109,19 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
                     plg = Plugin.objects.get(pk=plg_id)
             except ObjectDoesNotExist:
                 if 'plugin_id' not in d:
-                    msg = ["Couldn't find any plugin with name %s and version %s." %
-                     (plg_name, plg_version)]
+                    msg = [f'Could not find any plugin with name {plg_name} and version '
+                           f'{plg_version}.']
                 else:
-                    msg = ["Couldn't find any plugin with id %s." % plg_id]
+                    msg = [f'Could not find any plugin with id {plg_id}.']
                 raise serializers.ValidationError(msg)
             except Exception:
-                msg = ["Object %s must be a JSON object with 'previous_index' and "
-                       "either 'plugin_id' or 'plugin_name' and 'plugin_version' "
-                       "properties." % d]
+                msg = [f"Object {d} must be a JSON object with 'previous_index' and "
+                       f"either 'plugin_id' or 'plugin_name' and 'plugin_version' "
+                       f"properties."]
                 raise serializers.ValidationError(msg)
             if plg.meta.type == 'fs':
-                msg = ["Plugin %s is of type 'fs' and therefore can not be used to "
-                       "create a pipeline." % plg]
+                msg = [f"Plugin {plg} is of type 'fs' and therefore can not be used to "
+                       f"create a pipeline."]
                 raise serializers.ValidationError(msg)
             if 'plugin_parameter_defaults' in d:
                 param_defaults = d['plugin_parameter_defaults']
@@ -143,14 +140,14 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to raise a validation error when the locked value is false and there
         are plugin parameters in the pipeline without default values.
         """
-        error_msg = 'Pipeline can not be unlocked until all plugin parameters have ' \
-                    'default values.'
         if not locked and self.instance: # this validation only happens on update
             try:
                 self.instance.check_parameter_defaults()
             except ValueError:
                 # overriden validation methods automatically add the field name
-                raise serializers.ValidationError([error_msg])
+                raise serializers.ValidationError(
+                    ['Pipeline can not be unlocked until all plugin parameters have '
+                     'default values.'])
         return locked
 
     @staticmethod
@@ -165,20 +162,21 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
                 name = d['name']
                 default = d['default']
             except KeyError:
-                error_msg = "Invalid parameter default object %s. Each default object " \
-                            "must have 'name' and 'default' properties." % d
-                raise serializers.ValidationError({'plugin_tree': [error_msg]})
+                raise serializers.ValidationError(
+                    {'plugin_tree': [f"Invalid parameter default object {d}. Each "
+                                     f"default object must have 'name' and 'default' "
+                                     f"properties."]})
             param = [param for param in parameters if param.name == name]
             if not param:
-                error_msg = "Could not find any parameter with name %s for plugin %s." % \
-                            (name, plugin.meta.name)
-                raise serializers.ValidationError({'plugin_tree': [error_msg]})
+                raise serializers.ValidationError(
+                    {'plugin_tree': [f'Could not find any parameter with name {name} for '
+                                     f'plugin {plugin.meta.name}.']})
             default_param_serializer = DEFAULT_PARAMETER_SERIALIZERS[param[0].type](
                 data={'value': default})
             if not default_param_serializer.is_valid():
-                error_msg = "Invalid default value %s for parameter %s for plugin %s." % \
-                            (default, name, plugin.meta.name)
-                raise serializers.ValidationError({'plugin_tree': [error_msg]})
+                raise serializers.ValidationError(
+                    {'plugin_tree': [f'Invalid default value {default} for parameter '
+                                     f'{name} for plugin {plugin.meta.name}.']})
 
     @staticmethod
     def get_tree(tree_list):
@@ -191,7 +189,7 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
             root_ix = [ix for ix,d in enumerate(tree_list)
                        if d['previous_index'] is None][0]
         except IndexError:
-            raise ValueError("Couldn't find the root of the tree in %s" % tree_list)
+            raise ValueError(f'Could not find the root of the tree in {tree_list}.')
         tree = [None] * len(tree_list)
         plugin_id = tree_list[root_ix]['plugin_id']
         defaults = tree_list[root_ix]['plugin_parameter_defaults']
@@ -217,7 +215,7 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
                                          'plugin_parameter_defaults': defaults,
                                          'child_indices': [ix]}
                 except (IndexError, TypeError):
-                    raise ValueError("Invalid 'previous_index' for node %s" % d)
+                    raise ValueError(f"Invalid 'previous_index' for node {d}.")
         return {'root_index': root_ix, 'tree': tree}
 
     @staticmethod
@@ -237,7 +235,7 @@ class PipelineSerializer(serializers.HyperlinkedModelSerializer):
             nodes.append(curr_ix)
             queue.extend(tree[curr_ix]['child_indices'])
         if len(nodes) < num_nodes:
-            raise ValueError("Tree is not connected!")
+            raise ValueError('Tree is not connected!')
 
     @staticmethod
     def _add_plugin_tree_to_pipeline(pipeline, tree_dict):

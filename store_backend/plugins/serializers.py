@@ -43,8 +43,8 @@ class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
             # check if new owner is a system-registered user
             owner = User.objects.get(username=new_owner)
         except ObjectDoesNotExist:
-            msg = "User %s is not a registered user." % new_owner
-            raise serializers.ValidationError(msg)
+            raise serializers.ValidationError(f'User {new_owner} is not a registered '
+                                              f'user.')
         return owner
 
     def update(self, instance, validated_data):
@@ -85,8 +85,8 @@ class PluginMetaStarSerializer(serializers.HyperlinkedModelSerializer):
             # check whether plugin_name is a system-registered plugin
             pl_meta = PluginMeta.objects.get(name=plugin_name)
         except ObjectDoesNotExist:
-            msg = "Could not find a plugin with name %s." % plugin_name
-            raise serializers.ValidationError(msg)
+            raise serializers.ValidationError(f'Could not find a plugin with name '
+                                              f'{plugin_name}.')
         return pl_meta
 
     @staticmethod
@@ -99,7 +99,7 @@ class PluginMetaStarSerializer(serializers.HyperlinkedModelSerializer):
         except ObjectDoesNotExist:
             pass
         else:
-            msg = "Plugin named %s is already a favorite of user %s." % (meta.name, user)
+            msg = f'Plugin named {meta.name} is already a favorite of user {user}.'
             raise serializers.ValidationError({'non_field_errors': [msg]})
 
 
@@ -268,19 +268,19 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                     app_repr['max_memory_limit'])
 
             # validate limits
-            err_msg = "The minimum number of workers should be less than the maximum."
+            err_msg = 'The minimum number of workers should be less than the maximum.'
             self.validate_app_descriptor_limits(app_repr, 'min_number_of_workers',
                                                 'max_number_of_workers', err_msg)
 
-            err_msg = "Minimum cpu limit should be less than maximum cpu limit."
+            err_msg = 'Minimum cpu limit should be less than maximum cpu limit.'
             self.validate_app_descriptor_limits(app_repr, 'min_cpu_limit',
                                                 'max_cpu_limit', err_msg)
 
-            err_msg = "Minimum memory limit should be less than maximum memory limit."
+            err_msg = 'Minimum memory limit should be less than maximum memory limit.'
             self.validate_app_descriptor_limits(app_repr, 'min_memory_limit',
                                                 'max_memory_limit', err_msg)
 
-            err_msg = "Minimum gpu limit should be less than maximum gpu limit."
+            err_msg = 'Minimum gpu limit should be less than maximum gpu limit.'
             self.validate_app_descriptor_limits(app_repr, 'min_gpu_limit',
                                                 'max_gpu_limit', err_msg)
 
@@ -298,12 +298,12 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         if not isinstance(version, str):
             raise serializers.ValidationError(
-                {'descriptor_file':
-                     ["Invalid type for plugin app version field. Must be a string."]})
+                {'descriptor_file': ['Invalid type for plugin app version field. Must be '
+                                     'a string.']})
         if not re.match(r"^[0-9.]+$", version):
             raise serializers.ValidationError(
-                {'descriptor_file':
-                     ["Invalid plugin app version number format %s." % version]})
+                {'descriptor_file': [f'Invalid plugin app version number format '
+                                     f'{version}.']})
         return version
 
     @staticmethod
@@ -316,8 +316,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         except ObjectDoesNotExist:
             pass
         else:
-            msg = "Plugin with name %s and version %s already exists." % (meta.name,
-                                                                          version)
+            msg = f'Plugin with name {meta.name} and version {version} already exists.'
             raise serializers.ValidationError({'non_field_errors': [msg]})
 
     @staticmethod
@@ -330,9 +329,10 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         except ObjectDoesNotExist:
             pass
         else:
-            msg = "Docker image %s already used in a previous version of plugin " \
-                  "%s. Please properly version the new image." % (dock_image, meta.name)
-            raise serializers.ValidationError({'non_field_errors': [msg]})
+            raise serializers.ValidationError(
+                {'non_field_errors': [f'Docker image {dock_image} already used in a '
+                                      f'previous version of plugin {meta.name}. '
+                                      f'Please properly version the new image.']})
 
     @staticmethod
     def validate_meta_owner(meta, owner):
@@ -353,12 +353,12 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         for param in parameter_list:
             if 'type' not in param:
                 raise serializers.ValidationError(
-                    {'descriptor_file': ["Parameter type is required."]})
+                    {'descriptor_file': ['Parameter type is required.']})
             # translate from back-end type to front-end type, eg. bool->boolean
             param_type = [key for key in TYPES if TYPES[key] == param['type']]
             if not param_type:
                 raise serializers.ValidationError(
-                    {'descriptor_file': ["Invalid parameter type %s." % param['type']]})
+                    {'descriptor_file': ['Invalid parameter type %s.' % param['type']]})
             param['type'] = param_type[0]
             default = param['default'] if 'default' in param else None
             optional = param['optional'] if 'optional' in param else None
@@ -369,12 +369,12 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
                                              "cannot be optional."]})
                 if default is None:
                     raise serializers.ValidationError(
-                        {'descriptor_file': ["A default value is required for optional "
-                                             "parameters."]})
+                        {'descriptor_file': ['A default value is required for optional '
+                                             'parameters.']})
             elif 'ui_exposed' in param and not param['ui_exposed']:
                 raise serializers.ValidationError(
-                    {'descriptor_file': ["Any parameter that is not optional must be "
-                                         "exposed to the UI."]})
+                    {'descriptor_file': ['Any parameter that is not optional must be '
+                                         'exposed to the UI.']})
             if param['type'] == 'boolean' and 'action' not in param:
                 param['action'] = 'store_false' if default else 'store_true'
         return parameter_list
@@ -384,7 +384,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         Custom method to validate plugin maximum and minimum workers descriptors.
         """
-        error_msg = "Minimum and maximum number of workers must be positive integers."
+        error_msg = 'Minimum and maximum number of workers must be positive integers.'
         int_d = PluginSerializer.validate_app_int_descriptor(descriptor, error_msg)
         if int_d < 1:
             raise serializers.ValidationError({'descriptor_file': [error_msg]})
@@ -415,7 +415,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         """
         Custom method to validate plugin maximum and minimum gpu descriptors.
         """
-        error_msg = "Minimum and maximum gpu must be non-negative integers."
+        error_msg = 'Minimum and maximum gpu must be non-negative integers.'
         return PluginSerializer.validate_app_int_descriptor(descriptor, error_msg)
 
     @staticmethod
@@ -447,9 +447,9 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         representation.
         """
         if not (descriptor_name in app_repr):
-            error_msg = "Descriptor %s must be in the app representation dictionary." \
-                        % descriptor_name
-            raise serializers.ValidationError({'descriptor_file': [error_msg]})
+            raise serializers.ValidationError(
+                {'descriptor_file': [f'Descriptor {descriptor_name} must be in the app '
+                                     f'representation dictionary.']})
 
     @staticmethod
     def read_app_representation(app_representation_file):
@@ -460,8 +460,8 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             app_repr = json.loads(app_representation_file.read().decode())
             app_representation_file.seek(0)
         except Exception:
-            error_msg = "Invalid json representation file."
-            raise serializers.ValidationError({'descriptor_file': [error_msg]})
+            raise serializers.ValidationError(
+                {'descriptor_file': ['Invalid json representation file.']})
         return app_repr
 
 
