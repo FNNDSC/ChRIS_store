@@ -16,13 +16,6 @@ from .fields import CPUInt, MemoryInt
 
 class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
     stars = serializers.ReadOnlyField(source='fan.count')
-    title = serializers.ReadOnlyField()
-    license = serializers.ReadOnlyField()
-    type = serializers.ReadOnlyField()
-    icon = serializers.ReadOnlyField()
-    category = serializers.ReadOnlyField()
-    authors = serializers.ReadOnlyField()
-    documentation = serializers.ReadOnlyField()
     new_owner = serializers.CharField(min_length=4, max_length=32, write_only=True,
                                       required=False)
     plugins = serializers.HyperlinkedIdentityField(view_name='pluginmeta-plugin-list')
@@ -49,8 +42,17 @@ class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Overriden to add modification date.
+        Overriden to remove descriptors that are not allowed to be updated and add
+        a modification date.
         """
+        # these are part of the plugin repr. and are not allowed to be changed with PUT
+        validated_data.pop('title', ''),
+        validated_data.pop('license', ''),
+        validated_data.pop('type', ''),
+        validated_data.pop('icon', ''),
+        validated_data.pop('category', ''),
+        validated_data.pop('authors', ''),
+        validated_data.pop('documentation', '')
         instance.modification_date = timezone.now()
         instance.save()
         return super(PluginMetaSerializer, self).update(instance, validated_data)
@@ -148,10 +150,10 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
 
         # check whether plugin meta does not exist and validate the plugin meta data
         owner = validated_data.pop('owner')
+        meta = None
         try:
             meta = PluginMeta.objects.get(name=meta_data['name'])
         except ObjectDoesNotExist:
-            meta_data['owner'] = owner  # user becomes the first owner of the new plugin
             meta_serializer = PluginMetaSerializer(data=meta_data)
         else:
             # validate that user is an actual owner the existing plugin
@@ -189,7 +191,13 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             parameters_serializers.append(serializer_dict)
 
         # if no validation errors at this point then save everything to the DB!
-        pl_meta = meta_serializer.save()
+
+        if meta is None:
+            # user will become the first owner of the new plugin meta
+            pl_meta = meta_serializer.save(owner=owner)
+        else:
+            # user must already be an owner of the existing plugin meta
+            pl_meta = meta_serializer.save()
         validated_data = new_plg_serializer.validated_data
         validated_data['meta'] = pl_meta
         plugin = super(PluginSerializer, self).create(validated_data)
