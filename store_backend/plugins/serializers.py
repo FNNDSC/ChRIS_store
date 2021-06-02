@@ -42,17 +42,8 @@ class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Overriden to remove descriptors that are not allowed to be updated and add
-        a modification date.
+        Overriden to add modification date.
         """
-        # these are part of the plugin repr. and are not allowed to be changed with PUT
-        validated_data.pop('title', ''),
-        validated_data.pop('license', ''),
-        validated_data.pop('type', ''),
-        validated_data.pop('icon', ''),
-        validated_data.pop('category', ''),
-        validated_data.pop('authors', ''),
-        validated_data.pop('documentation', '')
         instance.modification_date = timezone.now()
         instance.save()
         return super(PluginMetaSerializer, self).update(instance, validated_data)
