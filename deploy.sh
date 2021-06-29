@@ -34,10 +34,10 @@ declare -i STEP=0
 
 if [[ "$1" == 'up' ]]; then
 
-    title -d 1 "Starting containerized production environment on using " " swarm/prod_deployments/docker-compose.yml"
+    title -d 1 "Starting containerized production environment on using " " swarm/prod/docker-compose.yml"
     echo ""
-    echo "docker stack deploy -c swarm/prod_deployments/docker-compose.yml chris_store_stack"
-    docker stack deploy -c swarm/prod_deployments/docker-compose.yml chris_store_stack
+    echo "docker stack deploy -c swarm/prod/docker-compose.yml chris_store_stack"
+    docker stack deploy -c swarm/prod/docker-compose.yml chris_store_stack
     windowBottom
 
     title -d 1 "Waiting until chris store stack containers are running on swarm"

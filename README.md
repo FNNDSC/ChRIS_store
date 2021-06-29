@@ -55,7 +55,7 @@ cd ChRIS_store
 Create ``secrets`` directory:
 
 ```bash
-mkdir swarm/prod_deployments/secrets
+mkdir swarm/prod/secrets
 ```
 
 Now copy all the required secret configuration files into the ``secrets`` directory, please take a look at 
