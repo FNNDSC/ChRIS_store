@@ -42,8 +42,8 @@ if [[ "$1" == 'up' ]]; then
 
     title -d 1 "Pulling core containers where needed..."
         printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
-                "docker pull" " mysql:5"                                    | ./boxes.sh
-        docker pull mysql:5                                                 | ./boxes.sh
+                "docker pull" " mysql:8"                                    | ./boxes.sh
+        docker pull mysql:8                                                 | ./boxes.sh
         echo ""                                                             | ./boxes.sh
         printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
                 "docker pull " "fnndsc/docker-swift-onlyone"                | ./boxes.sh

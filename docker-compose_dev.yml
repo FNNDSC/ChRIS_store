@@ -35,8 +35,8 @@ services:
       role: "Development server"
 
   chris_store_dev_db:
-    image: mysql:5
-    command: --character-set-server=utf8 --collation-server=utf8_bin
+    image: mysql:8
+    command: --collation-server=utf8mb4_0900_as_cs
     volumes:
       - chris_store_dev_db_data:/var/lib/mysql:z
     environment:
