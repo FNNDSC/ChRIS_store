@@ -42,8 +42,8 @@ if [[ "$1" == 'up' ]]; then
 
     title -d 1 "Pulling core containers where needed..."
         printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
-                "docker pull" " mysql:8"                                    | ./boxes.sh
-        docker pull mysql:8                                                 | ./boxes.sh
+                "docker pull" " postgres:13"                                    | ./boxes.sh
+        docker pull postgres:13                                                 | ./boxes.sh
         echo ""                                                             | ./boxes.sh
         printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
                 "docker pull " "fnndsc/docker-swift-onlyone"                | ./boxes.sh
@@ -64,14 +64,14 @@ if [[ "$1" == 'up' ]]; then
     windowBottom
 
     title -d 1 "Waiting until ChRIS store database server is ready to accept connections..."
-        docker-compose -f docker-compose_dev.yml exec chris_store_dev_db sh -c 'while ! mysqladmin -uroot -prootp status 2> /dev/null; do sleep 5; done;' >& dc.out > /dev/null
+        echo "This might take a few seconds..."                          | ./boxes.sh ${Yellow}
+        windowBottom
+        docker-compose -f docker-compose_dev.yml exec chris_store_dev_db sh -c 'while ! psql -U chris -d chris_store_dev -c "select 1" 2> /dev/null; do sleep 5; done;' >& dc.out > /dev/null
         echo -en "\033[2A\033[2K"
-        sed -E 's/[[:alnum:]]+:/\n&/g' dc.out | ./boxes.sh
-        # Give all permissions to chris user on the test DB. This is required for the Django tests:
-        echo "Granting <chris> user all DB permissions...."             | ./boxes.sh ${LightCyan}
-        echo "This is required for the Django tests."                   | ./boxes.sh ${LightCyan}
-        docker-compose -f docker-compose_dev.yml exec chris_store_dev_db mysql -uroot -prootp -e 'GRANT ALL PRIVILEGES ON test_chris_store_dev.* TO "chris"@"%"'  >& dc.out > /dev/null
-        cat dc.out                                                      | ./boxes.sh
+        cat dc.out                                                      | ./boxes.sh ${LightGreen}
+        echo ""                                                         | ./boxes.sh
+        echo "ChRIS store database is ready to accept connections"      | ./boxes.sh ${LightGreen}
+        echo ""                                                         | ./boxes.sh
     windowBottom
 
     title -d 1 "Running Django Unit tests..."

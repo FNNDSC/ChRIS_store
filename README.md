@@ -3,7 +3,7 @@
 ![License][license-badge]
 ![Last Commit][last-commit-badge]
 
-Back end for the ChRIS store. This is a Django-MySQL project that houses descriptions of ChRIS plugin-apps and workflows for registering to a ChRIS CUBE instance.
+Back end for the ChRIS store. This is a Django-PostgreSQL project that houses descriptions of ChRIS plugin-apps and workflows for registering to a ChRIS CUBE instance.
 
 ## ChRIS store development, testing and deployment
 

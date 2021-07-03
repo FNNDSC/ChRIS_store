@@ -81,7 +81,7 @@ DATABASES['default']['USER'] = 'chris'
 DATABASES['default']['PASSWORD'] = 'Chris1234'
 DATABASES['default']['TEST'] = {'NAME': 'test_chris_store_dev'}
 DATABASES['default']['HOST'] = 'chris_store_dev_db'
-DATABASES['default']['PORT'] = '3306'
+DATABASES['default']['PORT'] = '5432'
 
 # Mail settings
 # ------------------------------------------------------------------------------

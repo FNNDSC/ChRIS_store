@@ -15,7 +15,7 @@ services:
     image: fnndsc/chris_store
     environment:
       - DATABASE_HOST=chris_store_db
-      - DATABASE_PORT=3306
+      - DATABASE_PORT=5432
       - SWIFT_AUTH_URL=http://swift_service:8080/auth/v1.0
     env_file:
       - ./secrets/.chris_store.env
@@ -34,18 +34,17 @@ services:
       role: "Production server using Apache's mod_wsgi"
 
   chris_store_db:
-    image: mysql:8
-    command: --collation-server=utf8mb4_0900_as_cs
+    image: postgres:13
     volumes:
-      - chris_store_db_data:/var/lib/mysql
+      - chris_store_db_data:/var/lib/postgresql/data
     env_file:
       - ./secrets/.chris_store_db.env
     deploy:
       restart_policy:
         condition: on-failure
     labels:
-      name: "ChRIS_store MySQL Database"
-      role: "Production MySQL database"
+      name: "ChRIS_store PostgreSQL Database"
+      role: "Production PostgreSQL database"
 
   swift_service:
     image: fnndsc/docker-swift-onlyone
