@@ -42,8 +42,18 @@ class PluginMetaSerializer(serializers.HyperlinkedModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Overriden to add modification date.
+        Overriden to add modification date and readonly fields
         """
+        validated_data['title']=instance.title
+        validated_data['license']=instance.license
+        validated_data['icon']=instance.icon
+        validated_data['category']=instance.category
+        validated_data['authors']=instance.authors
+        validated_data['documentation']=instance.documentation
+        validated_data['type']=instance.type
+        new_owner = validated_data.get('new_owner',None)
+        if new_owner is not None:
+            instance.add_owner(new_owner)
         instance.modification_date = timezone.now()
         instance.save()
         return super(PluginMetaSerializer, self).update(instance, validated_data)
