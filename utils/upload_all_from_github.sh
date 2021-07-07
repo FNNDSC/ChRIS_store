@@ -35,7 +35,7 @@ if [ -n "$1" ]; then
   parallel -j $1 $source_dir/upload_one_from_github.sh {} <<< $list
 else
   for repo in $list; do
-    echo $source_dir/upload_one_from_github.sh $repo
+    $source_dir/upload_one_from_github.sh $repo
   done
 fi
 
