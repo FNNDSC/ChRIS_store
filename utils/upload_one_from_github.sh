@@ -35,9 +35,11 @@ color_reset="$(tput sgr0 2> /dev/null)"
 ghrepo=$1
 ghurl="https://github.com/$ghrepo"
 
-# FNNDSC/pl-simpledsapp -> fnndsc/pl-simpledsapp
+# docker image names must be all-lowercase
+# FNNDSC/pl-ANTs -> fnndsc/pl-ants
 dock_image=${ghrepo,,}
-# FNNDSC/pl-simpledsapp -> pl-simpledsapp
+# ChRIS plugin names are case-sensitive
+# FNNDSC/pl-ANTs -> pl-ANTs
 plname=$(echo $ghrepo | sed 's/^.*\///')
 
 dockerhub=$(curl -s "https://hub.docker.com/v2/repositories/$dock_image/tags/?ordering=last_updated")
