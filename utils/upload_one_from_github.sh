@@ -79,11 +79,18 @@ fi
 tagged_dock_image=$dock_image:$recent_tag
 quit_if_already_there
 
-descriptor_file=$(mktemp --suffix .json)
+time_pull_start=$(date +%s)
 docker pull -q $tagged_dock_image > /dev/null
+time_pull_end=$(date +%s)
+
+descriptor_file=$(mktemp --suffix .json)
 script=$(docker inspect --format '{{ (index .Config.Cmd 0)}}' $tagged_dock_image)
 docker run --rm $tagged_dock_image $script --json > $descriptor_file 2> /dev/null
-docker rmi $tagged_dock_image > /dev/null 2>&1 &
+
+# remove large, newly pulled images
+if [ "$(($time_pull_end-$time_pull_start))" -gt '3' ]; then
+  docker rmi $tagged_dock_image > /dev/null 2>&1 &
+fi
 
 res=$(
   curl -s -u "$CHRIS_STORE_USER" "${CHRIS_STORE_URL}plugins/" \
