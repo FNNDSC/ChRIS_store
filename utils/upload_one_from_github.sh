@@ -103,9 +103,20 @@ result=$?
 rm $descriptor_file
 
 if [ "$result" = "0" ]; then
-  uploaded_url=$(echo $res | jq -r '.collection.items[0].href')
-  printf "$color_green%-60s %s$color_reset\n" "$tagged_dock_image" "$uploaded_url"
+  uploaded_url=$(jq -r '.collection.items[0].href' <<< "$res")
+  if [ "$uploaded_url" != 'null' ]; then
+    printf "$color_green%-60s %s$color_reset\n" "$tagged_dock_image" "$uploaded_url"
+  else
+    error_msg="$(jq '.collection.error' <<< "$res")"
+    if [ "$error_msg" = 'null' ]; then
+      error_msg="unknown error"
+    fi
+  fi
 else
+  error_msg="network/request error"
+fi
+
+if [ -n "$error_msg" ]; then
   printf "$color_red%-60s %s$color_reset\n" "$tagged_dock_image" "$res"
 fi
 
