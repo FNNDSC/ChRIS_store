@@ -82,7 +82,7 @@ quit_if_already_there
 descriptor_file=$(mktemp --suffix .json)
 docker pull -q $tagged_dock_image > /dev/null
 script=$(docker inspect --format '{{ (index .Config.Cmd 0)}}' $tagged_dock_image)
-docker run --rm $dock_image $script --json > $descriptor_file 2> /dev/null
+docker run --rm $tagged_dock_image $script --json > $descriptor_file 2> /dev/null
 docker rmi $tagged_dock_image > /dev/null 2>&1 &
 
 res=$(
