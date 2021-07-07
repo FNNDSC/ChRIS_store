@@ -13,7 +13,7 @@
 # future work: max 100 plugins, gotta use pagination after that
 
 org='FNNDSC'
-search="fork:true topic:chris-app+org:$org"
+search="fork:true+topic:chris-app+org:$org"
 
 source_dir=$(dirname "$(readlink -f "$0")")
 
