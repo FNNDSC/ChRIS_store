@@ -13,6 +13,7 @@ from .permissions import IsUserOrChris
 
 
 class UserCreate(generics.ListCreateAPIView):
+    http_method_names = ['get', 'post']
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -26,6 +27,7 @@ class UserCreate(generics.ListCreateAPIView):
 
 
 class UserDetail(generics.RetrieveUpdateAPIView):
+    http_method_names = ['get', 'put']
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsUserOrChris,)
@@ -63,6 +65,7 @@ class UserOwnedPluginMetaList(generics.ListAPIView):
     """
     A view for the collection of user-specific plugin metas owned by the user.
     """
+    http_method_names = ['get']
     queryset = User.objects.all()
     serializer_class = PluginMetaSerializer
     permission_classes = (IsUserOrChris,)
@@ -90,6 +93,7 @@ class UserFavoritePluginMetaList(generics.ListAPIView):
     """
     A view for the collection of user-specific plugin metas favored by the user.
     """
+    http_method_names = ['get']
     queryset = User.objects.all()
     serializer_class = PluginMetaSerializer
     permission_classes = (IsUserOrChris,)

@@ -16,6 +16,7 @@ class PluginMetaList(generics.ListAPIView):
     """
     A view for the collection of plugin metas.
     """
+    http_method_names = ['get']
     queryset = PluginMeta.objects.all()
     serializer_class = PluginMetaSerializer
 
@@ -48,6 +49,7 @@ class PluginMetaListQuerySearch(generics.ListAPIView):
     """
     A view for the collection of plugin metas resulting from a query search.
     """
+    http_method_names = ['get']
     serializer_class = PluginMetaSerializer
     queryset = PluginMeta.objects.all()
     filterset_class = PluginMetaFilter
@@ -57,6 +59,7 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     A plugin meta view.
     """
+    http_method_names = ['get', 'put', 'delete']
     serializer_class = PluginMetaSerializer
     queryset = PluginMeta.objects.all()
     permission_classes = (IsOwnerOrChrisOrReadOnly,)
@@ -102,6 +105,7 @@ class PluginMetaPluginList(generics.ListAPIView):
     """
     A view for the collection of meta-specific plugins.
     """
+    http_method_names = ['get']
     queryset = PluginMeta.objects.all()
     serializer_class = PluginSerializer
 
@@ -128,6 +132,7 @@ class PluginMetaStarList(generics.ListCreateAPIView):
     """
     A view for the collection of plugins' stars.
     """
+    http_method_names = ['get', 'post']
     serializer_class = PluginMetaStarSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -175,6 +180,7 @@ class PluginMetaStarListQuerySearch(generics.ListAPIView):
     """
     A view for the collection of plugin stars resulting from a query search.
     """
+    http_method_names = ['get']
     serializer_class = PluginMetaStarSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filterset_class = PluginMetaStarFilter
@@ -195,6 +201,7 @@ class PluginMetaStarDetail(generics.RetrieveDestroyAPIView):
     """
     A plugin star view.
     """
+    http_method_names = ['get', 'delete']
     queryset = PluginMetaStar.objects.all()
     serializer_class = PluginMetaStarSerializer
     permission_classes = (IsStarOwnerOrChris,)
@@ -204,6 +211,7 @@ class PluginList(generics.ListCreateAPIView):
     """
     A view for the collection of plugins.
     """
+    http_method_names = ['get', 'post']
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
@@ -252,6 +260,7 @@ class PluginListQuerySearch(generics.ListAPIView):
     """
     A view for the collection of plugins resulting from a query search.
     """
+    http_method_names = ['get']
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
     filterset_class = PluginFilter
@@ -261,6 +270,7 @@ class PluginDetail(generics.RetrieveDestroyAPIView):
     """
     A plugin view.
     """
+    http_method_names = ['get', 'delete']
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
     permission_classes = (IsMetaOwnerOrChrisOrReadOnly,)
@@ -279,6 +289,7 @@ class PluginParameterList(generics.ListAPIView):
     """
     A view for the collection of plugin parameters.
     """
+    http_method_names = ['get']
     queryset = Plugin.objects.all()
     serializer_class = PluginParameterSerializer
 
@@ -301,5 +312,6 @@ class PluginParameterDetail(generics.RetrieveAPIView):
     """
     A plugin parameter view.
     """
+    http_method_names = ['get']
     queryset = PluginParameter.objects.all()
     serializer_class = PluginParameterSerializer

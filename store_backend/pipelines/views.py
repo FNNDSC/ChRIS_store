@@ -19,6 +19,7 @@ class PipelineList(generics.ListCreateAPIView):
     """
     A view for the collection of pipelines.
     """
+    http_method_names = ['get', 'post']
     serializer_class = PipelineSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
@@ -57,6 +58,7 @@ class PipelineListQuerySearch(generics.ListAPIView):
     """
     A view for the collection of pipelines resulting from a query search.
     """
+    http_method_names = ['get']
     serializer_class = PipelineSerializer
     filterset_class = PipelineFilter
 
@@ -72,6 +74,7 @@ class PipelineDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     A pipeline view.
     """
+    http_method_names = ['get', 'put', 'delete']
     queryset = Pipeline.objects.all()
     serializer_class = PipelineSerializer
     permission_classes = (IsChrisOrOwnerOrNotLockedReadOnly,)
@@ -105,6 +108,7 @@ class PipelinePluginList(generics.ListAPIView):
     """
     A view for a pipeline-specific collection of plugins.
     """
+    http_method_names = ['get']
     queryset = Pipeline.objects.all()
     serializer_class = PluginSerializer
     permission_classes = (IsChrisOrOwnerOrNotLockedReadOnly,)
@@ -133,6 +137,7 @@ class PipelinePluginPipingList(generics.ListAPIView):
     """
     A view for the collection of pipeline-specific plugin pipings.
     """
+    http_method_names = ['get']
     queryset = Pipeline.objects.all()
     serializer_class = PluginPipingSerializer
     permission_classes = (IsChrisOrOwnerOrNotLockedReadOnly,)
@@ -161,6 +166,7 @@ class PipelineDefaultParameterList(generics.ListAPIView):
     """
     A view for the collection of pipeline-specific plugin parameters' defaults.
     """
+    http_method_names = ['get']
     queryset = Pipeline.objects.all()
     serializer_class = GenericDefaultPipingParameterSerializer
     permission_classes = (IsChrisOrOwnerOrNotLockedReadOnly,)
@@ -196,6 +202,7 @@ class PluginPipingDetail(generics.RetrieveAPIView):
     """
     A plugin piping view.
     """
+    http_method_names = ['get']
     queryset = PluginPiping.objects.all()
     serializer_class = PluginPipingSerializer
     permission_classes = (IsChrisOrOwnerOrNotLocked,)
@@ -206,6 +213,7 @@ class DefaultPipingStrParameterDetail(generics.RetrieveUpdateAPIView):
     A view for a string default value for a plugin parameter in a pipeline's
     plugin piping.
     """
+    http_method_names = ['get', 'put']
     serializer_class = DEFAULT_PIPING_PARAMETER_SERIALIZERS['string']
     queryset = DefaultPipingStrParameter.objects.all()
     permission_classes = (IsChrisOrOwnerAndLockedOrNotLockedReadOnly,)
@@ -225,6 +233,7 @@ class DefaultPipingIntParameterDetail(generics.RetrieveUpdateAPIView):
     A view for an integer default value for a plugin parameter in a pipeline's
     plugin piping.
     """
+    http_method_names = ['get', 'put']
     serializer_class = DEFAULT_PIPING_PARAMETER_SERIALIZERS['integer']
     queryset = DefaultPipingIntParameter.objects.all()
     permission_classes = (IsChrisOrOwnerAndLockedOrNotLockedReadOnly,)
@@ -244,6 +253,7 @@ class DefaultPipingFloatParameterDetail(generics.RetrieveUpdateAPIView):
     A view for a float default value for a plugin parameter in a pipeline's
     plugin piping.
     """
+    http_method_names = ['get', 'put']
     serializer_class = DEFAULT_PIPING_PARAMETER_SERIALIZERS['float']
     queryset = DefaultPipingFloatParameter.objects.all()
     permission_classes = (IsChrisOrOwnerAndLockedOrNotLockedReadOnly,)
@@ -263,6 +273,7 @@ class DefaultPipingBoolParameterDetail(generics.RetrieveUpdateAPIView):
     A view for a boolean default value for a plugin parameter in a pipeline's
     plugin piping.
     """
+    http_method_names = ['get', 'put']
     serializer_class = DEFAULT_PIPING_PARAMETER_SERIALIZERS['boolean']
     queryset = DefaultPipingBoolParameter.objects.all()
     permission_classes = (IsChrisOrOwnerAndLockedOrNotLockedReadOnly,)
