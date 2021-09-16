@@ -7,13 +7,13 @@ from rest_framework.reverse import reverse
 
 from collectionjson import services
 
-from plugins.serializers import PluginMetaSerializer
+from plugins.models import PluginMetaCollaborator, PluginMetaCollaboratorFilter
+from plugins.serializers import PluginMetaSerializer, PluginMetaCollaboratorSerializer
 from .serializers import UserSerializer
-from .permissions import IsUserOrChris
+from .permissions import IsUser
 
 
 class UserCreate(generics.ListCreateAPIView):
-    http_method_names = ['get', 'post']
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -27,10 +27,9 @@ class UserCreate(generics.ListCreateAPIView):
 
 
 class UserDetail(generics.RetrieveUpdateAPIView):
-    http_method_names = ['get', 'put']
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsUserOrChris,)
+    permission_classes = (IsUser,)
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -61,42 +60,40 @@ class UserDetail(generics.RetrieveUpdateAPIView):
         user.save()
 
 
-class UserOwnedPluginMetaList(generics.ListAPIView):
+class UserCollabPluginMetaList(generics.ListAPIView):
     """
-    A view for the collection of user-specific plugin metas owned by the user.
+    A view for the collection of user-specific plugin meta collaborators.
     """
-    http_method_names = ['get']
     queryset = User.objects.all()
-    serializer_class = PluginMetaSerializer
-    permission_classes = (IsUserOrChris,)
+    serializer_class = PluginMetaCollaboratorSerializer
+    permission_classes = (IsUser,)
 
     def list(self, request, *args, **kwargs):
         """
-        Overriden to return the list of owned plugin metas for the queried user.
+        Overriden to return the list of plugin meta collaborators for the queried user.
         """
-        queryset = self.get_plugin_metas_queryset()
+        queryset = self.get_user_collab_plugin_metas_queryset()
         response = services.get_list_response(self, queryset)
         user = self.get_object()
         links = {'user': reverse('user-detail', request=request,
                                  kwargs={"pk": user.id})}
         return services.append_collection_links(response, links)
 
-    def get_plugin_metas_queryset(self):
+    def get_user_collab_plugin_metas_queryset(self):
         """
-        Custom method to get the actual user-owned plugin metas queryset.
+        Custom method to get the actual plugin meta collaborators queryset.
         """
         user = self.get_object()
-        return self.filter_queryset(user.owned_plugin_metas.all())
+        return PluginMetaCollaborator.objects.filter(user=user)
 
 
 class UserFavoritePluginMetaList(generics.ListAPIView):
     """
     A view for the collection of user-specific plugin metas favored by the user.
     """
-    http_method_names = ['get']
     queryset = User.objects.all()
     serializer_class = PluginMetaSerializer
-    permission_classes = (IsUserOrChris,)
+    permission_classes = (IsUser,)
 
     def list(self, request, *args, **kwargs):
         """

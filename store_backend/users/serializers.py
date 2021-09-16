@@ -14,8 +14,8 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     password = serializers.CharField(min_length=8, max_length=100, write_only=True)
     favorite_plugin_metas = serializers.HyperlinkedIdentityField(
         view_name='user-favoritepluginmeta-list')
-    owned_plugin_metas = serializers.HyperlinkedIdentityField(
-        view_name='user-ownedpluginmeta-list')
+    collab_plugin_metas = serializers.HyperlinkedIdentityField(
+        view_name='user-pluginmetacollaborator-list')
 
     def create(self, validated_data):
         """
@@ -29,4 +29,4 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
         fields = ('url', 'id', 'username', 'email', 'password', 'favorite_plugin_metas',
-                  'owned_plugin_metas')
+                  'collab_plugin_metas')

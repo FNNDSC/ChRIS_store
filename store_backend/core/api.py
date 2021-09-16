@@ -25,9 +25,9 @@ urlpatterns = format_suffix_patterns([
          user_views.UserFavoritePluginMetaList.as_view(),
          name='user-favoritepluginmeta-list'),
 
-    path('v1/users/<int:pk>/ownedpluginmetas/',
-         user_views.UserOwnedPluginMetaList.as_view(),
-         name='user-ownedpluginmeta-list'),
+    path('v1/users/<int:pk>/collabpluginmetas/',
+         user_views.UserCollabPluginMetaList.as_view(),
+         name='user-pluginmetacollaborator-list'),
 
 
     path('v1/',
@@ -45,6 +45,15 @@ urlpatterns = format_suffix_patterns([
     path('v1/<int:pk>/plugins/',
          plugin_views.PluginMetaPluginList.as_view(),
          name='pluginmeta-plugin-list'),
+
+    path('v1/<int:pk>/collaborators/',
+         plugin_views.PluginMetaCollaboratorList.as_view(),
+         name='pluginmeta-pluginmetacollaborator-list'),
+
+
+    path('v1/collaborators/<int:pk>/',
+         plugin_views.PluginMetaCollaboratorDetail.as_view(),
+         name='pluginmetacollaborator-detail'),
 
 
     path('v1/pluginstars/',
