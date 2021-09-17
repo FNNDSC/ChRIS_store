@@ -15,11 +15,13 @@ class IsMetaOwnerOrReadOnly(permissions.BasePermission):
             return True
 
         # Write permissions are only allowed to the owners.
-        try:
-            collab = PluginMetaCollaborator.objects.get(meta=obj, user=request.user)
-        except PluginMetaCollaborator.DoesNotExist:
-            return False
-        return collab.role == 'O'
+        if request.user.is_authenticated:
+            try:
+                collab = PluginMetaCollaborator.objects.get(meta=obj, user=request.user)
+            except PluginMetaCollaborator.DoesNotExist:
+                return False
+            return collab.role == 'O'
+        return False
 
 
 class IsStarOwner(permissions.BasePermission):
@@ -40,11 +42,13 @@ class IsMetaOwnerOrCollabReadOnly(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         # Read permissions are only allowed to the collaborators.
-        try:
-            collab = PluginMetaCollaborator.objects.get(meta=obj, user=request.user)
-        except PluginMetaCollaborator.DoesNotExist:
-            return False
-        return request.method in permissions.SAFE_METHODS or collab.role == 'O'
+        if request.user.is_authenticated:
+            try:
+                collab = PluginMetaCollaborator.objects.get(meta=obj, user=request.user)
+            except PluginMetaCollaborator.DoesNotExist:
+                return False
+            return request.method in permissions.SAFE_METHODS or collab.role == 'O'
+        return False
 
 
 class IsObjMetaOwnerAndNotUserOrCollabReadOnly(permissions.BasePermission):
@@ -56,13 +60,16 @@ class IsObjMetaOwnerAndNotUserOrCollabReadOnly(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         # Read permissions are only allowed to the collaborators.
-        try:
-            collab = PluginMetaCollaborator.objects.get(meta=obj.meta, user=request.user)
-        except PluginMetaCollaborator.DoesNotExist:
-            return False
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return collab.role == 'O' and obj.user != request.user
+        if request.user.is_authenticated:
+            try:
+                collab = PluginMetaCollaborator.objects.get(meta=obj.meta,
+                                                            user=request.user)
+            except PluginMetaCollaborator.DoesNotExist:
+                return False
+            if request.method in permissions.SAFE_METHODS:
+                return True
+            return collab.role == 'O' and obj.user != request.user
+        return False
 
 
 class IsObjMetaOwnerOrReadOnly(permissions.BasePermission):
@@ -77,8 +84,11 @@ class IsObjMetaOwnerOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        try:
-            collab = PluginMetaCollaborator.objects.get(meta=obj.meta, user=request.user)
-        except PluginMetaCollaborator.DoesNotExist:
-            return False
-        return collab.role == 'O'
+        if request.user.is_authenticated:
+            try:
+                collab = PluginMetaCollaborator.objects.get(meta=obj.meta,
+                                                            user=request.user)
+            except PluginMetaCollaborator.DoesNotExist:
+                return False
+            return collab.role == 'O'
+        return False

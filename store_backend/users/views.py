@@ -7,7 +7,7 @@ from rest_framework.reverse import reverse
 
 from collectionjson import services
 
-from plugins.models import PluginMetaCollaborator, PluginMetaCollaboratorFilter
+from plugins.models import PluginMetaCollaborator
 from plugins.serializers import PluginMetaSerializer, PluginMetaCollaboratorSerializer
 from .serializers import UserSerializer
 from .permissions import IsUser

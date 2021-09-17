@@ -143,16 +143,6 @@ class PluginMetaCollaborator(models.Model):
         return str(self.id)
 
 
-class PluginMetaCollaboratorFilter(FilterSet):
-    username = django_filters.CharFilter(field_name='user__username', lookup_expr='exact')
-    plugin_name = django_filters.CharFilter(field_name='meta__name', lookup_expr='exact')
-    role = django_filters.CharFilter(field_name='role', lookup_expr='exact')
-
-    class Meta:
-        model = PluginMetaStar
-        fields = ['id', 'username', 'plugin_name', 'role']
-
-
 def uploaded_file_path(instance, filename):
     # file will be stored to Swift at:
     # SWIFT_CONTAINER_NAME/plugins/<plugin_name>/<plugin_id>/<today_path>/<filename>

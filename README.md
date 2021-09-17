@@ -3,7 +3,7 @@
 ![License][license-badge]
 ![Last Commit][last-commit-badge]
 
-Back end for the ChRIS store. This is a Django-PostgreSQL project that houses descriptions of ChRIS plugin-apps and workflows for registering to a ChRIS CUBE instance.
+Backend for the ChRIS store. This is a Django-PostgreSQL project that houses descriptions of ChRIS plugin-apps and workflows for registering to a ChRIS CUBE instance.
 
 ## ChRIS store development, testing and deployment
 
@@ -13,7 +13,9 @@ This page describes how to quickly get the set of services comprising the backen
 
 ### Preconditions
 
-#### Install latest Docker and Docker Compose. Currently tested platforms
+#### Install latest Docker and Docker Compose 
+
+Currently tested platforms:
 * ``Ubuntu 18.04+ and MAC OS X 10.14+ and Fedora 31+`` ([Additional instructions for Fedora](https://github.com/mairin/ChRIS_store/wiki/Getting-the-ChRIS-Store-to-work-on-Fedora))
 * ``Docker 18.06.0+``
 * ``Docker Compose 1.27.0+``
@@ -35,7 +37,7 @@ cd ChRIS_store
 
 The resulting instance uses the default Django development server and therefore is not suitable for production.
 
-### Production deployment
+### Production deployment on a single-machine Docker Swarm cluster
 
 #### To get the production system up:
 
@@ -86,59 +88,6 @@ docker swarm leave --force
 
 ### Development
 
-#### Optionally setup a virtual environment
-
-#### Install virtualenv
-```bash
-pip install virtualenv virtualenvwrapper
-```
-
-#### Setup your virtual environments
-Create a directory for your virtual environments e.g.:
-```bash
-mkdir ~/Python_Envs
-```
-
-You might want to add to your .bashrc file these two lines:
-```bash
-export WORKON_HOME=~/Python_Envs
-source /usr/local/bin/virtualenvwrapper.sh
-```
-
-Then you can source your ``.bashrc`` and create a new Python3 virtual environment:
-
-```bash
-mkvirtualenv --python=python3 chris_store_env
-```
-
-To activate chris_store_env:
-```bash
-workon chris_store_env
-```
-
-To deactivate chris_store_env:
-```bash
-deactivate
-```
-
-#### Install useful python tools in your virtual environment
-```bash
-cd ChRIS_store
-workon chris_store_env
-pip install httpie
-pip install python-swiftclient
-pip install django-storage-swift
-```
-
-You can also install some python libraries (not all of them) specified in the ``requirements/base.txt`` and 
-``requirements/local.txt`` files in the source repo
-
-
-To list installed dependencies in chris_store_env:
-```
-pip freeze --local
-```
-
 ### Instantiate ChRIS Store dev environment
 
 Start ChRIS Store services by running the make bash script from the repository source directory
@@ -153,36 +102,34 @@ After running this script all the automated tests should have successfully run a
 
 #### Rerun automated tests after modifying source code
 
-Open another terminal and find out the id of the container running the Django server in interactive mode:
-```bash
-chris_store=$(docker ps -f ancestor=fnndsc/chris_store:dev -f name=chris_store_dev -q)
-```
-and run the Unit and Integration tests within that container. 
+Open another terminal and run the Unit and Integration tests within the container running the Django server:
 
 To run only the Unit tests:
 
 ```bash
-docker exec -it $chris_store python manage.py test --exclude-tag integration
+cd ChRIS_store
+docker-compose -f docker-compose_dev.yml exec chris_store_dev python manage.py test --exclude-tag integration
 ```
 
 To run only the Integration tests:
 
 ```bash
-docker exec -it $chris_store python manage.py test --tag integration
+docker-compose -f docker-compose_dev.yml exec chris_store_dev python manage.py test --tag integration
 ```
 
 To run all the tests:
 
 ```bash
-docker exec -it $chris_store python manage.py test 
+docker-compose -f docker-compose_dev.yml exec chris_store_dev python manage.py test 
 ```
+
 
 #### Check code coverage of the automated tests
 Make sure the ``store_backend/`` dir is world writable. Then type:
 
 ```bash
-docker exec -it $chris_store coverage run --source=plugins,users manage.py test
-docker exec -it $chris_store coverage report
+docker-compose -f docker-compose_dev.yml exec chris_store_dev coverage run --source=plugins,pipelines,users manage.py test
+docker-compose -f docker-compose_dev.yml exec chris_store_dev coverage report
 ```
 
 ### Using [HTTPie](https://httpie.org/) to play with the REST API 

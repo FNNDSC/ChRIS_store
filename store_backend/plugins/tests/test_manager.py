@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.test import TestCase, tag
 
-from plugins.models import PluginMeta, Plugin, PluginParameter
+from plugins.models import PluginMeta, PluginMetaCollaborator, Plugin, PluginParameter
 from plugins.services import manager
 
 
@@ -51,7 +51,7 @@ class PluginManagerTests(TestCase):
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
                                                       public_repo='http://gitgub.com',
                                                       **data)
-        meta.owner.set([user])
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
         data = self.plg_data.copy()
         (plugin, tf) = Plugin.objects.get_or_create(meta=meta,
                                                     dock_image='fnndsc/pl-testapp',
@@ -94,12 +94,10 @@ class PluginManagerTests(TestCase):
                                  password='anotherpassword')
         plugin = Plugin.objects.get(meta__name=self.plugin_name)
         initial_modification_date = plugin.meta.modification_date
-        self.pl_manager.run(['modify', self.plugin_name, 'http://github.com/repo',
-                             '--newowner', user.username])
+        self.pl_manager.run(['modify', self.plugin_name, 'http://github.com/repo'])
         plugin = Plugin.objects.get(meta__name=self.plugin_name)
         self.assertTrue(plugin.meta.modification_date > initial_modification_date)
-        user1 = User.objects.get(username=self.username)
-        self.assertCountEqual(plugin.meta.owner.all(), [user1, user])
+        self.assertEqual(plugin.meta.public_repo, 'http://github.com/repo')
 
     def test_mananger_can_remove_plugin(self):
         """

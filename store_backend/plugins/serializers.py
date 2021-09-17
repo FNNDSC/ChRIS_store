@@ -67,7 +67,7 @@ class PluginMetaStarSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to check if plugin meta and user are unique together.
         """
         user = self.context['request'].user
-        meta = data['plugin_name']
+        meta = data['meta']['name']
         try:
             PluginMetaStar.objects.get(meta=meta, user=user)
         except ObjectDoesNotExist:
@@ -82,7 +82,8 @@ class PluginMetaCollaboratorSerializer(serializers.HyperlinkedModelSerializer):
     plugin_name = serializers.ReadOnlyField(source='meta.name')
     meta_id = serializers.ReadOnlyField(source='meta.id')
     user_id = serializers.ReadOnlyField(source='user.id')
-    username = serializers.CharField(min_length=4, max_length=32, source='user.username')
+    username = serializers.CharField(min_length=4, max_length=32, source='user.username',
+                                     required=False)
     meta = serializers.HyperlinkedRelatedField(view_name='pluginmeta-detail',
                                                read_only=True)
     user = serializers.HyperlinkedRelatedField(view_name='user-detail', read_only=True)
@@ -95,25 +96,34 @@ class PluginMetaCollaboratorSerializer(serializers.HyperlinkedModelSerializer):
     def validate_username(self, username):
         """
         Overriden to check whether the provided username exists in the DB and is not
-        the user making the request.
+        the user making the request when creating a new collaborator.
         """
-        req_user = self.context['request'].user
-        try:
-            # check whether username is a system-registered user
-            user = User.objects.get(username=username)
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError("Could not find user %s." % username)
-        if user.username == req_user.username:
-            raise serializers.ValidationError("Can not be the user making the request.")
-        return user
+        if not self.instance:
+            req_user = self.context['request'].user
+            try:
+                # check whether username is a system-registered user
+                user = User.objects.get(username=username)
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError("Could not find user %s." % username)
+            if user.username == req_user.username:
+                raise serializers.ValidationError(
+                    "Can not be the user making the request.")
+            return user
 
     def validate(self, data):
         """
-        Overriden to check if plugin meta and user are unique together.
+        Overriden to check if plugin meta and user are unique together when creating
+        a new collaborator.
         """
-        if not self.instance:
+        if self.instance:
+            data.pop('user', None)  # make sure an update doesn't include 'user'
+        else:
             meta = self.context.get('view').get_object()
-            user = data['user']['username']
+            try:
+                user = data['user']['username']
+            except KeyError:
+                msg = 'This field is required.'
+                raise serializers.ValidationError({'username': [msg]})
             try:
                 PluginMetaCollaborator.objects.get(meta=meta, user=user)
             except ObjectDoesNotExist:

@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from rest_framework import status
 
-from plugins.models import PluginMeta, PluginMetaStar
+from plugins.models import PluginMeta, PluginMetaStar, PluginMetaCollaborator
 
 
 class UserViewTests(TestCase):
@@ -23,7 +23,16 @@ class UserViewTests(TestCase):
         self.content_type = 'application/vnd.collection+json'
         self.username = 'cube'
         self.password = 'cubepass'
-        self.email = 'dev@babymri.org'
+        self.email = 'dev1@babymri.org'
+        self.other_username = 'alan'
+        self.other_password = 'alanpass'
+
+        User.objects.create_user(username=self.username,
+                                 email=self.email,
+                                 password=self.password)
+        User.objects.create_user(username=self.other_username,
+                                 email='dev2@babymri.org',
+                                 password=self.other_password)
 
     def tearDown(self):
         # re-enable logging
@@ -39,21 +48,21 @@ class UserCreateViewTests(UserViewTests):
         super(UserCreateViewTests, self).setUp()
         self.create_url = reverse("user-create")
         self.post = json.dumps(
-            {"template": {"data": [{"name": "username", "value": self.username},
-                                   {"name": "password", "value": self.password},
-                                   {"name": "email", "value": self.email}]}})
+            {"template": {"data": [{"name": "username", "value": 'lester'},
+                                   {"name": "password", "value": 'lesterpass'},
+                                   {"name": "email", "value": 'dev3@babymri.org'}]}})
 
     def test_user_create_success(self):
         response = self.client.post(self.create_url, data=self.post,
                                     content_type=self.content_type)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["username"], self.username)
-        self.assertEqual(response.data["email"], self.email)
+        self.assertEqual(response.data["username"], 'lester')
+        self.assertEqual(response.data["email"], 'dev3@babymri.org')
 
     def test_user_create_failure_already_exists(self):
-        User.objects.create_user(username=self.username,
-                                 email=self.email,
-                                 password=self.password)
+        User.objects.create_user(username='lester',
+                                 email='lesterpass',
+                                 password='dev3@babymri.org')
         response = self.client.post(self.create_url, data=self.post,
                                     content_type=self.content_type)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -61,7 +70,7 @@ class UserCreateViewTests(UserViewTests):
     def test_user_create_failure_bad_password(self):
         post = json.dumps(
             {"template": {"data": [{"name": "username", "value": "new_user"},
-                                   {"name": "email", "value": self.email},
+                                   {"name": "email", "value": 'dev4@babymri.org'},
                                    {"name": "password", "value": "small"}]}})
         response = self.client.post(self.create_url, data=post,
                                     content_type=self.content_type)
@@ -75,9 +84,7 @@ class UserDetailViewTests(UserViewTests):
 
     def setUp(self):
         super(UserDetailViewTests, self).setUp()
-        user = User.objects.create_user(username=self.username,
-                                        email=self.email,
-                                        password=self.password)
+        user = User.objects.get(username=self.username)
         self.read_update_url = reverse("user-detail", kwargs={"pk": user.id})
         self.put = json.dumps({
             "template": {"data": [{"name": "password", "value": "updated_pass"},
@@ -106,41 +113,43 @@ class UserDetailViewTests(UserViewTests):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_user_update_failure_access_denied(self):
-        User.objects.create_user(username="other_username", email="dev2@babymri.org",
-                                 password="other_password")
-        self.client.login(username="other_username", password="other_password")
+        self.client.login(username=self.other_username, password=self.other_password)
         response = self.client.put(self.read_update_url, data=self.put,
                                    content_type=self.content_type)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class UserOwnedPluginMetaListViewTests(UserViewTests):
+class UserCollabPluginMetaListViewTests(UserViewTests):
     """
-    Test the user-ownedpluginmeta-list view.
+    Test the user-pluginmetacollaborator-list view.
     """
 
     def setUp(self):
-        super(UserOwnedPluginMetaListViewTests, self).setUp()
+        super(UserCollabPluginMetaListViewTests, self).setUp()
 
-        user = User.objects.create_user(username=self.username, email=self.email,
-                                        password=self.password)
-        self.list_url = reverse("user-ownedpluginmeta-list", kwargs={"pk": user.id})
+        user = User.objects.get(username=self.username)
+        self.list_url = reverse("user-pluginmetacollaborator-list", kwargs={"pk": user.id})
 
         # create a plugin meta
         self.plugin_name = 'simplefsapp'
-        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
+        (pl_meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
                                                       type='fs',
                                                       public_repo='http://gitgub.com')
-        meta.owner.set([user])
+        PluginMetaCollaborator.objects.create(meta=pl_meta, user=user)
 
-    def test_plugin_parameter_list_success_authenticated(self):
+    def test_user_plugin_meta_collaborator_list_success_authenticated(self):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.list_url)
         self.assertContains(response, self.plugin_name)
 
-    def test_plugin_parameter_list_failure_unauthenticated(self):
+    def test_user_plugin_meta_collaborator_list_failure_unauthenticated(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_plugin_meta_collaborator_list_failure_access_denied(self):
+        self.client.login(username=self.other_username, password=self.other_password)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class UserFavoritePluginMetaListViewTests(UserViewTests):
@@ -151,18 +160,17 @@ class UserFavoritePluginMetaListViewTests(UserViewTests):
     def setUp(self):
         super(UserFavoritePluginMetaListViewTests, self).setUp()
 
-        user = User.objects.create_user(username=self.username, email=self.email,
-                                        password=self.password)
+        user = User.objects.get(username=self.username)
         self.list_url = reverse("user-favoritepluginmeta-list", kwargs={"pk": user.id})
 
         # create a plugin meta
         self.plugin_name = 'simplefsapp'
-        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
-                                                      type='fs',
-                                                      public_repo='http://gitgub.com')
-        meta.owner.set([user])
+        (pl_meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
+                                                         type='fs',
+                                                         public_repo='http://gitgub.com')
+        PluginMetaCollaborator.objects.create(meta=pl_meta, user=user)
 
-    def test_plugin_parameter_list_success_authenticated(self):
+    def test_user_favorite_plugin_meta_list_success_authenticated(self):
         user = User.objects.get(username=self.username)
         meta = PluginMeta.objects.get(name=self.plugin_name)
         PluginMetaStar.objects.get_or_create(user=user, meta=meta)
@@ -170,6 +178,11 @@ class UserFavoritePluginMetaListViewTests(UserViewTests):
         response = self.client.get(self.list_url)
         self.assertContains(response, self.plugin_name)
 
-    def test_plugin_parameter_list_failure_unauthenticated(self):
+    def test_user_favorite_plugin_meta_list_failure_unauthenticated(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_favorite_plugin_meta_list_failure_access_denied(self):
+        self.client.login(username=self.other_username, password=self.other_password)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
