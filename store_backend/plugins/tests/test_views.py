@@ -211,7 +211,7 @@ class PluginMetaStarListViewTests(ViewTests):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.create_read_url)
         self.assertContains(response, self.plugin_name)
-        self.assertNotContains(response, 'testplugin')
+        self.assertContains(response, 'testplugin')
 
     def test_plugin_meta_star_list_failure_unauthenticated(self):
         response = self.client.get(self.create_read_url)

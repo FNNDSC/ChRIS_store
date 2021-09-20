@@ -61,8 +61,6 @@ class PluginMetaFilter(FilterSet):
                                                          lookup_expr='gte')
     max_creation_date = django_filters.IsoDateTimeFilter(field_name='creation_date',
                                                          lookup_expr='lte')
-    owner_username = django_filters.CharFilter(field_name='owner__username',
-                                               lookup_expr='exact')
     name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
     name_exact = django_filters.CharFilter(field_name='name', lookup_expr='exact')
     title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
@@ -121,10 +119,11 @@ class PluginMetaStar(models.Model):
 
 class PluginMetaStarFilter(FilterSet):
     plugin_name = django_filters.CharFilter(field_name='meta__name', lookup_expr='exact')
+    username = django_filters.CharFilter(field_name='user__username', lookup_expr='exact')
 
     class Meta:
         model = PluginMetaStar
-        fields = ['id', 'plugin_name']
+        fields = ['id', 'plugin_name', 'username']
 
 
 class PluginMetaCollaborator(models.Model):

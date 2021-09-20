@@ -9,9 +9,8 @@ from .models import (PluginMeta, PluginMetaFilter, PluginMetaStar, PluginMetaSta
 from .serializers import (PluginMetaSerializer, PluginMetaStarSerializer,
                           PluginMetaCollaboratorSerializer,
                           PluginSerializer, PluginParameterSerializer)
-from .permissions import (IsStarOwner, IsMetaOwnerOrReadOnly, IsObjMetaOwnerOrReadOnly,
-                          IsMetaOwnerOrCollabReadOnly,
-                          IsObjMetaOwnerAndNotUserOrCollabReadOnly)
+from .permissions import (IsStarOwnerOrReadOnly, IsMetaOwnerOrReadOnly,
+                          IsObjMetaOwnerOrReadOnly, IsObjMetaOwnerAndNotUserOrReadOnly)
 
 
 class PluginMetaList(generics.ListAPIView):
@@ -121,22 +120,12 @@ class PluginMetaPluginList(generics.ListAPIView):
 
 class PluginMetaStarList(generics.ListCreateAPIView):
     """
-    A view for the collection of plugins' stars.
+    A view for the collection of plugin metas' stars.
     """
     http_method_names = ['get', 'post']
+    queryset = PluginMetaStar.objects.all()
     serializer_class = PluginMetaStarSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
-    def get_queryset(self):
-        """
-        Overriden to return a custom queryset that is only comprised by the plugin
-        meta stars created by the currently authenticated user.
-        """
-        user = self.request.user
-        # if the user is chris then return all the plugin meta stars in the system
-        if user.username == 'chris':
-            return PluginMetaStar.objects.all()
-        return PluginMetaStar.objects.filter(user=user)
 
     def perform_create(self, serializer):
         """
@@ -176,17 +165,6 @@ class PluginMetaStarListQuerySearch(generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
     filterset_class = PluginMetaStarFilter
 
-    def get_queryset(self):
-        """
-        Overriden to return a custom queryset that is only comprised by the plugin
-        meta stars created by the currently authenticated user.
-        """
-        user = self.request.user
-        # if the user is chris then return all the plugin meta stars in the system
-        if user.username == 'chris':
-            return PluginMetaStar.objects.all()
-        return PluginMetaStar.objects.filter(user=user)
-
 
 class PluginMetaStarDetail(generics.RetrieveDestroyAPIView):
     """
@@ -195,17 +173,17 @@ class PluginMetaStarDetail(generics.RetrieveDestroyAPIView):
     http_method_names = ['get', 'delete']
     queryset = PluginMetaStar.objects.all()
     serializer_class = PluginMetaStarSerializer
-    permission_classes = (IsStarOwner,)
+    permission_classes = (permissions.IsAuthenticated, IsStarOwnerOrReadOnly,)
 
 
 class PluginMetaCollaboratorList(generics.ListCreateAPIView):
     """
-    A view for the collection of meta-specific plugin meta collaborator list.
+    A view for the collection of plugin meta-specific plugin meta collaborator list.
     """
     http_method_names = ['get', 'post']
     queryset = PluginMeta.objects.all()
     serializer_class = PluginMetaCollaboratorSerializer
-    permission_classes = (IsMetaOwnerOrCollabReadOnly,)
+    permission_classes = (permissions.IsAuthenticated, IsMetaOwnerOrReadOnly,)
 
     def get_plugin_meta_collaborators_queryset(self):
         """
@@ -246,7 +224,8 @@ class PluginMetaCollaboratorDetail(generics.RetrieveUpdateDestroyAPIView):
     http_method_names = ['get', 'put', 'delete']
     queryset = PluginMetaCollaborator.objects.all()
     serializer_class = PluginMetaCollaboratorSerializer
-    permission_classes = (IsObjMetaOwnerAndNotUserOrCollabReadOnly,)
+    permission_classes = (permissions.IsAuthenticated,
+                          IsObjMetaOwnerAndNotUserOrReadOnly,)
 
     def retrieve(self, request, *args, **kwargs):
         """

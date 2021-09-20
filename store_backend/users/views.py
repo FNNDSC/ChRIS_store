@@ -1,14 +1,13 @@
 
 from django.contrib.auth.models import User
 
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
 from collectionjson import services
 
-from plugins.models import PluginMetaCollaborator
-from plugins.serializers import PluginMetaSerializer, PluginMetaCollaboratorSerializer
+from plugins.serializers import PluginMetaSerializer
 from .serializers import UserSerializer
 from .permissions import IsUser
 
@@ -65,26 +64,26 @@ class UserCollabPluginMetaList(generics.ListAPIView):
     A view for the collection of user-specific plugin meta collaborators.
     """
     queryset = User.objects.all()
-    serializer_class = PluginMetaCollaboratorSerializer
-    permission_classes = (IsUser,)
+    serializer_class = PluginMetaSerializer
+    permission_classes = (permissions.IsAuthenticated,)
 
     def list(self, request, *args, **kwargs):
         """
         Overriden to return the list of plugin meta collaborators for the queried user.
         """
-        queryset = self.get_user_collab_plugin_metas_queryset()
+        queryset = self.get_plugin_metas_queryset()
         response = services.get_list_response(self, queryset)
         user = self.get_object()
         links = {'user': reverse('user-detail', request=request,
                                  kwargs={"pk": user.id})}
         return services.append_collection_links(response, links)
 
-    def get_user_collab_plugin_metas_queryset(self):
+    def get_plugin_metas_queryset(self):
         """
-        Custom method to get the actual plugin meta collaborators queryset.
+        Custom method to get the actual user-collaborated plugin metas queryset.
         """
         user = self.get_object()
-        return PluginMetaCollaborator.objects.filter(user=user)
+        return self.filter_queryset(user.collab_plugin_metas.all())
 
 
 class UserFavoritePluginMetaList(generics.ListAPIView):
@@ -93,7 +92,7 @@ class UserFavoritePluginMetaList(generics.ListAPIView):
     """
     queryset = User.objects.all()
     serializer_class = PluginMetaSerializer
-    permission_classes = (IsUser,)
+    permission_classes = (permissions.IsAuthenticated,)
 
     def list(self, request, *args, **kwargs):
         """

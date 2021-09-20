@@ -100,6 +100,11 @@ class UserDetailViewTests(UserViewTests):
         response = self.client.get(self.read_update_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_user_detail_failure_access_denied(self):
+        self.client.login(username=self.other_username, password=self.other_password)
+        response = self.client.get(self.read_update_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_user_update_success(self):
         self.client.login(username=self.username, password=self.password)
         response = self.client.put(self.read_update_url, data=self.put,
@@ -146,11 +151,6 @@ class UserCollabPluginMetaListViewTests(UserViewTests):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_user_plugin_meta_collaborator_list_failure_access_denied(self):
-        self.client.login(username=self.other_username, password=self.other_password)
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
 
 class UserFavoritePluginMetaListViewTests(UserViewTests):
     """
@@ -181,8 +181,3 @@ class UserFavoritePluginMetaListViewTests(UserViewTests):
     def test_user_favorite_plugin_meta_list_failure_unauthenticated(self):
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_user_favorite_plugin_meta_list_failure_access_denied(self):
-        self.client.login(username=self.other_username, password=self.other_password)
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
