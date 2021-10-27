@@ -15,4 +15,5 @@ jobs:
         env:
           CHRIS_STORE_URL: https://chrisstore.co/api/v1/
           CHRIS_STORE_USER: ${{ secrets.CHRIS_STORE_USER }}
-        run: utils/scripts/upload_all_from_github.sh
+        run: utils/upload_all_from_github.sh
+

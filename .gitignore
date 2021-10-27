@@ -8,3 +8,6 @@ secrets/
 htmlcov
 .docker
 .idea
+swarm/prod/secrets/
+kubernetes/prod/secrets/
+dc.out

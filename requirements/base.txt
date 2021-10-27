@@ -1,9 +1,9 @@
-Django==2.2.12
-django-filter==2.2
-djangorestframework==3.11.0
+Django==2.2.24
+django-filter==2.4.0
+djangorestframework==3.12.4
 django-cors-middleware==1.5.0
-mysqlclient==1.4.6
-python-swiftclient==3.9.0
+psycopg2==2.8.6
+python-swiftclient==3.12.0
 django-storage-swift==1.2.19
-mod-wsgi==4.7.1
-environs==7.4.0
+mod-wsgi==4.8.0
+environs==9.3.2

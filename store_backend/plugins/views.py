@@ -5,17 +5,19 @@ from rest_framework.reverse import reverse
 from collectionjson import services
 
 from .models import (PluginMeta, PluginMetaFilter, PluginMetaStar, PluginMetaStarFilter,
-                     Plugin, PluginFilter, PluginParameter)
+                     Plugin, PluginFilter, PluginParameter, PluginMetaCollaborator)
 from .serializers import (PluginMetaSerializer, PluginMetaStarSerializer,
+                          PluginMetaCollaboratorSerializer,
                           PluginSerializer, PluginParameterSerializer)
-from .permissions import (IsOwnerOrChrisOrReadOnly, IsMetaOwnerOrChrisOrReadOnly,
-                          IsStarOwnerOrChris)
+from .permissions import (IsStarOwnerOrReadOnly, IsMetaOwnerOrReadOnly,
+                          IsObjMetaOwnerOrReadOnly, IsObjMetaOwnerAndNotUserOrReadOnly)
 
 
 class PluginMetaList(generics.ListAPIView):
     """
     A view for the collection of plugin metas.
     """
+    http_method_names = ['get']
     queryset = PluginMeta.objects.all()
     serializer_class = PluginMetaSerializer
 
@@ -35,7 +37,7 @@ class PluginMetaList(generics.ListAPIView):
                 'user': reverse('user-detail', request=request, kwargs={"pk": user.id}),
                 'favorite_plugin_metas': reverse('user-favoritepluginmeta-list',
                                                  request=request, kwargs={"pk": user.id}),
-                'owned_plugin_metas': reverse('user-ownedpluginmeta-list',
+                'collab_plugin_metas': reverse('user-pluginmetacollaborator-list',
                                               request=request, kwargs={"pk": user.id})
             })
         response = services.append_collection_links(response, links)
@@ -48,6 +50,7 @@ class PluginMetaListQuerySearch(generics.ListAPIView):
     """
     A view for the collection of plugin metas resulting from a query search.
     """
+    http_method_names = ['get']
     serializer_class = PluginMetaSerializer
     queryset = PluginMeta.objects.all()
     filterset_class = PluginMetaFilter
@@ -57,19 +60,10 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     A plugin meta view.
     """
+    http_method_names = ['get', 'put', 'delete']
     serializer_class = PluginMetaSerializer
     queryset = PluginMeta.objects.all()
-    permission_classes = (IsOwnerOrChrisOrReadOnly,)
-
-    def perform_update(self, serializer):
-        """
-        Overriden to update plugin's owners if requested by a PUT request.
-        """
-        meta = self.get_object()
-        new_owner = serializer.validated_data.get('new_owner')
-        if new_owner is not None:
-            meta.add_owner(new_owner)
-        super(PluginMetaDetail, self).perform_update(serializer)
+    permission_classes = (IsMetaOwnerOrReadOnly,)
 
     def update(self, request, *args, **kwargs):
         """
@@ -92,9 +86,8 @@ class PluginMetaDetail(generics.RetrieveUpdateDestroyAPIView):
         """
         Overriden to append a collection+json template.
         """
-        response = super(PluginMetaDetail, self).retrieve(request, *args,
-                                                                     **kwargs)
-        template_data = {'public_repo': '', 'new_owner': ''}
+        response = super(PluginMetaDetail, self).retrieve(request, *args, **kwargs)
+        template_data = {'public_repo': ''}
         return services.append_collection_template(response, template_data)
 
 
@@ -102,12 +95,13 @@ class PluginMetaPluginList(generics.ListAPIView):
     """
     A view for the collection of meta-specific plugins.
     """
+    http_method_names = ['get']
     queryset = PluginMeta.objects.all()
     serializer_class = PluginSerializer
 
     def list(self, request, *args, **kwargs):
         """
-        Overriden to return a list of the plugins for the queried  meta.
+        Overriden to return a list of the plugins for the queried meta.
         """
         queryset = self.get_plugins_queryset()
         response = services.get_list_response(self, queryset)
@@ -126,21 +120,12 @@ class PluginMetaPluginList(generics.ListAPIView):
 
 class PluginMetaStarList(generics.ListCreateAPIView):
     """
-    A view for the collection of plugins' stars.
+    A view for the collection of plugin metas' stars.
     """
+    http_method_names = ['get', 'post']
+    queryset = PluginMetaStar.objects.all()
     serializer_class = PluginMetaStarSerializer
     permission_classes = (permissions.IsAuthenticated,)
-
-    def get_queryset(self):
-        """
-        Overriden to return a custom queryset that is only comprised by the plugin
-        meta stars created by the currently authenticated user.
-        """
-        user = self.request.user
-        # if the user is chris then return all the plugin meta stars in the system
-        if user.username == 'chris':
-            return PluginMetaStar.objects.all()
-        return PluginMetaStar.objects.filter(user=user)
 
     def perform_create(self, serializer):
         """
@@ -175,44 +160,97 @@ class PluginMetaStarListQuerySearch(generics.ListAPIView):
     """
     A view for the collection of plugin stars resulting from a query search.
     """
+    http_method_names = ['get']
     serializer_class = PluginMetaStarSerializer
     permission_classes = (permissions.IsAuthenticated,)
     filterset_class = PluginMetaStarFilter
-
-    def get_queryset(self):
-        """
-        Overriden to return a custom queryset that is only comprised by the plugin
-        meta stars created by the currently authenticated user.
-        """
-        user = self.request.user
-        # if the user is chris then return all the plugin meta stars in the system
-        if user.username == 'chris':
-            return PluginMetaStar.objects.all()
-        return PluginMetaStar.objects.filter(user=user)
 
 
 class PluginMetaStarDetail(generics.RetrieveDestroyAPIView):
     """
     A plugin star view.
     """
+    http_method_names = ['get', 'delete']
     queryset = PluginMetaStar.objects.all()
     serializer_class = PluginMetaStarSerializer
-    permission_classes = (IsStarOwnerOrChris,)
+    permission_classes = (permissions.IsAuthenticated, IsStarOwnerOrReadOnly,)
+
+
+class PluginMetaCollaboratorList(generics.ListCreateAPIView):
+    """
+    A view for the collection of plugin meta-specific plugin meta collaborator list.
+    """
+    http_method_names = ['get', 'post']
+    queryset = PluginMeta.objects.all()
+    serializer_class = PluginMetaCollaboratorSerializer
+    permission_classes = (permissions.IsAuthenticated, IsMetaOwnerOrReadOnly,)
+
+    def get_plugin_meta_collaborators_queryset(self):
+        """
+        Custom method to get the actual plugin meta's plugin meta collaborators queryset.
+        """
+        plg_meta = self.get_object()
+        return PluginMetaCollaborator.objects.filter(meta=plg_meta)
+
+    def perform_create(self, serializer):
+        """
+        Overriden to associate a plugin meta with the plugin meta collaborator.
+        """
+        plg_meta = self.get_object()
+        user = serializer.validated_data['user']['username']
+        serializer.save(meta=plg_meta, user=user)
+
+    def list(self, request, *args, **kwargs):
+        """
+        Overriden to append document-level link relations and a collection+json template
+        to the response.
+        """
+        queryset = self.get_plugin_meta_collaborators_queryset()
+        response = services.get_list_response(self, queryset)
+        plg_meta = self.get_object()
+        # append document-level link relations
+        links = {'meta': reverse('pluginmeta-detail', request=request,
+                                 kwargs={"pk": plg_meta.id})}
+        response = services.append_collection_links(response, links)
+        # append write template
+        template_data = {'username': '', 'role': ''}
+        return services.append_collection_template(response, template_data)
+
+
+class PluginMetaCollaboratorDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    A plugin star view.
+    """
+    http_method_names = ['get', 'put', 'delete']
+    queryset = PluginMetaCollaborator.objects.all()
+    serializer_class = PluginMetaCollaboratorSerializer
+    permission_classes = (permissions.IsAuthenticated,
+                          IsObjMetaOwnerAndNotUserOrReadOnly,)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Overriden to append a collection+json template.
+        """
+        response = super(PluginMetaCollaboratorDetail, self).retrieve(request, *args,
+                                                                      **kwargs)
+        template_data = {'role': ''}
+        return services.append_collection_template(response, template_data)
 
 
 class PluginList(generics.ListCreateAPIView):
     """
     A view for the collection of plugins.
     """
+    http_method_names = ['get', 'post']
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def perform_create(self, serializer):
         """
-        Overriden to associate an owner with the plugin.
+        Overriden to pass the request user to the serializer's create method.
         """
-        serializer.save(owner=[self.request.user])
+        serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         """
@@ -252,6 +290,7 @@ class PluginListQuerySearch(generics.ListAPIView):
     """
     A view for the collection of plugins resulting from a query search.
     """
+    http_method_names = ['get']
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
     filterset_class = PluginFilter
@@ -261,9 +300,10 @@ class PluginDetail(generics.RetrieveDestroyAPIView):
     """
     A plugin view.
     """
+    http_method_names = ['get', 'delete']
     serializer_class = PluginSerializer
     queryset = Plugin.objects.all()
-    permission_classes = (IsMetaOwnerOrChrisOrReadOnly,)
+    permission_classes = (IsObjMetaOwnerOrReadOnly,)
 
     def perform_destroy(self, instance):
         """
@@ -279,6 +319,7 @@ class PluginParameterList(generics.ListAPIView):
     """
     A view for the collection of plugin parameters.
     """
+    http_method_names = ['get']
     queryset = Plugin.objects.all()
     serializer_class = PluginParameterSerializer
 
@@ -301,5 +342,6 @@ class PluginParameterDetail(generics.RetrieveAPIView):
     """
     A plugin parameter view.
     """
+    http_method_names = ['get']
     queryset = PluginParameter.objects.all()
     serializer_class = PluginParameterSerializer

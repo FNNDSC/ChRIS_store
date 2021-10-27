@@ -11,7 +11,8 @@ from django.core.files.base import ContentFile
 
 from rest_framework import status
 
-from plugins.models import PluginMeta, PluginMetaStar, Plugin, PluginParameter
+from plugins.models import (PluginMeta, PluginMetaStar, PluginMetaCollaborator, Plugin,
+                            PluginParameter)
 
 
 class ViewTests(TestCase):
@@ -52,14 +53,14 @@ class ViewTests(TestCase):
 
         # create a chris store user
         user = User.objects.create_user(username=self.username, email=self.email,
-                                 password=self.password)
+                                        password=self.password)
         # create a plugin
-        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
-                                                      type='fs',
-                                                      title='chris app',
-                                                      public_repo='http://gitgub.com')
-        meta.owner.set([user])
-        (plugin, tf) = Plugin.objects.get_or_create(meta=meta,
+        (pl_meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name,
+                                                         type='fs',
+                                                         title='chris app',
+                                                         public_repo='http://gitgub.com')
+        PluginMetaCollaborator.objects.create(meta=pl_meta, user=user)
+        (plugin, tf) = Plugin.objects.get_or_create(meta=pl_meta,
                                                     version=self.plugin_version,
                                                     dock_image='fnndsc/pl-testapp')
         plugin.descriptor_file.name = self.plugin_name + '.json'
@@ -114,38 +115,12 @@ class PluginMetaDetailViewTests(ViewTests):
         self.assertContains(response, self.plugin_name)
 
     def test_plugin_meta_update_success(self):
-        plugin = Plugin.objects.get(meta__name=self.plugin_name)
-        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
-        (plugin_v2, tf) = Plugin.objects.get_or_create(meta=meta, version='0.2')
-        user1 = User.objects.get(username=self.username)
-        plugin_v2.meta.owner.set([user1])
-        f = ContentFile(json.dumps(self.plg_repr).encode())
-        f.name = self.plugin_name + '.json'
-        plugin.descriptor_file = f
-        plugin.save()
         put = json.dumps({
-            "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
-                                  {"name": "new_owner", "value": "another"}]}})
+            "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"}]}})
         self.client.login(username=self.username, password=self.password)
         response = self.client.put(self.read_update_delete_url, data=put,
                                    content_type=self.content_type)
         self.assertContains(response, "http://localhost11")
-        self.assertEqual(len(plugin.meta.owner.all()), 2)
-        self.assertEqual(len(plugin_v2.meta.owner.all()), 2)
-
-    def test_plugin_meta_update_failure_unregistered_new_owner(self):
-        plugin = Plugin.objects.get(meta__name=self.plugin_name)
-        f = ContentFile(json.dumps(self.plg_repr).encode())
-        f.name = self.plugin_name + '.json'
-        plugin.descriptor_file = f
-        plugin.save()
-        put = json.dumps({
-            "template": {"data": [{"name": "public_repo", "value": "http://localhost11.com"},
-                                  {"name": "new_owner", "value": "unregistered"}]}})
-        self.client.login(username=self.username, password=self.password)
-        response = self.client.put(self.read_update_delete_url, data=put,
-                                   content_type=self.content_type)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_plugin_meta_update_failure_unauthenticated(self):
         response = self.client.put(self.read_update_delete_url, data={},
@@ -162,6 +137,7 @@ class PluginMetaDetailViewTests(ViewTests):
         self.client.login(username=self.username, password=self.password)
         response = self.client.delete(self.read_update_delete_url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(PluginMeta.objects.count(), 0)
         self.assertEqual(Plugin.objects.count(), 0)
 
     def test_plugin_meta_delete_failure_unauthenticated(self):
@@ -225,7 +201,7 @@ class PluginMetaStarListViewTests(ViewTests):
                                         password='bobpassword')
         # create a plugin meta
         (meta, tf) = PluginMeta.objects.get_or_create(name='testplugin')
-        meta.owner.set([user])
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
         PluginMetaStar.objects.get_or_create(user=user, meta=meta)
 
         meta = PluginMeta.objects.get(name=self.plugin_name)
@@ -235,11 +211,193 @@ class PluginMetaStarListViewTests(ViewTests):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.create_read_url)
         self.assertContains(response, self.plugin_name)
-        self.assertNotContains(response, 'testplugin')
+        self.assertContains(response, 'testplugin')
 
     def test_plugin_meta_star_list_failure_unauthenticated(self):
         response = self.client.get(self.create_read_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PluginMetaStarDetailViewTests(ViewTests):
+    """
+    Test the pluginmetastar-detail view.
+    """
+
+    def setUp(self):
+        super(PluginMetaStarDetailViewTests, self).setUp()
+
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        user = User.objects.get(username=self.username)
+        star, tf = PluginMetaStar.objects.get_or_create(user=user, meta=meta)
+
+        self.read_delete_url = reverse("pluginmetastar-detail", kwargs={"pk": star.id})
+
+        # create another chris store user
+        User.objects.create_user(username='another', email='another@babymri.org',
+                                 password='another-pass')
+
+    def test_plugin_meta_star_detail_success_authenticated(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.read_delete_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_meta_star_detail_failure_unauthenticated(self):
+        response = self.client.get(self.read_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_star_delete_success(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.delete(self.read_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(PluginMetaStar.objects.count(), 0)
+
+    def test_plugin_meta_star_delete_failure_unauthenticated(self):
+        response = self.client.delete(self.read_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_star_delete_failure_access_denied(self):
+        self.client.login(username='another', password='another-pass')
+        response = self.client.delete(self.read_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class PluginMetaCollaboratorListViewTests(ViewTests):
+    """
+    Test the pluginmeta-pluginmetacollaborator-list view.
+    """
+
+    def setUp(self):
+        super(PluginMetaCollaboratorListViewTests, self).setUp()
+
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        self.create_read_url = reverse("pluginmeta-pluginmetacollaborator-list",
+                                       kwargs={"pk": meta.id})
+        self.post = json.dumps({"template": {"data": [{"name": "username",
+                                                       "value": 'another'},
+                                                      {"name": "role",
+                                                       "value": 'M'}]}})
+        # create another chris store user
+        User.objects.create_user(username='another', email='another@babymri.org',
+                                 password='another-pass')
+
+    def test_plugin_meta_collaborator_create_success(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(self.create_read_url, data=self.post,
+                                    content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_plugin_meta_collaborator_create_failure_unauthenticated(self):
+        response = self.client.post(self.create_read_url, data=self.post,
+                                    content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_collaborator_create_failure_missing_username(self):
+        post = json.dumps({"template": {"data": [{"name": "role", "value": 'M'}]}})
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(self.create_read_url, data=post,
+                                    content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_plugin_meta_collaborator_create_failure_recreating_itself(self):
+        post = json.dumps({"template": {"data": [{"name": "username",
+                                                  "value": self.username},
+                                                 {"name": "role",
+                                                  "value": 'M'}]}})
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(self.create_read_url, data=post,
+                                    content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_plugin_meta_collaborator_list_success_authenticated(self):
+        User.objects.create_user(username='bob', email='bob@test.com',
+                                 password='bobpassword')
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.create_read_url)
+        self.assertContains(response, self.username)
+        self.assertNotContains(response, 'bob')
+
+    def test_plugin_meta_collaborator_list_failure_unauthenticated(self):
+        response = self.client.get(self.create_read_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PluginMetaCollaboratorDetailViewTests(ViewTests):
+    """
+    Test the pluginmetacollaborator-detail view.
+    """
+
+    def setUp(self):
+        super(PluginMetaCollaboratorDetailViewTests, self).setUp()
+
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        collab = PluginMetaCollaborator.objects.get(meta=meta)
+        self.read_update_delete_url = reverse("pluginmetacollaborator-detail",
+                                              kwargs={"pk": collab.id})
+
+        # create another chris store user
+        User.objects.create_user(username='another', email='another@babymri.org',
+                                 password='another-pass')
+
+    def test_plugin_meta_collaborator_detail_success_authenticated(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(self.read_update_delete_url)
+        self.assertContains(response, self.plugin_name)
+
+    def test_plugin_meta_collaborator_detail__failure_unauthenticated(self):
+        response = self.client.get(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_collaborator_update_success(self):
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        user = User.objects.get(username='another')
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
+        put = json.dumps({
+            "template": {"data": [{"name": "role", "value": "M"}]}})
+        self.client.login(username='another', password='another-pass')
+        response = self.client.put(self.read_update_delete_url, data=put,
+                                   content_type=self.content_type)
+        self.assertContains(response, "M")
+
+    def test_plugin_meta_collaborator_update_failure_unauthenticated(self):
+        response = self.client.put(self.read_update_delete_url, data={},
+                                   content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_collaborator_update_failure_access_denied(self):
+        self.client.login(username='another', password='another-pass')
+        response = self.client.put(self.read_update_delete_url, data={},
+                                   content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_plugin_meta_collaborator_update_failure_updating_itself(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.put(self.read_update_delete_url, data={},
+                                   content_type=self.content_type)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_plugin_meta_collaborator_delete_success(self):
+        meta = PluginMeta.objects.get(name=self.plugin_name)
+        user = User.objects.get(username='another')
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
+        self.client.login(username='another', password='another-pass')
+        self.assertEqual(PluginMetaCollaborator.objects.count(), 2)
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(PluginMetaCollaborator.objects.count(), 1)
+
+    def test_plugin_meta_collaborator_delete_failure_unauthenticated(self):
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_plugin_meta_collaborator_delete_failure_access_denied(self):
+        self.client.login(username='another', password='another-pass')
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_plugin_meta_collaborator_delete_failure_deleting_itself(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.delete(self.read_update_delete_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class PluginListViewTests(ViewTests):

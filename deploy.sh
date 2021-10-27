@@ -4,11 +4,11 @@ G_SYNOPSIS="
 
  NAME
 
-	docker-deploy.sh
+	deploy.sh
 
  SYNOPSIS
 
-	docker-deploy.sh [up|down]
+	deploy.sh [up|down]
 
  ARGS
 
@@ -17,7 +17,7 @@ G_SYNOPSIS="
 
  DESCRIPTION
 
-	docker-deploy.sh script will depending on the argument deploy the ChRIS store set
+	deploy.sh script will depending on the argument deploy the ChRIS store set
     of services in production or tear down the system.
 
 "
@@ -34,10 +34,10 @@ declare -i STEP=0
 
 if [[ "$1" == 'up' ]]; then
 
-    title -d 1 "Starting containerized production environment on using " " ./docker-compose.yml"
+    title -d 1 "Starting containerized production environment on using " " swarm/prod/docker-compose.yml"
     echo ""
-    echo "docker stack deploy -c docker-compose.yml chris_store_stack"
-    docker stack deploy -c docker-compose.yml chris_store_stack
+    echo "docker stack deploy -c swarm/prod/docker-compose.yml chris_store_stack"
+    docker stack deploy -c swarm/prod/docker-compose.yml chris_store_stack
     windowBottom
 
     title -d 1 "Waiting until chris store stack containers are running on swarm"
@@ -73,19 +73,8 @@ if [[ "$1" == 'up' ]]; then
 fi
 
 if [[ "$1" == 'down' ]]; then
-    title -d 1 "Destroying containerized production environment" "from ./docker-compose.yml"
-    echo
+    title -d 1 "Destroying containerized production environment"
+    echo "docker stack rm chris_store_stack"
     docker stack rm chris_store_stack
-    sleep 10
-    echo
-    printf "Do you want to also remove persistent volumes?"
-    read -p  " [y/n] " -n 1 -r
-    echo
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]] ; then
-        sleep 10
-        docker volume rm chris_store_stack_chris_store_db_data
-        docker volume rm chris_store_stack_swift_storage
-    fi
     windowBottom
 fi

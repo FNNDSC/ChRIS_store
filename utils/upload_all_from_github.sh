@@ -13,16 +13,23 @@
 # future work: max 100 plugins, gotta use pagination after that
 
 org='FNNDSC'
-search="topic:chris-app+org:$org"
+search="fork:true+topic:chris-app+org:$org"
 
 source_dir=$(dirname "$(readlink -f "$0")")
 
-list=$(
-  curl -s "https://api.github.com/search/repositories?per_page=100&q=$search" \
-    -H 'accept:application/vnd.github.v3+json' \
-    | jq -r '.items[] | .full_name' 
-)
 
+res="$(
+  curl -s "https://api.github.com/search/repositories?per_page=100&q=$search" \
+    -H 'accept:application/vnd.github.v3+json'
+)"
+
+exit_code=0
+if [ "$(jq .total_count <<< "$res")" -gt '100' ]; then
+  exit_code=1
+  echo "::error file=$0::Pagination not supported, only first 100 search results will be processed."
+fi
+
+list=$(jq -r '.items[] | .full_name' <<< $res)
 
 if [ -n "$1" ]; then
   parallel -j $1 $source_dir/upload_one_from_github.sh {} <<< $list
@@ -31,3 +38,6 @@ else
     $source_dir/upload_one_from_github.sh $repo
   done
 fi
+
+exit $exit_code
+

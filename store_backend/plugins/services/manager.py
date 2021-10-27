@@ -45,7 +45,6 @@ class PluginManager(object):
         parser_modify = subparsers.add_parser('modify', help='Modify existing plugin')
         parser_modify.add_argument('name', help="Plugin's name")
         parser_modify.add_argument('publicrepo', help="Plugin's new public repo url")
-        parser_modify.add_argument('--newowner', help="Plugin's new owner username")
 
         # create the parser for the "remove" command
         parser_remove = subparsers.add_parser('remove', help='Remove an existing plugin')
@@ -62,8 +61,8 @@ class PluginManager(object):
                 'dock_image': args.dockerimage, 'descriptor_file': df}
         plg_serializer = PluginSerializer(data=data)
         plg_serializer.is_valid(raise_exception=True)
-        owner = User.objects.get(username=args.owner)
-        plg_serializer.save(owner=[owner])
+        user = User.objects.get(username=args.owner)
+        plg_serializer.save(user=user)
 
     def modify_plugin(self, args):
         """
@@ -73,16 +72,9 @@ class PluginManager(object):
             plugin_meta = PluginMeta.objects.get(name=args.name)
         except PluginMeta.DoesNotExist:
             raise NameError("Couldn't find plugin '%s' in the system" % args.name)
-        if args.newowner:
-            data = {'name': plugin_meta.name, 'public_repo': args.publicrepo,
-                    'new_owner': args.newowner}
-        else:
-            data = {'name': plugin_meta.name, 'public_repo': args.publicrepo}
+        data = {'name': plugin_meta.name, 'public_repo': args.publicrepo}
         plugin_meta_serializer = PluginMetaSerializer(plugin_meta, data=data)
         plugin_meta_serializer.is_valid(raise_exception=True)
-        newowner = plugin_meta_serializer.validated_data.get('new_owner')
-        if newowner:
-            plugin_meta.add_owner(newowner)
         plugin_meta_serializer.save()
 
     def remove_plugin(self, args):
@@ -134,7 +126,6 @@ class PluginManager(object):
             f = ContentFile(json.dumps(app_repr).encode())
             f.name = args.name + '.json'
         return f
-
 
 
 # ENTRYPOINT

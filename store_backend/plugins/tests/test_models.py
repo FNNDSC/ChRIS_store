@@ -5,7 +5,8 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 
 
-from plugins.models import PluginMeta, Plugin, PluginFilter, PluginParameter
+from plugins.models import (PluginMeta, PluginMetaCollaborator, Plugin, PluginFilter,
+                            PluginParameter)
 
 
 class ModelTests(TestCase):
@@ -44,7 +45,7 @@ class ModelTests(TestCase):
 
         # create a plugin
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
-        meta.owner.set([user])
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
         (plugin, tf) = Plugin.objects.get_or_create(meta=meta, version='0.1' )
         plugin.descriptor_file.name = self.plugin_name + '.json'
         plugin.save()
@@ -52,20 +53,6 @@ class ModelTests(TestCase):
     def tearDown(self):
         # re-enable logging
         logging.disable(logging.NOTSET)
-
-
-class PluginMetaModelTests(ModelTests):
-
-    def test_add_owner(self):
-        """
-        Test whether custom add_owner method adds a new owner to the plugin.
-        """
-        pl_meta = PluginMeta.objects.get(name=self.plugin_name)
-        another_user = User.objects.create_user(username='another',
-                                                email='anotherdev@babymri.org',
-                                                password='anotherpassword')
-        pl_meta.add_owner(another_user)
-        self.assertIn(another_user, pl_meta.owner.all())
 
 
 class PluginModelTests(ModelTests):
@@ -102,7 +89,7 @@ class PluginFilterTests(ModelTests):
 
         # create other plugin
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.other_plugin_name)
-        meta.owner.set([user])
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
         Plugin.objects.get_or_create(meta=meta)
 
     def test_search_name_title_category(self):

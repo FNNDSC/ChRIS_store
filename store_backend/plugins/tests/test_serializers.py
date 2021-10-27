@@ -9,7 +9,8 @@ from django.core.files.base import ContentFile
 
 from rest_framework import serializers
 
-from plugins.models import PluginMeta, PluginMetaStar, Plugin, PluginParameter
+from plugins.models import (PluginMeta, PluginMetaCollaborator, PluginMetaStar, Plugin,
+                            PluginParameter)
 from plugins.serializers import (PluginMetaSerializer, PluginMetaStarSerializer,
                                  PluginSerializer, PluginParameterSerializer)
 
@@ -25,25 +26,11 @@ class PluginMetaSerializerTests(TestCase):
                                  password='foopassword')
         # create a plugin meta
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
-        meta.owner.set([user])
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
 
     def tearDown(self):
         # re-enable logging
         logging.disable(logging.NOTSET)
-
-    def test_validate_new_owner(self):
-        """
-        Test whether overriden validate_new_owner method checks whether a new plugin
-        owner is a system-registered user.
-        """
-        another_user = User.objects.create_user(username='another',
-                                                email='anotherdev@babymri.org',
-                                                password='anotherpassword')
-        plg_meta_serializer = PluginMetaSerializer()
-        with self.assertRaises(serializers.ValidationError):
-            plg_meta_serializer.validate_new_owner("unknown")
-        new_owner = plg_meta_serializer.validate_new_owner("another")
-        self.assertEqual(new_owner, another_user)
 
     def test_update(self):
         """
@@ -69,7 +56,7 @@ class PluginMetaStarSerializerTests(TestCase):
                                  password='foopassword')
         # create a plugin meta
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
-        meta.owner.set([user])
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
 
     def tearDown(self):
         # re-enable logging
@@ -126,7 +113,7 @@ class PluginSerializerTests(TestCase):
 
         # create a plugin
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
-        meta.owner.set([user])
+        PluginMetaCollaborator.objects.create(meta=meta, user=user)
         (plugin, tf) = Plugin.objects.get_or_create(meta=meta,
                                                     version=self.plg_repr['version'],
                                                     dock_image=self.plugin_dock_image)
@@ -159,23 +146,25 @@ class PluginSerializerTests(TestCase):
         with self.assertRaises(serializers.ValidationError):
             plg_serializer.validate_app_version('v1.2')
 
-    def test_validate_name_version(self):
+    def test_validate_meta_version(self):
         """
-        Test whether custom validate_name_version method raises a ValidationError when
-        plugin name and version are not unique together.
+        Test whether custom validate_meta_version method raises a ValidationError when
+        plugin meta and version are not unique together.
         """
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         plg_serializer = PluginSerializer()
         with self.assertRaises(serializers.ValidationError):
-            plg_serializer.validate_name_version(self.plg_repr['version'], self.plugin_name)
+            plg_serializer.validate_meta_version(meta, self.plg_repr['version'])
 
-    def test_validate_name_image(self):
+    def test_validate_meta_image(self):
         """
-        Test whether custom validate_name_image method raises a ValidationError when
-        plugin name and docker image are not unique together.
+        Test whether custom validate_meta_image method raises a ValidationError when
+        plugin meta and docker image are not unique together.
         """
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         plg_serializer = PluginSerializer()
         with self.assertRaises(serializers.ValidationError):
-            plg_serializer.validate_name_image(self.plugin_dock_image, self.plugin_name)
+            plg_serializer.validate_meta_image(meta, self.plugin_dock_image)
 
     def test_create_also_creates_meta_first_time_plugin_name_is_used(self):
         """
@@ -191,7 +180,7 @@ class PluginSerializerTests(TestCase):
         f = ContentFile(json.dumps(self.plg_repr).encode())
         f.name = 'testapp.json'
         validated_data['descriptor_file'] = f
-        validated_data['owner'] = [user]
+        validated_data['user'] = user
         plg_serializer = PluginSerializer()
         with self.assertRaises(PluginMeta.DoesNotExist):
             PluginMeta.objects.get(name='testapp')
@@ -213,7 +202,7 @@ class PluginSerializerTests(TestCase):
         f = ContentFile(json.dumps(self.plg_repr).encode())
         f.name = 'testapp.json'
         validated_data['descriptor_file'] = f
-        validated_data['owner'] = [user]
+        validated_data['user'] = user
         plg_serializer = PluginSerializer()
         n_plg_meta = PluginMeta.objects.count()
         plg_meta = PluginMeta.objects.get(name=self.plugin_name)
@@ -221,22 +210,18 @@ class PluginSerializerTests(TestCase):
         self.assertEqual(n_plg_meta, PluginMeta.objects.count())
         self.assertEqual(plugin.meta, plg_meta)
 
-    def test_validate_name_owner(self):
+    def test_validate_meta_collaborator(self):
         """
-        Test whether custom validate_name_owner method raises a ValidationError when
-        plugin name already exists and the user is not an owner.
+        Test whether custom validate_meta_collaborator method raises a ValidationError
+        when the user is not a collaborator for the already existing plugin meta.
         """
-        user = User.objects.get(username=self.username)
+        (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         another_user = User.objects.create_user(username='another',
                                                 email='anotherdev@babymri.org',
                                                 password='anotherpassword')
         plg_serializer = PluginSerializer()
         with self.assertRaises(serializers.ValidationError):
-            plg_serializer.validate_name_owner(another_user, self.plugin_name)
-        owners = plg_serializer.validate_name_owner(another_user, 'new_name')
-        self.assertIn(another_user, owners)
-        owners = plg_serializer.validate_name_owner(user, self.plugin_name)
-        self.assertIn(user, owners)
+            plg_serializer.validate_meta_collaborator(meta, another_user)
 
     def test_read_app_representation(self):
         """

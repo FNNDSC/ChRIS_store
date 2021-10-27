@@ -35,9 +35,11 @@ color_reset="$(tput sgr0 2> /dev/null)"
 ghrepo=$1
 ghurl="https://github.com/$ghrepo"
 
-# FNNDSC/pl-simpledsapp -> fnndsc/pl-simpledsapp
+# docker image names must be all-lowercase
+# FNNDSC/pl-ANTs -> fnndsc/pl-ants
 dock_image=${ghrepo,,}
-# FNNDSC/pl-simpledsapp -> pl-simpledsapp
+# ChRIS plugin names are case-sensitive
+# FNNDSC/pl-ANTs -> pl-ANTs
 plname=$(echo $ghrepo | sed 's/^.*\///')
 
 dockerhub=$(curl -s "https://hub.docker.com/v2/repositories/$dock_image/tags/?ordering=last_updated")
@@ -77,11 +79,18 @@ fi
 tagged_dock_image=$dock_image:$recent_tag
 quit_if_already_there
 
-descriptor_file=$(mktemp --suffix .json)
+time_pull_start=$(date +%s)
 docker pull -q $tagged_dock_image > /dev/null
+time_pull_end=$(date +%s)
+
+descriptor_file=$(mktemp --suffix .json)
 script=$(docker inspect --format '{{ (index .Config.Cmd 0)}}' $tagged_dock_image)
-docker run --rm $dock_image $script --json > $descriptor_file 2> /dev/null
-docker rmi $tagged_dock_image > /dev/null 2>&1 &
+docker run --rm $tagged_dock_image $script --json > $descriptor_file 2> /dev/null
+
+# remove large, newly pulled images
+if [ "$(($time_pull_end-$time_pull_start))" -gt '3' ]; then
+  docker rmi $tagged_dock_image > /dev/null 2>&1 &
+fi
 
 res=$(
   curl -s -u "$CHRIS_STORE_USER" "${CHRIS_STORE_URL}plugins/" \
@@ -94,9 +103,20 @@ result=$?
 rm $descriptor_file
 
 if [ "$result" = "0" ]; then
-  uploaded_url=$(echo $res | jq -r '.collection.items[0].href')
-  printf "$color_green%-60s %s$color_reset\n" "$tagged_dock_image" "$uploaded_url"
+  uploaded_url=$(jq -r '.collection.items[0].href' <<< "$res")
+  if [ "$uploaded_url" != 'null' ]; then
+    printf "$color_green%-60s %s$color_reset\n" "$tagged_dock_image" "$uploaded_url"
+  else
+    error_msg="$(jq '.collection.error' <<< "$res")"
+    if [ "$error_msg" = 'null' ]; then
+      error_msg="unknown error"
+    fi
+  fi
 else
+  error_msg="network/request error"
+fi
+
+if [ -n "$error_msg" ]; then
   printf "$color_red%-60s %s$color_reset\n" "$tagged_dock_image" "$res"
 fi
 

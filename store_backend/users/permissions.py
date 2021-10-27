@@ -2,10 +2,10 @@
 from rest_framework import permissions
 
 
-class IsUserOrChrisOrReadOnly(permissions.BasePermission):
+class IsUserOrReadOnly(permissions.BasePermission):
     """
-    Custom permission to only allow owners of an object or superuser
-    'chris' to modify/edit it. Read only is allowed to other users.
+    Custom permission to only allow owners of an object to modify/edit it.
+    Read only is allowed to other users.
     """
 
     def has_object_permission(self, request, view, obj):
@@ -14,17 +14,15 @@ class IsUserOrChrisOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Write permissions are only allowed to the authenticated user and
-        # superuser 'chris'.
-        return (obj == request.user) or (request.user.username == 'chris')
+        # Write permissions are only allowed to the authenticated user
+        return obj == request.user
 
 
-class IsUserOrChris(permissions.BasePermission):
+class IsUser(permissions.BasePermission):
     """
-    Custom permission to only allow access to the user that owns the object or
-    superuser 'chris'.
+    Custom permission to only allow access to the user that owns the object.
     """
 
     def has_object_permission(self, request, view, obj):
-        # Access is only allowed to the owner and superuser 'chris'.
-        return (request.user == obj) or (request.user.username == 'chris')
+        # Access is only allowed to the owner
+        return request.user == obj
