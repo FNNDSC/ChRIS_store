@@ -178,7 +178,7 @@ if [[ "$1" == 'up' ]]; then
     windowBottom
 
     title -d 1 "Attaching interactive terminal (ctrl-c to detach)"
-    chris_store_dev=$(docker ps -f name=chris_store_dev_1 -q)
+    chris_store_dev=$(docker ps -f ancestor=fnndsc/chris_store:dev -q)
     docker attach --detach-keys ctrl-c $chris_store_dev
 fi
 
