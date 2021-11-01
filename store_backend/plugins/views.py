@@ -162,8 +162,9 @@ class PluginMetaStarListQuerySearch(generics.ListAPIView):
     """
     http_method_names = ['get']
     serializer_class = PluginMetaStarSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    queryset = PluginMetaStar.objects.all()
     filterset_class = PluginMetaStarFilter
+    permission_classes = (permissions.IsAuthenticated,)
 
 
 class PluginMetaStarDetail(generics.RetrieveDestroyAPIView):
