@@ -316,10 +316,6 @@ class PluginMetaCollaboratorListViewTests(ViewTests):
         self.assertContains(response, self.username)
         self.assertNotContains(response, 'bob')
 
-    def test_plugin_meta_collaborator_list_failure_unauthenticated(self):
-        response = self.client.get(self.create_read_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
 
 class PluginMetaCollaboratorDetailViewTests(ViewTests):
     """
@@ -342,10 +338,6 @@ class PluginMetaCollaboratorDetailViewTests(ViewTests):
         self.client.login(username=self.username, password=self.password)
         response = self.client.get(self.read_update_delete_url)
         self.assertContains(response, self.plugin_name)
-
-    def test_plugin_meta_collaborator_detail__failure_unauthenticated(self):
-        response = self.client.get(self.read_update_delete_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_plugin_meta_collaborator_update_success(self):
         meta = PluginMeta.objects.get(name=self.plugin_name)

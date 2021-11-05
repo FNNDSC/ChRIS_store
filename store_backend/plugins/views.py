@@ -184,7 +184,7 @@ class PluginMetaCollaboratorList(generics.ListCreateAPIView):
     http_method_names = ['get', 'post']
     queryset = PluginMeta.objects.all()
     serializer_class = PluginMetaCollaboratorSerializer
-    permission_classes = (permissions.IsAuthenticated, IsMetaOwnerOrReadOnly,)
+    permission_classes = (IsMetaOwnerOrReadOnly,)
 
     def get_plugin_meta_collaborators_queryset(self):
         """
@@ -225,8 +225,7 @@ class PluginMetaCollaboratorDetail(generics.RetrieveUpdateDestroyAPIView):
     http_method_names = ['get', 'put', 'delete']
     queryset = PluginMetaCollaborator.objects.all()
     serializer_class = PluginMetaCollaboratorSerializer
-    permission_classes = (permissions.IsAuthenticated,
-                          IsObjMetaOwnerAndNotUserOrReadOnly,)
+    permission_classes = (IsObjMetaOwnerAndNotUserOrReadOnly,)
 
     def retrieve(self, request, *args, **kwargs):
         """
