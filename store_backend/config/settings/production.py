@@ -50,16 +50,6 @@ DATABASES['default']['HOST'] = get_secret('DATABASE_HOST')
 DATABASES['default']['PORT'] = get_secret('DATABASE_PORT')
 
 
-# SWIFT SERVICE CONFIGURATION
-# ------------------------------------------------------------------------------
-DEFAULT_FILE_STORAGE = 'swift.storage.SwiftStorage'
-SWIFT_AUTH_URL = get_secret('SWIFT_AUTH_URL')
-SWIFT_USERNAME = get_secret('SWIFT_USERNAME')
-SWIFT_KEY = get_secret('SWIFT_KEY')
-SWIFT_CONTAINER_NAME = get_secret('SWIFT_CONTAINER_NAME')
-SWIFT_AUTO_CREATE_CONTAINER = True
-
-
 # LOGGING CONFIGURATION
 # See http://docs.djangoproject.com/en/2.2/topics/logging for
 # more details on how to customize your logging configuration.

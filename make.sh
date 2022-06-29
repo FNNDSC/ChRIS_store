@@ -46,10 +46,6 @@ if [[ "$1" == 'up' ]]; then
         docker pull postgres:13                                                 | ./boxes.sh
         echo ""                                                             | ./boxes.sh
         printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
-                "docker pull " "fnndsc/docker-swift-onlyone"                | ./boxes.sh
-        docker pull fnndsc/docker-swift-onlyone                             | ./boxes.sh
-        echo ""                                                             | ./boxes.sh
-        printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
                 "docker pull " "fnndsc/chris_store:dev"                     | ./boxes.sh
         docker pull fnndsc/chris_store:dev                                  | ./boxes.sh
         echo ""                                                             | ./boxes.sh

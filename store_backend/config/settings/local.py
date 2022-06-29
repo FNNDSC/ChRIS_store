@@ -66,13 +66,6 @@ for app in ['collectionjson', 'plugins', 'pipelines', 'users']:
             'propagate': False  # required to avoid double logging with root logger
         }
 
-# swift service settings
-DEFAULT_FILE_STORAGE = 'swift.storage.SwiftStorage'
-SWIFT_AUTH_URL = 'http://swift_service_dev:8080/auth/v1.0'
-SWIFT_USERNAME = 'chris:chris1234'
-SWIFT_KEY = 'testing'
-SWIFT_CONTAINER_NAME = 'store_users'
-SWIFT_AUTO_CREATE_CONTAINER = True
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
