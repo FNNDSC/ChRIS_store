@@ -5,3 +5,4 @@ django-cors-middleware==1.5.0
 psycopg2==2.8.6
 mod-wsgi==4.8.0
 environs==9.3.2
+six==1.16.0
