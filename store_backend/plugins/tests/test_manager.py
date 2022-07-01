@@ -58,7 +58,6 @@ class PluginManagerTests(TestCase):
                                                     **data)
         #f = ContentFile(self.plg_repr)
         #f.name = self.plugin_name + '.json'
-        plugin.descriptor_file.name = self.plugin_name + '.json'
         plugin.save()
 
         # add plugin's parameters

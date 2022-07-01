@@ -7,7 +7,6 @@ from unittest import mock
 from django.test import TestCase, tag
 from django.urls import reverse
 from django.contrib.auth.models import User
-from django.core.files.base import ContentFile
 
 from rest_framework import status
 
@@ -63,7 +62,6 @@ class ViewTests(TestCase):
         (plugin, tf) = Plugin.objects.get_or_create(meta=pl_meta,
                                                     version=self.plugin_version,
                                                     dock_image='fnndsc/pl-testapp')
-        plugin.descriptor_file.name = self.plugin_name + '.json'
         plugin.save()
 
     def tearDown(self):

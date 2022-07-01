@@ -47,7 +47,6 @@ class ModelTests(TestCase):
         (meta, tf) = PluginMeta.objects.get_or_create(name=self.plugin_name)
         PluginMetaCollaborator.objects.create(meta=meta, user=user)
         (plugin, tf) = Plugin.objects.get_or_create(meta=meta, version='0.1' )
-        plugin.descriptor_file.name = self.plugin_name + '.json'
         plugin.save()
 
     def tearDown(self):

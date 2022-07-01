@@ -16,16 +16,13 @@ services:
     environment:
       - DATABASE_HOST=chris_store_db
       - DATABASE_PORT=5432
-      - SWIFT_AUTH_URL=http://swift_service:8080/auth/v1.0
     env_file:
       - ./secrets/.chris_store.env
       - ./secrets/.chris_store_db.env
-      - ./secrets/.swift_service.env
     ports:
       - "8010:8010"
     depends_on:
       - chris_store_db
-      - swift_service
     deploy:
       restart_policy:
         condition: on-failure
@@ -46,22 +43,5 @@ services:
       name: "ChRIS_store PostgreSQL Database"
       role: "Production PostgreSQL database"
 
-  swift_service:
-    image: fnndsc/docker-swift-onlyone
-    init: true
-    volumes:
-      - swift_storage:/srv
-    env_file:
-      - ./secrets/.swift_service.env
-    ports:
-      - "8080:8080"
-    deploy:
-      restart_policy:
-        condition: on-failure
-    labels:
-      name: "swift"
-      role: "Swift object storage service"
-
 volumes:
   chris_store_db_data:
-  swift_storage:

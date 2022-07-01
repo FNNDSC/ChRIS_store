@@ -165,6 +165,7 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
         Overriden to validate and save all the plugin descriptors and parameters
         associated with the plugin when creating it.
         """
+
         # gather the data that belongs to the plugin meta
         meta_dict = validated_data.pop('meta')
         meta_data = {'name': meta_dict['name'],
@@ -226,6 +227,8 @@ class PluginSerializer(serializers.HyperlinkedModelSerializer):
             PluginMetaCollaborator.objects.create(meta=pl_meta, user=user)
         validated_data = new_plg_serializer.validated_data
         validated_data['meta'] = pl_meta
+        del validated_data['descriptor_file']
+
         plugin = super(PluginSerializer, self).create(validated_data)
         for param_serializer_dict in parameters_serializers:
             param = param_serializer_dict['serializer'].save(plugin=plugin)

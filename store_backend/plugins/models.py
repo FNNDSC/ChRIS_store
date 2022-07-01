@@ -165,7 +165,6 @@ class Plugin(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     version = models.CharField(max_length=10)
     dock_image = models.CharField(max_length=500)
-    descriptor_file = models.FileField(max_length=512, upload_to=uploaded_file_path)
     execshell = models.CharField(max_length=50, blank=True)
     selfpath = models.CharField(max_length=512, blank=True)
     selfexec = models.CharField(max_length=50, blank=True)
