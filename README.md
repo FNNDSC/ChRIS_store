@@ -30,7 +30,7 @@ If you read nothing else on this page, and just want to get an instance of the C
 running with no mess, no fuss:
 
 ```bash
-git clone https://github.com/FNNDSC/ChRIS_store
+git clone https://github.com/FNNDSC/ChRIS_store.git
 cd ChRIS_store
 ./make.sh down ; ./make.sh up
 ```
