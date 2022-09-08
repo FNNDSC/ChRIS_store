@@ -1,6 +1,6 @@
 import logging
 
-from django.conf.urls import url, include
+from django.urls import path, include
 from django.test.utils import override_settings
 from django.test import TestCase
 
@@ -95,6 +95,5 @@ class FunctionTests(SimpleGetTest):
 router = DefaultRouter()
 router.register('moron', views.MoronModelViewSet)
 urlpatterns = [
-    url(r'^rest-api/', include(router.urls)),
+    path('rest-api/', include(router.urls)),
 ]
-

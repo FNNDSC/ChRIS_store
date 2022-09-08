@@ -36,7 +36,7 @@ services:
   chris_store_dev_db:
     image: postgres:13
     volumes:
-      - chris_store_dev_db_data:/var/lib/postgresql/data:z
+      - chris_store_dev_db_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=chris_store_dev
       - POSTGRES_USER=chris

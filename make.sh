@@ -42,19 +42,15 @@ if [[ "$1" == 'up' ]]; then
 
     title -d 1 "Pulling core containers where needed..."
         printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
-                "docker pull" " postgres:13"                                    | ./boxes.sh
-        docker pull postgres:13                                                 | ./boxes.sh
-        echo ""                                                             | ./boxes.sh
-        printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
-                "docker pull " "fnndsc/chris_store:dev"                     | ./boxes.sh
-        docker pull fnndsc/chris_store:dev                                  | ./boxes.sh
+                "docker pull" " postgres:13"                                | ./boxes.sh
+        docker pull postgres:13                                             | ./boxes.sh
         echo ""                                                             | ./boxes.sh
     windowBottom
 
     title -d 1 "Starting containerized development environment using " " ./docker-compose_dev.yml"
-        echo "docker-compose -f docker-compose_dev.yml up -d"     | ./boxes.sh  ${LightCyan}
+        echo "docker-compose -f docker-compose_dev.yml up -d --build"  | ./boxes.sh  ${LightCyan}
         windowBottom
-        docker-compose -f docker-compose_dev.yml up -d     >& dc.out > /dev/null
+        docker-compose -f docker-compose_dev.yml up -d --build  >& dc.out > /dev/null
         echo -en "\033[2A\033[2K"
         cat dc.out | sed -E 's/(.{80})/\1\n/g'                    | ./boxes.sh ${LightGreen}
     windowBottom
@@ -173,9 +169,9 @@ if [[ "$1" == 'up' ]]; then
         cat dc.out | ./boxes.sh
     windowBottom
 
-    title -d 1 "Attaching interactive terminal (ctrl-c to detach)"
+    title -d 1 "Attaching interactive terminal (ctrl-a to detach)"
     chris_store_dev=$(docker ps -f ancestor=fnndsc/chris_store:dev -q)
-    docker attach --detach-keys ctrl-c $chris_store_dev
+    docker attach --detach-keys ctrl-a $chris_store_dev
 fi
 
 if [[ "$1" == 'down' ]]; then

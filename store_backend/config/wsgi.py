@@ -1,15 +1,14 @@
 """
-WSGI config for ChRIS_store project.
+WSGI config for mysite project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
 For more information on this file, see
-https://docs.djangoproject.com/en/2.2/howto/deployment/wsgi/
+https://docs.djangoproject.com/en/4.0/howto/deployment/wsgi/
 """
 
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
 
 from django.core.wsgi import get_wsgi_application
 
