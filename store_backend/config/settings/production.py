@@ -27,22 +27,20 @@ def get_secret(setting, secret_type=env):
 
 # SECRET CONFIGURATION
 # ------------------------------------------------------------------------------
-# See: https://docs.djangoproject.com/en/4.0/ref/settings/#secret-key
-# Raises ImproperlyConfigured exception if DJANGO_SECRET_KEY not in os.environ
+# See: https://docs.djangoproject.com/en/4.2/ref/settings/#secret-key
 SECRET_KEY = get_secret('DJANGO_SECRET_KEY')
 
 
 # SITE CONFIGURATION
 # ------------------------------------------------------------------------------
 # Hosts/domain names that are valid for this site
-# See https://docs.djangoproject.com/en/4.0/ref/settings/#allowed-hosts
+# See https://docs.djangoproject.com/en/4.2/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = get_secret('DJANGO_ALLOWED_HOSTS', env.list)
 # END SITE CONFIGURATION
 
 
 # DATABASE CONFIGURATION
 # ------------------------------------------------------------------------------
-# Raises ImproperlyConfigured exception if DATABASE_URL not in os.environ
 DATABASES['default']['NAME'] = get_secret('POSTGRES_DB')
 DATABASES['default']['USER'] = get_secret('POSTGRES_USER')
 DATABASES['default']['PASSWORD'] = get_secret('POSTGRES_PASSWORD')
@@ -51,7 +49,7 @@ DATABASES['default']['PORT'] = get_secret('DATABASE_PORT')
 
 
 # LOGGING CONFIGURATION
-# See https://docs.djangoproject.com/en/4.0/topics/logging/ for
+# See https://docs.djangoproject.com/en/4.2/topics/logging/ for
 # more details on how to customize your logging configuration.
 ADMINS = [('FNNDSC Developers', 'dev@babymri.org')]
 LOGGING = {

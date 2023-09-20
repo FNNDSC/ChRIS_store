@@ -30,7 +30,7 @@
 # docker build --build-arg http_proxy=${PROXY} --build-arg ENVIRONMENT=local -t local/chris_store:dev .
 #
 
-FROM fnndsc/ubuntu-python3:ubuntu20.04-python3.8.5
+FROM fnndsc/ubuntu-python3:ubuntu20.04-python3.8.10
 MAINTAINER fnndsc "dev@babymri.org"
 
 # Pass a UID on build command line (see above) to set internal UID

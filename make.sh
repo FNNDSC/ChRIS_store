@@ -42,8 +42,8 @@ if [[ "$1" == 'up' ]]; then
 
     title -d 1 "Pulling core containers where needed..."
         printf "${LightCyan}%40s${Green}%-40s${Yellow}\n"                   \
-                "docker pull" " postgres:13"                                | ./boxes.sh
-        docker pull postgres:13                                             | ./boxes.sh
+                "docker pull" " postgres:16"                                | ./boxes.sh
+        docker pull postgres:16                                             | ./boxes.sh
         echo ""                                                             | ./boxes.sh
     windowBottom
 

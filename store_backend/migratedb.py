@@ -2,7 +2,7 @@
 
 import time
 import sys
-import psycopg2
+import psycopg
 from argparse import ArgumentParser
 
 # django needs to be loaded
@@ -31,8 +31,8 @@ max_tries = args.attempts if args.attempts else 30
 db = None
 while max_tries > 0 and db is None:
     try:
-        db = psycopg2.connect(host=host, user=args.user, password=args.password,
-                              dbname=args.database)
+        db = psycopg.connect(host=host, user=args.user, password=args.password,
+                             dbname=args.database)
     except Exception:
         time.sleep(5)
         max_tries -= 1

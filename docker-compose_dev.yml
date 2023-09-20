@@ -34,7 +34,7 @@ services:
       role: "Development server"
 
   chris_store_dev_db:
-    image: postgres:13
+    image: postgres:16
     volumes:
       - chris_store_dev_db_data:/var/lib/postgresql/data
     environment:
